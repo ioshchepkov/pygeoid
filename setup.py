@@ -36,5 +36,6 @@ setup(name='pygeoid',
       ],
       keywords=['geodesy', 'gravimetry', 'geoid'],
       packages=find_packages(),
+      install_requires=['pint'],
       python_requires='>=3',
       )
