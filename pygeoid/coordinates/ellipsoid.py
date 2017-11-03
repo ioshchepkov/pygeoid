@@ -16,125 +16,11 @@ _proj.pj_ellps.update({
 DEFAULT_ELLIPSOID = 'GRS80'
 
 
-class _Ellipse:
-    """Class representing an ellipse geometry.
-
-    The class is used as a parent class for Ellipsoid and basically not for a direct use.
-    """
-
-    def __init__(self, a, b, f, e2):
-        self._a = a  # equtorial radius
-        self._b = b  # polar radius
-        self._f = f  # flattening
-        self._e2 = e2  # eccentricity squared
-
-        # define other parameters
-        self._e = np.sqrt(self._e2)  # eccentricity
-        self._e12 = self._e2 / (1 - self._e2)  # 2nd eccentricity squared
-        self._e1 = np.sqrt(self._e12)  # 2nd eccentricity
-
-    #########################################################################
-    # Defining and computed constants
-    #########################################################################
-    @property
-    def equatorial_radius(self):
-        """Return semi-major or equatorial axis radius"""
-        return self._a
-
-    @property
-    def polar_radius(self):
-        """Return semi-minor or polar axis radius"""
-        return self._b
-
-    @property
-    def flattening(self):
-        """Return flattening"""
-        return self._f
-
-    @property
-    def reciprocal_flattening(self):
-        """Return reciprocal flattening"""
-        return 1 / self.flattening
-
-    @property
-    def eccentricity(self):
-        """Return first eccentricity"""
-        return self._e
-
-    @property
-    def eccentricity_squared(self):
-        """Return first eccentricity squared"""
-        return self._e2
-
-    @property
-    def second_eccentricity(self):
-        """Return second eccentricity"""
-        return self._e1
-
-    @property
-    def second_eccentricity_squared(self):
-        """Return second eccentricity squared"""
-        return self._e12
-
-    @property
-    def linear_eccentricity(self):
-        """Return linear eccentricity"""
-        return self.equatorial_radius * self.eccentricity
-
-    @property
-    def quadrant_distance(self):
-        """Return arc of meridian from equator to pole (meridian quadrant)"""
-        prc = self.polar_radius_of_curvature
-        return prc * np.pi / 2 * (1 -
-                                  3 / 4 * self._e12 + 45 / 64 * self._e12**2 -
-                                  175 / 256 * self._e12 ** 3 +
-                                  11025 / 16384 * self._e12**4)
-
-    #########################################################################
-    # Auxiliary methods
-    #########################################################################
-    def _w(self, lat):
-        """Return auxiliary function W"""
-        return np.sqrt(1 - self._e2 * np.sin(lat) ** 2)
-
-    def _v(self, lat):
-        """Return auxiliary function V"""
-        return np.sqrt(1 + self._e12 * np.cos(lat) ** 2)
-
-    #########################################################################
-    # Radiuses of curvature
-    #########################################################################
-    @property
-    def polar_radius_of_curvature(self):
-        """Return polar radius of curvature"""
-        return self.equatorial_radius**2 / self.polar_radius
-
-    def curvature_radius(self, lat):
-        """Return radius of curvature"""
-        return self.polar_radius_of_curvature / self._v(lat) ** 3
-
-    ##########################################################################
-    def polar_equation(self, lat):
-        """Return radius of the ellipse with respect to the origin
-
-        Parameters
-        ----------
-            lat : float or array_like of floats
-                Spherical latitude in radians.
-
-        Returns
-        -------
-            float : radius in meters
-        """
-        return (self._a * self._b) / (np.sqrt(self._a**2 * np.sin(lat)**2 +
-                                              self._b**2 * np.cos(lat)**2))
-
-
-class Ellipsoid(_Ellipse):
+class Ellipsoid(_proj.Geod):
     """Class represents an ellipsoid of revolution and its geometry.
 
     This class intialize proj.Geod class from pyproj package, so any valid init
-    string for Proj are accepted as arguments. See pyproj.Geod.__new__ methods
+    string for Proj are accepted as arguments. See pyproj.Geod.__new__
     documentation (https://jswhit.github.io/pyproj/pyproj.Geod-class.html)
     for more information.
 
@@ -143,8 +29,9 @@ class Ellipsoid(_Ellipse):
     ellps : str, optional
         Ellipsoid name, most common ellipsoids are accepted
     """
+    # pylint: disable=R0904
 
-    def __init__(self, ellps=None, **kwargs):
+    def __new__(cls, ellps=None, **kwargs):
         if not kwargs:
             if ellps in _proj.pj_ellps:
                 kwargs['ellps'] = ellps
@@ -156,23 +43,83 @@ class Ellipsoid(_Ellipse):
                         are:\n{:%s}'.format(ellps,
                                             _proj.pj_ellps.keys()))
 
-        self._geod = _proj.Geod(**kwargs)
-        self._name = kwargs['ellps']
+        # define useful short-named attributes
+        geod = _proj.Geod.__new__(cls, **kwargs)
+        geod.e2 = geod.es  # eccentricity squared
+        geod.e = np.sqrt(geod.e2)  # eccentricity
+        geod.e12 = geod.e2 / (1 - geod.e2)  # 2nd eccentricity squared
+        geod.e1 = np.sqrt(geod.e12)  # 2nd eccentricity
 
-        super().__init__(self._geod.a, self._geod.b,
-                         self._geod.f, self._geod.es)
+        return geod
+
+    #########################################################################
+    # Defining and computed constants
+    #########################################################################
+    @property
+    def equatorial_radius(self):
+        """Return semi-major or equatorial axis radius"""
+        return self.a
+
+    @property
+    def polar_radius(self):
+        """Return semi-minor or polar axis radius"""
+        return self.b
+
+    @property
+    def flattening(self):
+        """Return flattening"""
+        return self.f
+
+    @property
+    def reciprocal_flattening(self):
+        """Return reciprocal flattening"""
+        return 1 / self.flattening
+
+    @property
+    def eccentricity(self):
+        """Return first eccentricity"""
+        return self.e
+
+    @property
+    def eccentricity_squared(self):
+        """Return first eccentricity squared"""
+        return self.e2
+
+    @property
+    def second_eccentricity(self):
+        """Return second eccentricity"""
+        return self.e1
+
+    @property
+    def second_eccentricity_squared(self):
+        """Return second eccentricity squared"""
+        return self.e12
+
+    @property
+    def linear_eccentricity(self):
+        """Return linear eccentricity"""
+        return self.equatorial_radius * self.eccentricity
+
+    @property
+    def quadrant_distance(self):
+        """Return arc of meridian from equator to pole (meridian quadrant)"""
+        prc = self.polar_radius_of_curvature
+        return prc * np.pi / 2 * (1 -
+                                  3 / 4 * self.e12 + 45 / 64 * self.e12**2 -
+                                  175 / 256 * self.e12 ** 3 +
+                                  11025 / 16384 * self.e12**4)
 
     @property
     def surface_area(self):
         """Return surface area of the ellipsoid"""
-        return _2pi * self._a**2 * (
-            1 + 0.5 * (1 - self._e2) / self._e * np.log((1 +
-                                                         self._e) / (1 - self._e)))
+        return _2pi * self.a**2 * (
+            1 + 0.5 * (1 - self.e2) / self.e * np.log((1 +
+                                                       self.e) / (1 - self.e)))
 
     @property
     def volume(self):
         """Return volume of the elliposid"""
-        return _4pi * self._a**2 * self._b / 3
+        return _4pi * self.a**2 * self.b / 3
 
     ##########################################################################
     # Equivalent sphere radiuses
@@ -180,28 +127,44 @@ class Ellipsoid(_Ellipse):
     @property
     def mean_radius(self):
         """Return arithmetic mean radius"""
-        return (2 * self._a + self._b) / 3
+        return (2 * self.a + self.b) / 3
 
     @property
     def mean_radius_same_surface(self):
         """Return radius of the sphere with the same surface"""
         prc = self.polar_radius_of_curvature
         return prc * (1 -
-                      2 / 3 * self._e12 + 26 / 45 * self._e12**2 -
-                      100 / 189 * self._e12**3 +
-                      7034 / 14175 * self._e12**4)
+                      2 / 3 * self.e12 + 26 / 45 * self.e12**2 -
+                      100 / 189 * self.e12**3 +
+                      7034 / 14175 * self.e12**4)
 
     @property
     def mean_radius_same_volume(self):
         """Return radius of the sphere with the same volume"""
-        return np.power(self._a**2 * self._b, 1 / 3)
+        return np.power(self.a**2 * self.b, 1 / 3)
+
+    #########################################################################
+    # Auxiliary methods
+    #########################################################################
+    def _w(self, lat):
+        """Return auxiliary function W"""
+        return np.sqrt(1 - self.e2 * np.sin(lat) ** 2)
+
+    def _v(self, lat):
+        """Return auxiliary function V"""
+        return np.sqrt(1 + self.e12 * np.cos(lat) ** 2)
 
     #########################################################################
     # Radiuses of curvature
     #########################################################################
+    @property
+    def polar_radius_of_curvature(self):
+        """Return polar radius of curvature"""
+        return self.equatorial_radius**2 / self.polar_radius
+
     def meridian_curvature_radius(self, lat):
         """Return radius of curvature of meridian normal section M"""
-        return self.curvature_radius(lat)
+        return self.polar_radius_of_curvature / self._v(lat) ** 3
 
     def prime_vertical_curvature_radius(self, lat):
         """Return radius of curvature of prime vertical normal section N"""
@@ -219,60 +182,21 @@ class Ellipsoid(_Ellipse):
                       1 / self.meridian_curvature_radius(lat))
 
     ##########################################################################
+    def polar_equation(self, lat):
+        """Return radius of the ellipse with respect to the origin
+
+        Parameters
+        ----------
+            lat : float or array_like of floats
+                Spherical latitude in radians.
+
+        Returns
+        -------
+            float : radius in meters
+        """
+        return (self.a * self.b) / (np.sqrt(self.a**2 * np.sin(lat)**2 +
+                                            self.b**2 * np.cos(lat)**2))
+
     def reduced_latitude(self, lat):
         """Return reduced latitude from geodetic one"""
-        return np.arctan((1 - self._f) * np.tan(lat))
-
-    def inverse(self, lon1, lat1, lon2, lat2, radians=False):
-        """Solve inverse geodetic problem on the ellipsoid
-
-        Parameters
-        ----------
-            lon1 : float or array_like of floats
-                Geodetic longitude of the firse point.
-            lat1 : float or array_like of floats
-                Geodetic latitude of the first point.
-            lon2 : float or array_like of floats
-                Geodetic longitude of the second point.
-            lat3 : float or array_like of floats
-                Geodetic latitude of the second point.
-            radians : bool
-                If True then coordinates and output azimuths in radians.
-
-        Returns
-        -------
-            azimuth1 : float or array_like of floats
-                Forward geodetic azimuth.
-            azimuth2 : float or array_like of floats
-                Back geodetic azimuth.
-            distance : float or array_like of floats
-                Distance between two points, in meters.
-        """
-        return self._geod.inv(lon1, lat1, lon2, lat2, radians=radians)
-
-    def forward(self, lon, lat, azimuth, distance, radians=False):
-        """Solve forward geodetic problem on the ellipsoid
-
-        Parameters
-        ----------
-            lon : float or array_like of floats
-                Geodetic longitude.
-            lat : float or array_like of floats
-                Geodetic latitude.
-            azimuth : float or array_like of floats
-                Geodetic azimuth.
-            distance : float or array_like of floats
-                Distance, in meters.
-            radians : bool
-                If True, then `lon`, `lat` and `azimuth` in radians.
-
-        Returns
-        -------
-            lon : float or array_like of floats
-                Geodetic longitude of the second point.
-            lon : float or array_like of floats
-                Geodetic longitude of the second point.
-            azimuth : float or array_like of floats
-                Back geodetic azimuth.
-        """
-        return self._geod.fwd(lon, lat, azimuth, distance, radians=radians)
+        return np.arctan((1 - self.f) * np.tan(lat))
