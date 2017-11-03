@@ -117,8 +117,14 @@ class _Ellipse:
     def polar_equation(self, lat):
         """Return radius of the ellipse with respect to the origin
 
-        Input:
-            lat (float): spherical latitude in radians
+        Parameters
+        ----------
+            lat : float or array_like of floats
+                Spherical latitude in radians.
+
+        Returns
+        -------
+            float : radius in meters
         """
         return (self._a * self._b) / (np.sqrt(self._a**2 * np.sin(lat)**2 +
                                               self._b**2 * np.cos(lat)**2))
@@ -217,14 +223,56 @@ class Ellipsoid(_Ellipse):
         """Return reduced latitude from geodetic one"""
         return np.arctan((1 - self._f) * np.tan(lat))
 
-    def inverse(self):
-        """Solve inverse geodetic problem on the ellipsoid"""
-        raise NotImplementedError('Not implemented yet.')
+    def inverse(self, lon1, lat1, lon2, lat2, radians=False):
+        """Solve inverse geodetic problem on the ellipsoid
 
-    def forward(self):
-        """Solve forward geodetic problem on the ellipsoid"""
-        raise NotImplementedError('Not implemented yet.')
+        Parameters
+        ----------
+            lon1 : float or array_like of floats
+                Geodetic longitude of the firse point.
+            lat1 : float or array_like of floats
+                Geodetic latitude of the first point.
+            lon2 : float or array_like of floats
+                Geodetic longitude of the second point.
+            lat3 : float or array_like of floats
+                Geodetic latitude of the second point.
+            radians : bool
+                If True then coordinates and output azimuths in radians.
 
-    def area(self):
-        """Return area of the rectangle on the ellipsoid"""
-        raise NotImplementedError('Not implemented yet.')
+        Returns
+        -------
+            azimuth1 : float or array_like of floats
+                Forward geodetic azimuth.
+            azimuth2 : float or array_like of floats
+                Back geodetic azimuth.
+            distance : float or array_like of floats
+                Distance between two points, in meters.
+        """
+        return self._geod.inv(lon1, lat1, lon2, lat2, radians=radians)
+
+    def forward(self, lon, lat, azimuth, distance, radians=False):
+        """Solve forward geodetic problem on the ellipsoid
+
+        Parameters
+        ----------
+            lon : float or array_like of floats
+                Geodetic longitude.
+            lat : float or array_like of floats
+                Geodetic latitude.
+            azimuth : float or array_like of floats
+                Geodetic azimuth.
+            distance : float or array_like of floats
+                Distance, in meters.
+            radians : bool
+                If True, then `lon`, `lat` and `azimuth` in radians.
+
+        Returns
+        -------
+            lon : float or array_like of floats
+                Geodetic longitude of the second point.
+            lon : float or array_like of floats
+                Geodetic longitude of the second point.
+            azimuth : float or array_like of floats
+                Back geodetic azimuth.
+        """
+        return self._geod.fwd(lon, lat, azimuth, distance, radians=radians)
