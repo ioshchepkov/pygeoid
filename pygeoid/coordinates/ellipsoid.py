@@ -121,27 +121,38 @@ class Ellipsoid(_proj.Geod):
         """Return volume of the elliposid"""
         return _4pi * self.a**2 * self.b / 3
 
-    ##########################################################################
-    # Equivalent sphere radiuses
-    ##########################################################################
-    @property
-    def mean_radius(self):
-        """Return arithmetic mean radius"""
-        return (2 * self.a + self.b) / 3
+    def mean_radius(self, kind='arithmetic'):
+        """Return the radius of a sphere.
 
-    @property
-    def mean_radius_same_surface(self):
-        """Return radius of the sphere with the same surface"""
-        prc = self.polar_curvature_radius
-        return prc * (1 -
-                      2 / 3 * self.e12 + 26 / 45 * self.e12**2 -
-                      100 / 189 * self.e12**3 +
-                      7034 / 14175 * self.e12**4)
+        Parameters
+        ----------
+            kind : {'arithmetic', 'same_area', 'same_volume'}, optional
+                Controls what kind of radius is returned.
 
-    @property
-    def mean_radius_same_volume(self):
-        """Return radius of the sphere with the same volume"""
-        return np.power(self.a**2 * self.b, 1 / 3)
+                * 'arithmetic' returns the arithmetic mean value
+                    of the 3 semi-axis of the ellipsoid.
+                * 'same_area' returns the radius of the sphere with the same
+                    surface area as the ellipsoid.
+                * 'same_volume' returns the radius of the sphere with the same
+                    volume as the ellipsoid.
+
+                Default is 'arithmetic'.
+
+        Returns
+        -------
+            float : mean radius of the ellipsoid
+        """
+        if kind == 'arithmetic':
+            radius = (2 * self.a + self.b) / 3
+        elif kind == 'same_area':
+            radius = self.polar_curvature_radius *\
+                (1 - 2 / 3 * self.e12 + 26 / 45 * self.e12**2 -
+                 100 / 189 * self.e12**3 +
+                 7034 / 14175 * self.e12**4)
+        elif kind == 'same_volume':
+            radius = np.power(self.a**2 * self.b, 1 / 3)
+
+        return radius
 
     #########################################################################
     # Auxiliary methods
@@ -216,7 +227,7 @@ class Ellipsoid(_proj.Geod):
         """Return the distance between two parallels lat1 and lat2"""
         return self.inv(0., lat1, 0., lat2, radians=radians)
 
-    def parallel_arc_distance(self, lat, lon1, lat2, radians=False):
+    def parallel_arc_distance(self, lat, lon1, lon2, radians=False):
         """Return the distance between two points on a parallel"""
         return self.inv(lon1, lat, lon2, lat, radians=radians)
 
