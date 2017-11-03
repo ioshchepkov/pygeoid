@@ -103,7 +103,7 @@ class Ellipsoid(_proj.Geod):
     @property
     def quadrant_distance(self):
         """Return arc of meridian from equator to pole (meridian quadrant)"""
-        prc = self.polar__curvature_radius
+        prc = self.polar_curvature_radius
         return prc * np.pi / 2 * (1 -
                                   3 / 4 * self.e12 + 45 / 64 * self.e12**2 -
                                   175 / 256 * self.e12 ** 3 +
@@ -212,6 +212,14 @@ class Ellipsoid(_proj.Geod):
                       1 / self.meridian_curvature_radius(lat))
 
     ##########################################################################
+    def meridian_arc_distance(self, lat1, lat2, radians=False):
+        """Return the distance between two parallels lat1 and lat2"""
+        return self.inv(0., lat1, 0., lat2, radians=radians)
+
+    def parallel_arc_distance(self, lat, lon1, lat2, radians=False):
+        """Return the distance between two points on a parallel"""
+        return self.inv(lon1, lat, lon2, lat, radians=radians)
+
     def polar_equation(self, lat, radians=False):
         """Return radius of the ellipse with respect to the origin
 
