@@ -27,7 +27,8 @@ class Ellipsoid(_proj.Geod):
     Parameters
     ----------
     ellps : str, optional
-        Ellipsoid name, most common ellipsoids are accepted
+        Ellipsoid name, most common ellipsoids are accepted. Default is
+        'GRS80'.
     """
     # pylint: disable=R0904
 
@@ -52,57 +53,59 @@ class Ellipsoid(_proj.Geod):
 
         return geod
 
-    #########################################################################
-    # Defining and computed constants
-    #########################################################################
     @property
     def equatorial_radius(self):
-        """Return semi-major or equatorial axis radius"""
+        """Return semi-major or equatorial axis radius, in meters."""
         return self.a
 
     @property
     def polar_radius(self):
-        """Return semi-minor or polar axis radius"""
+        """Return semi-minor or polar axis radius, in meters."""
         return self.b
 
     @property
     def flattening(self):
-        """Return flattening"""
+        """Return flattening."""
         return self.f
 
     @property
     def reciprocal_flattening(self):
-        """Return reciprocal flattening"""
+        """Return reciprocal flattening."""
         return 1 / self.flattening
 
     @property
     def eccentricity(self):
-        """Return first eccentricity"""
+        """Return first eccentricity."""
         return self.e
 
     @property
     def eccentricity_squared(self):
-        """Return first eccentricity squared"""
+        """Return first eccentricity squared."""
         return self.e2
 
     @property
     def second_eccentricity(self):
-        """Return second eccentricity"""
+        """Return second eccentricity."""
         return self.e1
 
     @property
     def second_eccentricity_squared(self):
-        """Return second eccentricity squared"""
+        """Return second eccentricity squared."""
         return self.e12
 
     @property
     def linear_eccentricity(self):
-        """Return linear eccentricity"""
+        """Return linear eccentricity, in meters."""
         return self.equatorial_radius * self.eccentricity
 
     @property
+    def polar_curvature_radius(self):
+        """Return polar radius of curvature, in meters."""
+        return self.equatorial_radius**2 / self.polar_radius
+
+    @property
     def quadrant_distance(self):
-        """Return arc of meridian from equator to pole (meridian quadrant)"""
+        """Return arc of meridian from equator to pole, in meters."""
         prc = self.polar_curvature_radius
         return prc * np.pi / 2 * (1 -
                                   3 / 4 * self.e12 + 45 / 64 * self.e12**2 -
@@ -111,14 +114,14 @@ class Ellipsoid(_proj.Geod):
 
     @property
     def surface_area(self):
-        """Return surface area of the ellipsoid"""
+        """Return surface area of the ellipsoid, in squared meters."""
         return _2pi * self.a**2 * (
             1 + 0.5 * (1 - self.e2) / self.e * np.log((1 +
                                                        self.e) / (1 - self.e)))
 
     @property
     def volume(self):
-        """Return volume of the elliposid"""
+        """Return volume of the elliposid, in cubical meters."""
         return _4pi * self.a**2 * self.b / 3
 
     def mean_radius(self, kind='arithmetic'):
@@ -126,21 +129,22 @@ class Ellipsoid(_proj.Geod):
 
         Parameters
         ----------
-            kind : {'arithmetic', 'same_area', 'same_volume'}, optional
-                Controls what kind of radius is returned.
+        kind : {'arithmetic', 'same_area', 'same_volume'}, optional
+            Controls what kind of radius is returned.
 
-                * 'arithmetic' returns the arithmetic mean value
-                    of the 3 semi-axis of the ellipsoid.
-                * 'same_area' returns the radius of the sphere with the same
-                    surface area as the ellipsoid.
-                * 'same_volume' returns the radius of the sphere with the same
-                    volume as the ellipsoid.
+            * 'arithmetic' returns the arithmetic mean value
+                of the 3 semi-axis of the ellipsoid.
+            * 'same_area' returns the radius of the sphere with the same
+                surface area as the ellipsoid.
+            * 'same_volume' returns the radius of the sphere with the same
+                volume as the ellipsoid.
 
-                Default is 'arithmetic'.
+            Default is 'arithmetic'.
 
         Returns
         -------
-            float : mean radius of the ellipsoid
+        float
+            mean radius of the ellipsoid, in meters
         """
         if kind == 'arithmetic':
             radius = (2 * self.a + self.b) / 3
@@ -158,55 +162,83 @@ class Ellipsoid(_proj.Geod):
     # Auxiliary methods
     #########################################################################
     def _w(self, lat):
-        """Return auxiliary function W
+        """Return auxiliary function W.
 
         Parameters
         ----------
-            lat : float or array_like of floats
-                Geodetic latitude, in radians.
+        lat : float or array_like of floats
+            Geodetic latitude, in radians.
+
+        Returns
+        -------
+        float or array_like of floats
+            Value of W.
         """
         return np.sqrt(1 - self.e2 * np.sin(lat) ** 2)
 
     def _v(self, lat):
-        """Return auxiliary function V
+        """Return auxiliary function V.
 
         Parameters
         ----------
-            lat : float or array_like of floats
-                Geodetic latitude, in radians.
+        lat : float or array_like of floats
+            Geodetic latitude, in radians.
+
+        Returns
+        -------
+        float or array_like of floats
+            Value of V.
         """
         return np.sqrt(1 + self.e12 * np.cos(lat) ** 2)
 
     #########################################################################
-    # Radiuses of curvature
+    # Curvature
     #########################################################################
-    @property
-    def polar_curvature_radius(self):
-        """Return polar radius of curvature"""
-        return self.equatorial_radius**2 / self.polar_radius
-
     def meridian_curvature_radius(self, lat):
-        """Return radius of curvature of meridian normal section M
+        """Return radius of curvature of meridian normal section M.
 
         Parameters
         ----------
-            lat : float or array_like of floats
-                Geodetic latitude, in radians.
+        lat : float or array_like of floats
+            Geodetic latitude, in radians.
+
+        Returns
+        -------
+        float or array_like of floats
+            Value of the radius of curvature of meridian normal section M,
+            in meters.
         """
         return self.polar_curvature_radius / self._v(lat) ** 3
 
     def prime_vertical_curvature_radius(self, lat):
-        """Return radius of curvature of prime vertical normal section N
+        """Return radius of curvature of prime vertical normal section N.
 
         Parameters
         ----------
-            lat : float or array_like of floats
-                Geodetic latitude, in radians.
+        lat : float or array_like of floats
+            Geodetic latitude, in radians.
+
+        Returns
+        -------
+        float or array_like of floats
+            Value of the radius of curvature of prime vertical normal section N,
+            in meters.
         """
         return self.polar_curvature_radius / self._v(lat)
 
     def gaussian_curvature_radius(self, lat, radians=False):
-        """Return Gaussian radius of curvature"""
+        """Return Gaussian radius of curvature, in meters
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude.
+
+        Returns
+        -------
+        float or array_like of floats
+            Value of the Gaussian radius of curvature, in meters.
+        """
         if not radians:
             lat = np.radians(lat)
 
@@ -215,39 +247,84 @@ class Ellipsoid(_proj.Geod):
         return np.sqrt(meridian_curv_radius * pvertical_curv_radius)
 
     def mean_curvature(self, lat, radians=False):
-        """Return mean curvature"""
+        """Return mean curvature
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude.
+
+        Returns
+        -------
+        float or array_like of floats
+            Value of the mean curvature, in meters**-1.
+        """
         if not radians:
             lat = np.radians(lat)
 
         return 0.5 * (1 / self.prime_vertical_curvature_radius(lat) +
                       1 / self.meridian_curvature_radius(lat))
-    ##########################################################################
 
+    #########################################################################
+    # Arc distanses, geodetic problems
+    #########################################################################
     def meridian_arc_distance(self, lat1, lat2, radians=False):
-        """Return the distance between two parallels lat1 and lat2"""
+        """Return the distance between two parallels lat1 and lat2
+
+        Parameters
+        ----------
+        lat1 : float or array_like of floats
+            Geodetic latitude of the first point.
+        lat2 : float or array_like of floats
+            Geodetic latitude of the second point.
+
+        Returns
+        -------
+        float or array_like of floats
+            The dustance between two parallels, in meters.
+        """
         return self.inv(0., lat1, 0., lat2, radians=radians)
 
     def parallel_arc_distance(self, lat, lon1, lon2, radians=False):
-        """Return the distance between two points on a parallel"""
+        """Return the distance between two points on a parallel.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude of the parallel.
+        lon1 : float or array_like of floats
+            Geodetic longitude of the first point.
+        lon2 : float or array_like of floats
+            Geodetic longitude of the second point.
+
+        Returns
+        -------
+        float or array_like of floats
+            The dustance between two meridians, in meters.
+        """
         return self.inv(lon1, lat, lon2, lat, radians=radians)
 
-    def parallel_radius(self, lat, radians=False):
-        """Return the radius of the parallel"""
+    #########################################################################
+    # Radiuses
+    #########################################################################
+    def circle_radius(self, lat, radians=False):
+        """Return the radius of the parallel lat, in meters."""
         if not radians:
             lat = np.radians(lat)
         return self.prime_vertical_curvature_radius(lat) * np.cos(lat)
 
     def polar_equation(self, lat, radians=False):
-        """Return radius of the ellipsoid with respect to the origin
+        """Return radius of the ellipsoid with respect to the origin.
 
         Parameters
         ----------
-            lat : float or array_like of floats
-                Spherical latitude in radians.
+        lat : float or array_like of floats
+            Geocentric latitude in radians.
 
         Returns
         -------
-            float : geocentric radius, in meters
+        float
+            Geocentric radius of the parallel, in meters.
         """
         if not radians:
             lat = np.radians(lat)
@@ -259,13 +336,35 @@ class Ellipsoid(_proj.Geod):
     # Latitudes
     #########################################################################
     def geocentric_latitude(self, lat, radians=False):
-        """Convert geodetic latitude to geocentric latitude (in radians)"""
+        """Convert geodetic latitude to geocentric latitude.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude.
+
+        Returns
+        -------
+        float
+            Geocentric (spherical) latitude, in radians.
+        """
         if not radians:
             lat = np.radians(lat)
         return np.arctan((1 - self.f)**2 * np.tan(lat))
 
     def reduced_latitude(self, lat, radians=False):
-        """Convert geodetic latitude to reduced latitude (in radians)"""
+        """Convert geodetic latitude to reduced latitude.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude.
+
+        Returns
+        -------
+        float
+            Reduced latitude, in radians.
+        """
         if not radians:
             lat = np.radians(lat)
         return np.arctan((1 - self.f) * np.tan(lat))
