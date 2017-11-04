@@ -55,7 +55,7 @@ class Ellipsoid(_proj.Geod):
 
     @property
     def equatorial_radius(self):
-        """Return semi-major or equatorial axis radius, in meters."""
+        """Return semi-major or equatorial axis radius :math:`a`, in meters."""
         return self.a
 
     @property

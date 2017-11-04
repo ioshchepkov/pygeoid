@@ -3,6 +3,7 @@
 
 import os
 from setuptools import setup, find_packages
+from sphinx.setup_command import BuildDoc
 
 import pygeoid
 
@@ -11,8 +12,15 @@ with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),
                        'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(name='pygeoid',
-      version=pygeoid.__version__,
+name = 'pygeoid'
+version = pygeoid.__version__
+
+# Sphinx
+cmdclass = {'build_sphinx': BuildDoc}
+
+
+setup(name=name,
+      version=version,
       description='Local gravity field modelling with Python',
       long_description=long_description,
       url='https://github.com/ioshchepkov/pygeoid',
@@ -38,4 +46,10 @@ setup(name='pygeoid',
       packages=find_packages(),
       install_requires=['numpy', 'scipy', 'pyproj', 'pint'],
       python_requires='>=3',
+      cmdclass=cmdclass,
+      command_options={
+          'build_sphinx': {
+              'project': ('setup.py', name),
+              'version': ('setup.py', version),
+              'release': ('setup.py', version)}},
       )
