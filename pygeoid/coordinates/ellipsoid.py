@@ -220,8 +220,8 @@ class Ellipsoid(_proj.Geod):
         float
             mean radius of the ellipsoid, in meters
 
-        Note
-        ----
+        Notes
+        -----
         The arithmetic mean radius of the ellipsoid is
 
         .. math:: R_m = \\frac{2a + b}{2},
