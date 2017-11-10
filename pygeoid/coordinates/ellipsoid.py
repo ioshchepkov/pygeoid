@@ -6,7 +6,7 @@ import numpy as np
 import pyproj as _proj
 from pygeoid.constants import _2pi, _4pi
 
-# update Proj ellipsoid parametres
+# update Proj ellipsoid Parameters
 _proj.pj_ellps.update({
     'PZ90': {'description': 'PZ-90', 'a': 6378136.0, 'rf': 298.25784},
     'GSK2011': {'description': 'GSK-2011', 'a': 6378136.5, 'rf': 298.2564151}
@@ -24,7 +24,7 @@ class Ellipsoid(_proj.Geod):
     documentation (https://jswhit.github.io/pyproj/pyproj.Geod-class.html)
     for more information.
 
-    Parametres
+    Parameters
     ----------
     ellps : str, optional
         Ellipsoid name, most common ellipsoids are accepted. Default is
@@ -227,7 +227,7 @@ class Ellipsoid(_proj.Geod):
     def mean_radius(self, kind='arithmetic'):
         """Return the radius of a sphere.
 
-        Parametres
+        Parameters
         ----------
         kind : {'arithmetic', 'same_area', 'same_volume'}, optional
             Controls what kind of radius is returned.
@@ -284,7 +284,7 @@ class Ellipsoid(_proj.Geod):
     def _w(self, lat):
         """Return auxiliary function W.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude, in radians.
@@ -309,7 +309,7 @@ class Ellipsoid(_proj.Geod):
     def _v(self, lat):
         """Return auxiliary function V.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude, in radians.
@@ -337,7 +337,7 @@ class Ellipsoid(_proj.Geod):
     def meridian_curvature_radius(self, lat):
         """Return radius of curvature of meridian normal section.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude, in radians.
@@ -363,7 +363,7 @@ class Ellipsoid(_proj.Geod):
     def prime_vertical_curvature_radius(self, lat):
         """Return radius of curvature of prime vertical normal section.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude, in radians.
@@ -389,7 +389,7 @@ class Ellipsoid(_proj.Geod):
     def mean_curvature(self, lat, radians=False):
         """Return mean curvature, in inverse metres.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude.
@@ -416,7 +416,7 @@ class Ellipsoid(_proj.Geod):
         """Return Gaussian curvature, in inverse metres.
 
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude.
@@ -442,7 +442,7 @@ class Ellipsoid(_proj.Geod):
     def average_curvature(self, lat, radians=False):
         """Return average curvature, in inverse metres.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude.
@@ -473,7 +473,7 @@ class Ellipsoid(_proj.Geod):
     def meridian_arc_distance(self, lat1, lat2, radians=False):
         """Return the distance between two parallels `lat1` and `lat2`.
 
-        Parametres
+        Parameters
         ----------
         lat1 : float or array_like of floats
             Geodetic latitude of the first point.
@@ -490,7 +490,7 @@ class Ellipsoid(_proj.Geod):
     def parallel_arc_distance(self, lat, lon1, lon2, radians=False):
         """Return the distance between two points on a parallel.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude of the parallel.
@@ -529,7 +529,7 @@ class Ellipsoid(_proj.Geod):
     def polar_equation(self, lat, radians=False):
         """Return radius of the ellipsoid with respect to the origin.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             **Geocentric** latitude.
@@ -562,7 +562,7 @@ class Ellipsoid(_proj.Geod):
     def geocentric_latitude(self, lat, radians=False):
         """Convert geodetic latitude to geocentric latitude.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude.
@@ -590,7 +590,7 @@ class Ellipsoid(_proj.Geod):
     def reduced_latitude(self, lat, radians=False):
         """Convert geodetic latitude to reduced (parametric) latitude.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude.
@@ -623,7 +623,7 @@ class Ellipsoid(_proj.Geod):
 
         This method use `pyproj.Geod.fwd` as a backend.
 
-        Parametres
+        Parameters
         ----------
         lat : float or array_like of floats
             Geodetic latitude of the initial point.
@@ -658,7 +658,7 @@ class Ellipsoid(_proj.Geod):
 
         This method use `pyproj.Geod.inv` as a backend.
 
-        Parametres
+        Parameters
         ----------
         lat1 : float or array_like of floats
             Geodetic latitude of the initial point.
@@ -691,7 +691,7 @@ class Ellipsoid(_proj.Geod):
 
         This method use `pyproj.Geod.npts` as a backend.
 
-        Parametres
+        Parameters
         ----------
         lat1 : float or array_like of floats
             Geodetic latitude of the initial point.
