@@ -20,7 +20,7 @@ class Ellipsoid(_proj.Geod):
     """Class represents an ellipsoid of revolution and its geometry.
 
     This class intialize proj.Geod class from pyproj package, so any valid init
-    string for Proj are accepted as arguments. See pyproj.Geod.__new__
+    string for Proj are accepted as arguments. See `pyproj.Geod.__new__`
     documentation (https://jswhit.github.io/pyproj/pyproj.Geod-class.html)
     for more information.
 
@@ -568,7 +568,7 @@ class Ellipsoid(_proj.Geod):
         given latitudes (lat) and longitudes (lon) of initial points, plus
         forward azimuths (azimuth) and distances (distance).
 
-        This method use pyproj.Geod.fwd() as a backend.
+        This method use `pyproj.Geod.fwd` as a backend.
 
         Parameters
         ----------
@@ -601,7 +601,7 @@ class Ellipsoid(_proj.Geod):
         points (specified by lat1, lon1) and terminus points (specified by
         lat1, lon2).
 
-        This method use pyproj.Geod.inv() as a backend.
+        This method use `pyproj.Geod.inv` as a backend.
 
         Parameters
         ----------
@@ -628,12 +628,12 @@ class Ellipsoid(_proj.Geod):
     def npts(self, lat1, lon1, lat2, lon2, npts, radians=False):
         """Return equaly spaced points alog geodesic line.
 
-        Given a single initial point and terminus point (specified by python
-        floats lat1,lon1 and lat2,lon2), returns a list of longitude/latitude
+        Given a single initial point and terminus point (specified by
+        `lat1`, `lon1` and `lat2`, `lon2`), returns a list of longitude/latitude
         pairs describing npts equally spaced intermediate points along the
         geodesic between the initial and terminus points.
 
-        This method use pyproj.Geod.npts() as a backend.
+        This method use `pyproj.Geod.npts` as a backend.
 
         Parameters
         ----------
