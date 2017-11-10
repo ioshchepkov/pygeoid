@@ -221,7 +221,7 @@ class Ellipsoid(_proj.Geod):
 
         Parameters
         ----------
-        kind : {'arithmetic', 'same_area', 'same_volume'}
+        kind : {'arithmetic', 'same_area', 'same_volume'}, optional
             Controls what kind of radius is returned.
 
             * 'arithmetic' returns the arithmetic mean value
@@ -475,9 +475,9 @@ class Ellipsoid(_proj.Geod):
         Returns
         -------
         float or array_like of floats
-            The dustance between two parallels, in meters.
+            The distance between two parallels, in meters.
         """
-        return self.inv(0., lat1, 0., lat2, radians=radians)
+        return self.inv(lat1, 0., lat2, 0., radians=radians)[-1]
 
     def parallel_arc_distance(self, lat, lon1, lon2, radians=False):
         """Return the distance between two points on a parallel, in meters.
@@ -496,7 +496,7 @@ class Ellipsoid(_proj.Geod):
         float or array_like of floats
             The dustance between two meridians, in meters.
         """
-        return self.inv(lon1, lat, lon2, lat, radians=radians)
+        return self.inv(lat, lon1, lat, lon2, radians=radians)[-1]
 
     #########################################################################
     # Radiuses
