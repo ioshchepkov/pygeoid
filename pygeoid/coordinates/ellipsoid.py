@@ -55,7 +55,7 @@ class Ellipsoid(_proj.Geod):
 
     @property
     def equatorial_radius(self):
-        """Return semi-major or equatorial axis radius :math:`a`, in meters."""
+        """Return semi-major or equatorial axis radius, in meters."""
         return self.a
 
     @property
@@ -65,8 +65,10 @@ class Ellipsoid(_proj.Geod):
 
     @property
     def flattening(self):
-        """Return flattening :math:`f`.
+        """Return flattening :math:`f` of the ellipsoid.
 
+        Notes
+        -----
         The flattening of the ellipsoid is
 
         .. math::
@@ -86,6 +88,8 @@ class Ellipsoid(_proj.Geod):
     def eccentricity(self):
         """Return first eccentricity :math:`e`.
 
+        Notes
+        -----
         The first eccentricity of the ellipsoid is
 
         .. math::
@@ -105,6 +109,8 @@ class Ellipsoid(_proj.Geod):
     def second_eccentricity(self):
         """Return second eccentricity :math:`e'`.
 
+        Notes
+        -----
         The second eccentricity of the ellipsoid is
 
         .. math::
@@ -124,6 +130,8 @@ class Ellipsoid(_proj.Geod):
     def linear_eccentricity(self):
         """Return linear eccentricity :math:`E`, in meters.
 
+        Notes
+        -----
         The linear eccentricity of the ellipsoid is
 
         .. math::
@@ -138,6 +146,8 @@ class Ellipsoid(_proj.Geod):
     def polar_curvature_radius(self):
         """Return polar radius of curvature :math:`c`, in meters.
 
+        Notes
+        -----
         The polar radius of curvature of the ellipsoid is
 
         .. math::
@@ -152,11 +162,14 @@ class Ellipsoid(_proj.Geod):
     def quadrant_distance(self):
         """Return arc of meridian :math:`Q` from equator to pole, in meters.
 
+        Notes
+        -----
         The arc length of meridian from equator to pole is
 
         .. math::
-            Q = c\\frac{\pi}{2}\\left( 1 - \\frac{3}{4}e'^2 + \\frac{45}{64}e'^4
-            +  \\frac{175}{256}e'^6 + \\frac{11025}{16384}e'^8\\right),
+            Q = c\\frac{\pi}{2}\\left( 1 - \\frac{3}{4}e'^2 +
+            \\frac{45}{64}e'^4 +  \\frac{175}{256}e'^6 +
+            \\frac{11025}{16384}e'^8\\right),
 
         where :math:`c` -- polar radius of curvature, :math:`e'` -- second
         eccentricity.
@@ -171,6 +184,8 @@ class Ellipsoid(_proj.Geod):
     def surface_area(self):
         """Return surface area of the ellipsoid :math:`A`, in squared meters.
 
+        Notes
+        -----
         The surface area of the ellipsoid is
 
         .. math::
@@ -182,12 +197,15 @@ class Ellipsoid(_proj.Geod):
         """
         return _2pi * self.a**2 * (
             1 + 0.5 * (1 - self.e2) / self.e * np.log((1 +
-                                                       self.e) / (1 - self.e)))
+                                                       self.e) / (1 -
+                                                                  self.e)))
 
     @property
     def volume(self):
         """Return volume of the elliposid :math:`V`, in cubical meters.
 
+        Notes
+        -----
         The volume of the ellipsoid is
 
         .. math::
@@ -203,22 +221,23 @@ class Ellipsoid(_proj.Geod):
 
         Parameters
         ----------
-        kind : {'arithmetic', 'same_area', 'same_volume'}, optional
+        kind : {'arithmetic', 'same_area', 'same_volume'}
             Controls what kind of radius is returned.
 
-            * 'arithmetic' returns the arithmetic mean value :math:`R_m` of the 3 semi-axis
-                of the ellipsoid.
-            * 'same_area' returns the radius :math:`R_A` of the sphere with the same surface
+            * 'arithmetic' returns the arithmetic mean value
+                :math:`R_m` of the 3 semi-axis of the ellipsoid.
+            * 'same_area' returns the radius :math:`R_A` of
+                the sphere with the same surface
                 area as the ellipsoid.
-            * 'same_volume' returns the radius :math:`R_V` of the sphere with the same
-                volume as the ellipsoid.
+            * 'same_volume' returns the radius :math:`R_V` of
+                the sphere with the same volume as the ellipsoid.
 
             Default is 'arithmetic'.
 
         Returns
         -------
         float
-            mean radius of the ellipsoid, in meters
+            mean radius of the ellipsoid, in meters.
 
         Notes
         -----
@@ -238,6 +257,7 @@ class Ellipsoid(_proj.Geod):
         A sphere with the same volume as the ellipsoid has the radius
 
         .. math:: R_V = a^2 b.
+
         """
         if kind == 'arithmetic':
             radius = (2 * self.a + self.b) / 3
@@ -245,6 +265,8 @@ class Ellipsoid(_proj.Geod):
             radius = np.sqrt(self.surface_area / _4pi)
         elif kind == 'same_volume':
             radius = np.power(self.a**2 * self.b, 1 / 3)
+        else:
+            raise ValueError('Not a valid `kind` of the radius.')
 
         return radius
 
@@ -253,14 +275,6 @@ class Ellipsoid(_proj.Geod):
     #########################################################################
     def _w(self, lat):
         """Return auxiliary function W.
-
-        The auxiliary funtion :math:`W` defined as
-
-        .. math::
-        W = \sqrt{1 - e^2\sin^2{\phi}},
-
-        where :math:`e` -- (first) eccentricity of the ellipsoid, :math:`\phi`
-        -- geodetic latitude.
 
         Parameters
         ----------
@@ -271,19 +285,21 @@ class Ellipsoid(_proj.Geod):
         -------
         float or array_like of floats
             Value of W.
+
+        Notes
+        -----
+        The auxiliary function :math:`W` defined as
+
+        .. math::
+        W = \sqrt{1 - e^2\sin^2{\phi}},
+
+        where :math:`e` -- (first) eccentricity of the ellipsoid, :math:`\phi`
+        -- geodetic latitude.
         """
         return np.sqrt(1 - self.e2 * np.sin(lat) ** 2)
 
     def _v(self, lat):
         """Return auxiliary function V.
-
-        The auxiliary funtion :math:`V` defined as
-
-        .. math::
-        V = \sqrt{1 + e'^2\cos^2{\phi}},
-
-        where :math:`e'` -- second eccentricity of the ellipsoid, :math:`\phi`
-        -- geodetic latitude.
 
         Parameters
         ----------
@@ -294,6 +310,16 @@ class Ellipsoid(_proj.Geod):
         -------
         float or array_like of floats
             Value of V.
+
+        Notes
+        -----
+        The auxiliary funtion :math:`V` defined as
+
+        .. math::
+        V = \sqrt{1 + e'^2\cos^2{\phi}},
+
+        where :math:`e'` -- second eccentricity of the ellipsoid, :math:`\phi`
+        -- geodetic latitude.
         """
         return np.sqrt(1 + self.e12 * np.cos(lat) ** 2)
 
@@ -302,14 +328,6 @@ class Ellipsoid(_proj.Geod):
     #########################################################################
     def meridian_curvature_radius(self, lat):
         """Return radius of curvature of meridian normal section :math:`M`.
-
-        The radius of curvature of meridian normal section is
-
-        .. math::
-            M = \\frac{c}{V^3},
-
-        where :math:`c` -- polar radius of curvature, :math:`V` -- auxiliary
-        function which depends on geodetic latitude.
 
         Parameters
         ----------
@@ -321,19 +339,21 @@ class Ellipsoid(_proj.Geod):
         float or array_like of floats
             Value of the radius of curvature of meridian normal section M,
             in meters.
+
+        Notes
+        -----
+        The radius of curvature of meridian normal section is
+
+        .. math::
+            M = \\frac{c}{V^3},
+
+        where :math:`c` -- polar radius of curvature, :math:`V` -- auxiliary
+        function which depends on geodetic latitude.
         """
         return self.polar_curvature_radius / self._v(lat) ** 3
 
     def prime_vertical_curvature_radius(self, lat):
         """Return radius of curvature of prime vertical normal section N.
-
-        The radius of curvature of prime vertical is
-
-        .. math::
-            N = \\frac{c}{V},
-
-        where :math:`c` -- polar radius of curvature, :math:`V` -- auxiliary
-        function which depends on geodetic latitude.
 
         Parameters
         ----------
@@ -343,17 +363,23 @@ class Ellipsoid(_proj.Geod):
         Returns
         -------
         float or array_like of floats
-            Value of the radius of curvature of prime vertical normal section N,
-            in meters.
+            Value of the radius of curvature of prime vertical
+            normal section N, in meters.
+
+        Notes
+        -----
+        The radius of curvature of prime vertical is
+
+        .. math::
+            N = \\frac{c}{V},
+
+        where :math:`c` -- polar radius of curvature, :math:`V` -- auxiliary
+        function which depends on geodetic latitude.
         """
         return self.polar_curvature_radius / self._v(lat)
 
     def mean_curvature(self, lat, radians=False):
         """Return mean curvature.
-
-        The mean curvature is :math:`1/\sqrt{MN}`, where
-        :math:`M` -- radius of curvature of meridian normal section,
-        :math:`N` -- radius of curvature of prime vertical.
 
         Parameters
         ----------
@@ -364,21 +390,23 @@ class Ellipsoid(_proj.Geod):
         -------
         float or array_like of floats
             Value of the mean curvature, in meters**-1.
+
+        Notes
+        -----
+        The mean curvature is :math:`1/\sqrt{MN}`, where
+        :math:`M` -- radius of curvature of meridian normal section,
+        :math:`N` -- radius of curvature of prime vertical.
         """
         if not radians:
             lat = np.radians(lat)
 
         meridian_curv_radius = self.meridian_curvature_radius(lat)
         pvertical_curv_radius = self.prime_vertical_curvature_radius(lat)
-        return 1/np.sqrt(meridian_curv_radius * pvertical_curv_radius)
-
+        return 1 / np.sqrt(meridian_curv_radius * pvertical_curv_radius)
 
     def gaussian_curvature(self, lat, radians=False):
         """Return Gaussian curvature, in meters**-1
 
-        The Gaussian curvature is :math:`1/MN`, where
-        :math:`M` -- radius of curvature of meridian normal section,
-        :math:`N` -- radius of curvature of prime vertical.
 
         Parameters
         ----------
@@ -389,6 +417,12 @@ class Ellipsoid(_proj.Geod):
         -------
         float or array_like of floats
             Value of the Gaussian radius of curvature, in meters.
+
+        Notes
+        -----
+        The Gaussian curvature is :math:`1/MN`, where
+        :math:`M` -- radius of curvature of meridian normal section,
+        :math:`N` -- radius of curvature of prime vertical.
         """
         if not radians:
             lat = np.radians(lat)
@@ -400,13 +434,6 @@ class Ellipsoid(_proj.Geod):
     def average_curvature(self, lat, radians=False):
         """Return average curvature.
 
-        The average curvature is
-
-        .. math:: \\frac{1}{2} \\left( \\frac{1}{M} + \\frac{1}{N} \\right),
-
-        where :math:`M` -- radius of curvature of meridian normal section,
-        :math:`N` -- radius of curvature of prime vertical.
-
         Parameters
         ----------
         lat : float or array_like of floats
@@ -416,6 +443,15 @@ class Ellipsoid(_proj.Geod):
         -------
         float or array_like of floats
             Value of the average curvature, in meters**-1.
+
+        Notes
+        -----
+        The average curvature is
+
+        .. math:: \\frac{1}{2} \\left( \\frac{1}{M} + \\frac{1}{N} \\right),
+
+        where :math:`M` -- radius of curvature of meridian normal section,
+        :math:`N` -- radius of curvature of prime vertical.
         """
         if not radians:
             lat = np.radians(lat)
@@ -468,6 +504,8 @@ class Ellipsoid(_proj.Geod):
     def circle_radius(self, lat, radians=False):
         """Return the radius of the parallel :math:`\\phi`, in meters.
 
+        Notes
+        -----
         The radius of the parallel is
 
         .. math::
@@ -483,15 +521,6 @@ class Ellipsoid(_proj.Geod):
     def polar_equation(self, lat, radians=False):
         """Return radius of the ellipsoid with respect to the origin.
 
-        The polar equation of the ellipsoid is
-
-        .. math::
-            r = \\frac{ab}{\sqrt{a^2\sin^2{\\vartheta} +
-            b^2\cos^2{\\vartheta}}},
-
-        where :math:`a` and :math:`b` -- equatorial and polar axis of the
-        ellipsoid respectively, :math:`\\vartheta` -- geocentric latitude.
-
         Parameters
         ----------
         lat : float or array_like of floats
@@ -501,6 +530,17 @@ class Ellipsoid(_proj.Geod):
         -------
         float
             Geocentric radius of the parallel, in meters.
+
+        Notes
+        -----
+        The polar equation of the ellipsoid is
+
+        .. math::
+            r = \\frac{ab}{\sqrt{a^2\sin^2{\\vartheta} +
+            b^2\cos^2{\\vartheta}}},
+
+        where :math:`a` and :math:`b` -- equatorial and polar axis of the
+        ellipsoid respectively, :math:`\\vartheta` -- geocentric latitude.
         """
         if not radians:
             lat = np.radians(lat)
@@ -514,14 +554,6 @@ class Ellipsoid(_proj.Geod):
     def geocentric_latitude(self, lat, radians=False):
         """Convert geodetic latitude to geocentric latitude.
 
-        The relationship between geodetic :math:`\\phi` and geocentric
-        :math:`\\vartheta` latitudes is
-
-        .. math::
-            \\vartheta = \\tan^{-1}{\left(\left(1 - f\\right)^2\\tan\\phi\\right)},
-
-        where :math:`f` -- flattening of the ellipsoid.
-
         Parameters
         ----------
         lat : float or array_like of floats
@@ -531,6 +563,17 @@ class Ellipsoid(_proj.Geod):
         -------
         float
             Geocentric (spherical) latitude, in radians.
+
+        Notes
+        -----
+        The relationship between geodetic :math:`\\phi` and geocentric
+        :math:`\\vartheta` latitudes is
+
+        .. math::
+            \\vartheta = \\tan^{-1}{\left(\left(1 -
+            f\\right)^2\\tan\\phi\\right)},
+
+        where :math:`f` -- flattening of the ellipsoid.
         """
         if not radians:
             lat = np.radians(lat)
@@ -538,14 +581,6 @@ class Ellipsoid(_proj.Geod):
 
     def reduced_latitude(self, lat, radians=False):
         """Convert geodetic latitude to reduced (parametric) latitude.
-
-        The relationship between geodetic :math:`\\phi` and reduced
-        :math:`\\beta` latitudes is
-
-        .. math::
-            \\beta = \\tan^{-1}{\left(\left(1 - f\\right)\\tan\\phi\\right)},
-
-        where :math:`f` -- flattening of the ellipsoid.
 
         Parameters
         ----------
@@ -556,17 +591,27 @@ class Ellipsoid(_proj.Geod):
         -------
         float
             Reduced latitude, in radians.
+
+        Notes
+        -----
+        The relationship between geodetic :math:`\\phi` and reduced
+        :math:`\\beta` latitudes is
+
+        .. math::
+            \\beta = \\tan^{-1}{\left(\left(1 - f\\right)\\tan\\phi\\right)},
+
+        where :math:`f` -- flattening of the ellipsoid.
         """
         if not radians:
             lat = np.radians(lat)
         return np.arctan((1 - self.f) * np.tan(lat))
 
-    def fwd(self, lat, lon, azimuth, dustance, radians=False):
+    def fwd(self, lat, lon, azimuth, distance, radians=False):
         """Solve forward geodetic problem.
 
         Returns latitudes, longitudes and back azimuths of terminus points
-        given latitudes (lat) and longitudes (lon) of initial points, plus
-        forward azimuths (azimuth) and distances (distance).
+        given latitudes `lat` and longitudes `lon` of initial points, plus
+        forward `azimuth`s and `distance`s.
 
         This method use `pyproj.Geod.fwd` as a backend.
 
@@ -590,16 +635,18 @@ class Ellipsoid(_proj.Geod):
         back_azimuth : float or array_like of floats
             Back geodetic azimuth.
         """
-        out =  super().fwd(lon, lat, azimuth, distance, radians=radians)
-        out_lon, out_lat, out_baz = out
+        out_lon, out_lat, out_baz = super().fwd(lon,
+                                                lat, azimuth,
+                                                distance,
+                                                radians=radians)
         return out_lat, out_lon, out_baz
 
     def inv(self, lat1, lon1, lat2, lon2, radians=False):
         """Solve inverse geodetic problem.
 
         Returns forward and back azimuths, plus distances between initial
-        points (specified by lat1, lon1) and terminus points (specified by
-        lat1, lon2).
+        points (specified by `lat1`, `lon1`) and terminus points (specified by
+        `lat1`, `lon2`).
 
         This method use `pyproj.Geod.inv` as a backend.
 
@@ -629,9 +676,10 @@ class Ellipsoid(_proj.Geod):
         """Return equaly spaced points alog geodesic line.
 
         Given a single initial point and terminus point (specified by
-        `lat1`, `lon1` and `lat2`, `lon2`), returns a list of longitude/latitude
-        pairs describing npts equally spaced intermediate points along the
-        geodesic between the initial and terminus points.
+        `lat1`, `lon1` and `lat2`, `lon2`), returns a list of
+        longitude/latitude pairs describing npts equally spaced
+        intermediate points along the geodesic between the initial
+        and terminus points.
 
         This method use `pyproj.Geod.npts` as a backend.
 
