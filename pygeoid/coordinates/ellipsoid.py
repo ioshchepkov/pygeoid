@@ -560,3 +560,97 @@ class Ellipsoid(_proj.Geod):
         if not radians:
             lat = np.radians(lat)
         return np.arctan((1 - self.f) * np.tan(lat))
+
+    def fwd(self, lat, lon, azimuth, dustance, radians=False):
+        """Solve forward geodetic problem.
+
+        Returns latitudes, longitudes and back azimuths of terminus points
+        given latitudes (lat) and longitudes (lon) of initial points, plus
+        forward azimuths (azimuth) and distances (distance).
+
+        This method use pyproj.Geod.fwd() as a backend.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude of the initial point.
+        lon : float or array_like of floats
+            Longitude of the initial point.
+        azimuth : float or array_like of floats
+            Geodetic azimuth.
+        distance : float or array_like of floats
+            Distance, in meters.
+
+        Returns
+        -------
+        lat : float or array_like of floats
+            Geodetic latitude of the terminus point.
+        lon : float or array_like of floats
+            Longitude of the terminus point.
+        back_azimuth : float or array_like of floats
+            Back geodetic azimuth.
+        """
+        out =  super().fwd(lon, lat, azimuth, distance, radians=radians)
+        out_lon, out_lat, out_baz = out
+        return out_lat, out_lon, out_baz
+
+    def inv(self, lat1, lon1, lat2, lon2, radians=False):
+        """Solve inverse geodetic problem.
+
+        Returns forward and back azimuths, plus distances between initial
+        points (specified by lat1, lon1) and terminus points (specified by
+        lat1, lon2).
+
+        This method use pyproj.Geod.inv() as a backend.
+
+        Parameters
+        ----------
+        lat1 : float or array_like of floats
+            Geodetic latitude of the initial point.
+        lon1 : float or array_like of floats
+            Longitude of the initial point.
+        lat2 : float or array_like of floats
+            Geodetic latitude of the terminus point.
+        lon2 : float or array_like of floats
+            Longitude of the terminus point.
+
+        Returns
+        -------
+        azimuth : float or array_like of floats
+            Geodetic azimuth.
+        back_azimuth : float or array_like of floats
+            Back geodetic azimuth.
+        distance : float or array_like of floats
+            Distance, in meters.
+        """
+        return super().inv(lon1, lat1, lon2, lat2, radians=radians)
+
+    def npts(self, lat1, lon1, lat2, lon2, npts, radians=False):
+        """Return equaly spaced points alog geodesic line.
+
+        Given a single initial point and terminus point (specified by python
+        floats lat1,lon1 and lat2,lon2), returns a list of longitude/latitude
+        pairs describing npts equally spaced intermediate points along the
+        geodesic between the initial and terminus points.
+
+        This method use pyproj.Geod.npts() as a backend.
+
+        Parameters
+        ----------
+        lat1 : float or array_like of floats
+            Geodetic latitude of the initial point.
+        lon1 : float or array_like of floats
+            Longitude of the initial point.
+        lat2 : float or array_like of floats
+            Geodetic latitude of the terminus point.
+        lon2 : float or array_like of floats
+            Longitude of the terminus point.
+        npts : int
+            Number of intermediate points.
+
+        Returns
+        -------
+        points : list of tuples
+            List of latitudes and longitudes of the intermediate points.
+        """
+        return super().npts(lon1, lat1, lon2, lat2, npts, radians=radians)
