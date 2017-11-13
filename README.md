@@ -1,5 +1,8 @@
 # pygeoid
 
+[![Build Status](https://travis-ci.org/ioshchepkov/pygeoid.svg?branch=master)](https://travis-ci.org/ioshchepkov/pygeoid)
+[![Coverage Status](https://coveralls.io/repos/github/ioshchepkov/pygeoid/badge.svg)](https://coveralls.io/github/ioshchepkov/pygeoid)
+
 Local gravity field modelling with Python.
 
 The main purpose of the package is to realise common algorithms and methods in physical
