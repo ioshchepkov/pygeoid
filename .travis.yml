@@ -2,11 +2,13 @@ language: python
 python:
     - "3.6"
 install: 
-    - "pip install -r requirements.txt"
-    - "pip install coverage"
-    - "pip install coveralls"
+    - pip install -r requirements.txt
+    - pip install coverage
+    - pip install coveralls
 script: 
-    - "pytest"
-    - "coverage run --source=pygeoid setup.py test"
+    - pytest
+    - coverage run --source=pygeoid setup.py test
 after_success:
     coveralls
+notifications:
+    email: false
