@@ -65,7 +65,7 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
 
     Notes
     -----
-    The algorithm of H. Vermille is used for this transformation [1]_.
+    The algorithm of H. Vermeille is used for this transformation [1]_.
 
     References
     ----------
