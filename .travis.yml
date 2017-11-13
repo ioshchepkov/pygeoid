@@ -1,0 +1,12 @@
+language: python
+python:
+    - "3.6"
+install: 
+    - "pip install -r requirements.txt --use-mirrors"
+    - "pip install coverage"
+    - "pip install coveralls"
+script: 
+    - "pytest"
+    - "coverage run --source=pygeoid setup.py test"
+after_success:
+    coveralls
