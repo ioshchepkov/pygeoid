@@ -91,7 +91,7 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
         u_aux = 2 / 3 * _np.arctan2(_np.sqrt(j), _np.sqrt(-t) +
                                     _np.sqrt(-8 * r**3))
 
-        u = -4 * r * _np.sin(u_aux) * _np.cos(_np.pi / 6 * u_aux)
+        u = -4 * r * _np.sin(u_aux) * _np.cos(_np.pi / 6 + u_aux)
 
     if u:
         v = _np.sqrt(u**2 + e4 * q)
