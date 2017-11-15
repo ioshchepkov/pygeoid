@@ -1,0 +1,7 @@
+include LICENSE.txt
+include README.md
+include requirements*txt
+
+# docs
+recursive-include docs *
+
