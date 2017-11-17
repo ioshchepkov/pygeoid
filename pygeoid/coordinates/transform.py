@@ -184,7 +184,9 @@ def spherical_to_cartesian(lat, lon, radius, degrees=True):
 def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
     """Convert 3D cartesian to ellipsoidal-harmonic coordinates.
 
-    Note that point (x, y, z) must be on or above the elliposid.
+    Note that point (x, y, z) must be on or outside of the sphere with the
+    radius equals to the linear eccentricity of the reference ellipsoid `ell`,
+    i. e. x**2 + y**2 + z**2 >= E**2.
 
     Parameters
     ----------
@@ -210,13 +212,14 @@ def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
     E = ell.linear_eccentricity
     k = x**2 + y**2 + z**2 - E**2
 
+    if _np.any(k < 0):
+        raise ValueError(
+        'x**2 + y**2 + z**2 must be grater or equal to the linear eccentricity of the reference ellipsoid')
+
     u = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * E**2 * z**2) / k**2))
 
-    if _np.any(u < 0):
-        raise ValueError('Point must be on (h=0) or above (h>0) the ellipsoid')
-
     u = _np.sqrt(u)
-    rlat = _np.arctan2(z * _np.sqrt(u ** 2 + ell.E ** 2),
+    rlat = _np.arctan2(z * _np.sqrt(u ** 2 + E ** 2),
                        u * _np.sqrt(x**2 + y**2))
 
     lon = _np.arctan2(y, x)
