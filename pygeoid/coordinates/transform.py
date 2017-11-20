@@ -2,13 +2,14 @@
 
 """
 
+import functools as _functools
 import numpy as _np
 
 
 def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
     """Convert geodetic to 3D cartesian coordinates.
 
-    Convert geodetic coordinates (`lat`, `lon`, `height`) given on the
+    Convert geodetic coordinates (`lat`, `lon`, `height`) given w.r.t.
     ellipsoid `ell` to 3D cartesian coordinates (`x`, `y`, `z`).
 
     Parameters
@@ -19,7 +20,7 @@ def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
         Geodetic longitude.
     height : float or array_like of floats
         Geodetic height, in metres.
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the input `lat` and `lon` are given in degrees,
@@ -43,6 +44,8 @@ def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
     return x, y, z
 
 
+@_functools.partial(_np.vectorize, otypes=(_np.float64, _np.float64,
+                                           _np.float64), excluded=[3, 4])
 def cartesian_to_geodetic(x, y, z, ell, degrees=True):
     """Convert 3D cartesian to geodetic coordinates.
 
@@ -50,7 +53,7 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
     ----------
     x, y, z : float or array_like of floats
         Cartesian coordinates, in metres.
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the output geodetic latitude and longitude will be in degrees,
@@ -69,9 +72,8 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
 
     References
     ----------
-    .. [1] H .Vermeille, An analytical method to transform geocentric into
-    geodetic coordinates, Journal of Geodesy, vol. 85, no. 2, pp. 105-117,
-    doi:10.1007/s00190-010-0419-xs
+    .. [1] Vermeille, H., 2011. An analytical method to transform geocentric into
+    geodetic coordinates. Journal of Geodesy, 85(2), pp.105-117.
     """
     e4 = ell.e2 ** 2
 
@@ -81,30 +83,28 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
     r = (p + q - e4) / 6
 
     # Step 2 - 3
-    j = e4 * p * q
-    t = 8 * r**3 + j
+    e4pq = e4 * p * q
+    t = 8 * r**3 + e4pq
 
-    if t > 0:
-        u = r + 0.5 * (_np.sqrt(t) + _np.sqrt(j)) ** (2 / 3) \
-            + 0.5 * (_np.sqrt(t) - _np.sqrt(j)) ** (2 / 3)
-    elif t <= 0 and q != 0:
-        u_aux = 2 / 3 * _np.arctan2(_np.sqrt(j), _np.sqrt(-t) +
-                                    _np.sqrt(-8 * r**3))
+    if (t > 0) or (t <= 0 and q != 0):
+        if t > 0:
+            l = _np.power(_np.sqrt(t) + _np.sqrt(e4pq), 1 / 3)
+            u = 3 / 2 * r**2 / l**2 + 0.5 * (l + r / l)**2
+        elif t <= 0 and q != 0:
+            u_aux = 2 / 3 * _np.arctan2(_np.sqrt(e4pq), _np.sqrt(-t) +
+                                        _np.sqrt(-8 * r**3))
 
-        u = -4 * r * _np.sin(u_aux) * _np.cos(_np.pi / 6 + u_aux)
+            u = -4 * r * _np.sin(u_aux) * _np.cos(_np.pi / 6 + u_aux)
 
-    if u:
         v = _np.sqrt(u**2 + e4 * q)
         w = ell.e2 * (u + v - q) / (2 * v)
         k = (u + v) / (_np.sqrt(w**2 + u + v) + w)
         D = (k * _np.sqrt(x**2 + y**2)) / (k + ell.e2)
 
         height = (k + ell.e2 - 1) * _np.sqrt(D**2 + z**2) / k
-
         lat = 2 * _np.arctan2(z, D + _np.sqrt(D**2 + z**2))
-
     # Step 4
-    if q == 0 and p <= e4:
+    elif q == 0 and p <= e4:
         e2p = _np.sqrt(ell.e2 - p)
         me2 = _np.sqrt(1 - ell.e2)
 
@@ -186,40 +186,40 @@ def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
 
     Note that point (x, y, z) must be on or outside of the sphere with the
     radius equals to the linear eccentricity of the reference ellipsoid `ell`,
-    i. e. x**2 + y**2 + z**2 >= E**2.
+    i. e. (x**2 + y**2 + z**2) >= E**2.
 
     Parameters
     ----------
     x, y, z : float or array_like of floats
         Cartesian coordinates, in metres.
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which ellipsoidal coordinates are referenced to.
     degrees : bool, optional
-        If True, the output ellipsoidal coordinates reduced
-        latitude and longitude will be in degrees, otherwise radians.
+        If True, the output reduced latitude and longitude will
+        be in degrees, otherwise radians.
 
     Returns
     -------
-    rlat,  : float or array_like of floats
+    rlat : float or array_like of floats
         Reduced latitude.
     lon : float or array_like of floats
         Longitude.
     u : float or array_like of floats
-        Semiminor axis of the ellipsoid passing through
-        the point (`x`, `y`, `z`).
+        Polar axis of the ellipsoid passing through the given point.
     """
 
-    E = ell.linear_eccentricity
-    k = x**2 + y**2 + z**2 - E**2
+    le2 = ell.linear_eccentricity**2
+
+    k = x**2 + y**2 + z**2 - le2
 
     if _np.any(k < 0):
         raise ValueError(
-        'x**2 + y**2 + z**2 must be grater or equal to the linear eccentricity of the reference ellipsoid')
+            'x**2 + y**2 + z**2 must be grater or equal to the linear eccentricity of the reference ellipsoid')
 
-    u = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * E**2 * z**2) / k**2))
+    u = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * le2 * z**2) / k**2))
 
     u = _np.sqrt(u)
-    rlat = _np.arctan2(z * _np.sqrt(u ** 2 + E ** 2),
+    rlat = _np.arctan2(z * _np.sqrt(u ** 2 + le2),
                        u * _np.sqrt(x**2 + y**2))
 
     lon = _np.arctan2(y, x)
@@ -236,14 +236,13 @@ def ellipsoidal_to_cartesian(rlat, lon, u, ell, degrees=True):
 
     Parameters
     ----------
-    rlat,  : float or array_like of floats
+    rlat : float or array_like of floats
         Reduced latitude.
     lon : float or array_like of floats
         Longitude.
     u : float or array_like of floats
-        Semiminor axis of the ellipsoid passing through
-        the point (`x`, `y`, `z`).
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+        Polar axis of the ellipsoid passing through the point.
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the input `rlat` and `lon` are given in degrees,
@@ -269,7 +268,7 @@ def ellipsoidal_to_cartesian(rlat, lon, u, ell, degrees=True):
 
 
 def geodetic_to_spherical(lat, lon, height, ell, degrees=True):
-    """Convert from geodetic to spherical cordinates.
+    """Convert from geodetic to spherical coordinates.
 
     Parameters
     ----------
@@ -279,7 +278,7 @@ def geodetic_to_spherical(lat, lon, height, ell, degrees=True):
         Geodetic longitude.
     height : float or array_like of floats
         Geodetic height, in metres.
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the input and output `lat` and `lon` are given in degrees,
@@ -306,7 +305,7 @@ def spherical_to_geodetic(lat, lon, radius, ell, degrees=True):
         Spherical latitude and longitude.
     radius : float or array_like of floats
         Radius, in metres.
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the input and output `lat` and `lon` are given in degrees,
@@ -325,7 +324,7 @@ def spherical_to_geodetic(lat, lon, radius, ell, degrees=True):
 
 
 def geodetic_to_ellipsoidal(lat, lon, height, ell, degrees=True):
-    """Convert from geodetic to  ellipsoidal coordinates
+    """Convert from geodetic to ellipsoidal-harmonic coordinates
 
     Parameters
     ----------
@@ -335,7 +334,7 @@ def geodetic_to_ellipsoidal(lat, lon, height, ell, degrees=True):
         Geodetic longitude.
     height : float or array_like of floats
         Geodetic height, in metres.
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the input `lat`, `lon` are and the output `rlat`,`lon`
@@ -343,34 +342,31 @@ def geodetic_to_ellipsoidal(lat, lon, height, ell, degrees=True):
 
     Returns
     -------
-    rlat,  : float or array_like of floats
+    rlat : float or array_like of floats
         Reduced latitude.
     lon : float or array_like of floats
         Longitude.
     u : float or array_like of floats
-        Semiminor axis of the ellipsoid passing through
-        the point (`x`, `y`, `z`).
+        Polar axis of the ellipsoid passing through
+        the given point.
     """
-    if _np.any(height < 0):
-        raise ValueError('Point must be on (h=0) or above (h>0) the ellipsoid')
     return cartesian_to_ellipsoidal(
         *geodetic_to_cartesian(lat, lon, height, ell=ell, degrees=degrees),
         ell=ell, degrees=degrees)
 
 
 def ellipsoidal_to_geodetic(rlat, lon, u, ell, degrees=True):
-    """Convert from ellipsoidal to geodetic coordinates
+    """Convert from ellipsoidal-harmonic to geodetic coordinates
 
     Parameters
     ----------
-    rlat,  : float or array_like of floats
+    rlat : float or array_like of floats
         Reduced latitude.
     lon : float or array_like of floats
         Longitude.
     u : float or array_like of floats
-        Semiminor axis of the ellipsoid passing through
-        the point (`x`, `y`, `z`).
-    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+        Polar axis of the ellipsoid passing through the point.
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the input `rlat` and `lon` are given in degrees,
