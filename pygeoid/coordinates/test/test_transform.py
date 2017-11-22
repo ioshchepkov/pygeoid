@@ -18,18 +18,18 @@ def test_cartesian_to_geodetic_and_back():
     lat, lon, height = cartesian_to_geodetic(x, y, z, ell)
     b_x, b_y, b_z = geodetic_to_cartesian(lat, lon, height, ell)
 
-    assert np.allclose(x, b_x)
-    assert np.allclose(y, b_y)
-    assert np.allclose(z, b_z)
+    np.testing.assert_array_almost_equal(b_x, x, decimal=5)
+    np.testing.assert_array_almost_equal(b_y, y, decimal=5)
+    np.testing.assert_array_almost_equal(b_z, z, decimal=5)
 
 
 def test_cartesian_to_spherical_and_back():
     lat, lon, radius = cartesian_to_spherical(x, y, z)
     b_x, b_y, b_z = spherical_to_cartesian(lat, lon, radius)
 
-    assert np.allclose(x, b_x)
-    assert np.allclose(y, b_y)
-    assert np.allclose(z, b_z)
+    np.testing.assert_array_almost_equal(b_x, x, decimal=5)
+    np.testing.assert_array_almost_equal(b_y, y, decimal=5)
+    np.testing.assert_array_almost_equal(b_z, z, decimal=5)
 
 
 def test_focal_distance_exception():
@@ -53,22 +53,23 @@ def test_cartesian_to_ellipsoidal_and_back():
     rlat, lon, u = cartesian_to_ellipsoidal(x_, y_, z_, ell)
     b_x, b_y, b_z = ellipsoidal_to_cartesian(rlat, lon, u, ell)
 
-    assert np.allclose(x_, b_x)
-    assert np.allclose(y_, b_y)
-    assert np.allclose(z_, b_z)
+    np.testing.assert_array_almost_equal(b_x, x_, decimal=5)
+    np.testing.assert_array_almost_equal(b_y, y_, decimal=5)
+    np.testing.assert_array_almost_equal(b_z, z_, decimal=5)
 
 
 def test_geodetic_to_spherical_and_back():
     lat, lon, height = cartesian_to_geodetic(x, y, z, ell)
 
     sph_lat, sph_lon, radius = geodetic_to_spherical(lat, lon, height, ell)
-    assert np.allclose(lon, sph_lon)
+    np.testing.assert_array_almost_equal(sph_lon, lon, decimal=9)
+
     b_lat, b_lon, b_height = spherical_to_geodetic(
         sph_lat, sph_lon, radius, ell)
 
-    assert np.allclose(lat, b_lat)
-    assert np.allclose(lon, b_lon)
-    assert np.allclose(height, b_height)
+    np.testing.assert_array_almost_equal(b_lat, lat, decimal=9)
+    np.testing.assert_array_almost_equal(b_lon, lon, decimal=9)
+    np.testing.assert_array_almost_equal(b_height, height, decimal=5)
 
 
 def test_geodetic_to_elliposidal_and_back():
@@ -80,10 +81,10 @@ def test_geodetic_to_elliposidal_and_back():
     lat, lon, height = cartesian_to_geodetic(x_, y_, z_, ell)
 
     rlat, ell_lon, u = geodetic_to_ellipsoidal(lat, lon, height, ell)
-    assert np.allclose(lon, ell_lon)
+    np.testing.assert_array_almost_equal(ell_lon, lon, decimal=9)
 
     b_lat, b_lon, b_height = ellipsoidal_to_geodetic(rlat, ell_lon, u, ell)
 
-    assert np.allclose(lat, b_lat)
-    assert np.allclose(lon, b_lon)
-    assert np.allclose(height, b_height)
+    np.testing.assert_array_almost_equal(b_lat, lat, decimal=9)
+    np.testing.assert_array_almost_equal(b_lon, lon, decimal=9)
+    np.testing.assert_array_almost_equal(b_height, height, decimal=5)

@@ -5,3 +5,5 @@ include requirements*txt
 # docs
 recursive-include docs *
 
+recursive-include pygeoid/coordinates/test *
+
