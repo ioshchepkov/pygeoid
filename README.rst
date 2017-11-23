@@ -21,21 +21,13 @@ The project is in the early planning and development stage.
 Install
 -------
 
-Using git
-~~~~~~~~~
-
-Clone pygeoid repository onto your computer with ``git clone`` command
-and then use ``pip`` as usual:
+To install ``pygeoid`` simply use ``pip`` as usual: 
 
 .. code:: bash
 
-    pip install .
+    pip install pygeoid
 
-License
--------
+Documentation
+-------------
 
-This project is licensed under the MIT License - see the `LICENSE.txt`_
-file for details
-
-.. _LICENSE.txt: LICENSE.txt
-
+Full documentation is available at https://pygeoid.readthedocs.io
