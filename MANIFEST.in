@@ -1,9 +1,13 @@
 include LICENSE.txt
-include README.md
+include README.rst
+include CHANGES.rst
 include requirements*txt
 
 # docs
 recursive-include docs *
 
+# tests
 recursive-include pygeoid/coordinates/test *
+
+global-exclude __pycache__ *.pyc
 

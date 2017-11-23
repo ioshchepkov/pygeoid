@@ -11,7 +11,7 @@ import pygeoid
 
 # Get the long description from the README file
 with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                       'README.md'), encoding='utf-8') as f:
+                       'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 name = 'pygeoid'
@@ -56,8 +56,10 @@ setup(name=name,
           'Natural Language :: English',
           'Operating System :: OS Independent',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3 :: Only',
+          'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Education',
           'Topic :: Scientific/Engineering',
       ],
@@ -66,7 +68,7 @@ setup(name=name,
       include_package_data=True,
       tests_require=['pytest'],
       install_requires=['numpy', 'scipy', 'pyproj', 'pint'],
-      python_requires='>=3',
+      python_requires='>=3.4',
       cmdclass=cmdclass,
       command_options={
           'build_sphinx': {
