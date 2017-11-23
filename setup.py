@@ -68,7 +68,7 @@ setup(name=name,
       include_package_data=True,
       tests_require=['pytest'],
       install_requires=['numpy', 'scipy', 'pyproj', 'pint'],
-      python_requires='>=3',
+      python_requires='>=3.4',
       cmdclass=cmdclass,
       command_options={
           'build_sphinx': {
