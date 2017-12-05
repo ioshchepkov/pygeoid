@@ -88,3 +88,13 @@ def test_geodetic_to_elliposidal_and_back():
     np.testing.assert_array_almost_equal(b_lat, lat, decimal=9)
     np.testing.assert_array_almost_equal(b_lon, lon, decimal=9)
     np.testing.assert_array_almost_equal(b_height, height, decimal=5)
+
+def test_cartesian_to_polar_and_back():
+    values = np.round(np.linspace(-100000, 100000, 1000), 5)
+    x, y = np.meshgrid(values, values, indexing='ij')
+    theta, radius = cartesian_to_polar(x, y, degrees=True)
+    b_x, b_y = polar_to_cartesian(theta, radius, degrees=True)
+
+    np.testing.assert_array_almost_equal(b_x, x, decimal=5)
+    np.testing.assert_array_almost_equal(b_y, y, decimal=5)
+
