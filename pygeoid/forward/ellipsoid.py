@@ -26,15 +26,19 @@ def _j2_to_flattening(j2, a, gm, omega):
     """Calculate flattening from J2, a, GM and omega.
 
     """
-    m1 = omega**2 * a**3 / gm
+    # pylint: disable=C0103
+    _m1 = omega**2 * a**3 / gm
 
-    def e2(e2, j2, m1):
+    def e2(e2, j2, _m1):
+        """Compute e2 from J2.
+
+        """
         e1 = np.sqrt(e2 / (1 - e2))
         q0 = 0.5*((1 + 3 / e1**2) * np.arctan(e1) - 3 / e1)
-        return 3*j2 + 2/15 * m1 * np.sqrt(e2)**3 / q0 - e2
+        return 3*j2 + 2/15 * _m1 * np.sqrt(e2)**3 / q0 - e2
 
-    _e2_0 = 3 * j2 + 2/15 * m1
-    _e2 = optimize.fsolve(e2, _e2_0, args=(j2, m1), xtol=1e-10)[0]
+    _e2_0 = 3 * j2 + 2/15 * _m1
+    _e2 = optimize.fsolve(e2, _e2_0, args=(j2, _m1), xtol=1e-10)[0]
 
     return 1 - np.sqrt(1 - _e2)
 
@@ -51,7 +55,6 @@ class LevelEllipsoid(Ellipsoid):
         Ellipsoid name. Default is 'GRS80'.
     """
     # pylint: disable=R0904
-
     def __init__(self, ellps=None, **kwargs):
         if not kwargs:
             if ellps in LEVEL_ELLIPSOIDS:
@@ -67,10 +70,10 @@ class LevelEllipsoid(Ellipsoid):
         if 'j2' in kwargs:
             kwargs['f'] = _j2_to_flattening(kwargs['j2'], kwargs['a'],
                                             kwargs['gm'], kwargs['omega'])
-            kwargs['_j2'] = kwargs.pop('j2')
+            self._j2 = kwargs['j2']
 
-        self.gm = kwargs['gm']
-        self.omega = kwargs['omega']
+        self._gm = kwargs['gm']
+        self._omega = kwargs['omega']
 
         super().__init__(self, **kwargs)
 
@@ -108,7 +111,27 @@ class LevelEllipsoid(Ellipsoid):
         """Return dynamic form factor J2.
 
         """
+        # pylint: disable=C0103
         return self._j2
+
+    @property
+    def gm(self):
+        """Return geocentric gravitational constant.
+
+        """
+        # pylint: disable=C0103
+        return self._gm
+
+    @property
+    def omega(self):
+        """Return angular velocity, in radians.
+
+        """
+        return self._omega
+
+    #########################################################################
+    # Potential
+    #########################################################################
 
     @property
     def surface_potential(self):
@@ -123,6 +146,7 @@ class LevelEllipsoid(Ellipsoid):
         """Return auxiliary function q(u).
 
         """
+        # pylint: disable=C0103
         E = self.linear_eccentricity
         return 0.5 * ((1 + 3 * u**2 / E**2) * np.arctan2(E, u) - 3 * u / E)
 
@@ -146,7 +170,7 @@ class LevelEllipsoid(Ellipsoid):
         float or array_like of floats
             Normal gravitational potential, in m/s**2.
         """
-
+        # pylint: disable=C0103
         if degrees:
             rlat = np.radians(rlat)
 
@@ -178,7 +202,7 @@ class LevelEllipsoid(Ellipsoid):
         float or array_like of floats
             Normal gravity potential, in m**2/s**2.
         """
-
+        # pylint: disable=C0103
         if degrees:
             rlat = np.radians(rlat)
 
@@ -186,6 +210,10 @@ class LevelEllipsoid(Ellipsoid):
         centrifugal = 0.5 * self.omega**2 * (u**2 +
                                              self.linear_eccentricity**2) * np.cos(rlat)**2
         return gravitational + centrifugal
+
+    #########################################################################
+    # Normal gravity
+    #########################################################################
 
     @property
     def equatorial_normal_gravity(self):
@@ -213,8 +241,9 @@ class LevelEllipsoid(Ellipsoid):
         """Return coefficients for the conventional gravity formula.
 
         """
-        f4 = -0.5 * self.f**2 + 2.5 * self.f * self.m * self.polar_radius / self.a
-        return (self.gravity_flattening, 0.25 * f4)
+        f4_coeff = -0.5 * self.f**2 +\
+                2.5 * self.f * self.m * self.polar_radius / self.a
+        return (self.gravity_flattening, 0.25 * f4_coeff)
 
     def surface_normal_gravity(self, lat, degrees=True):
         """Return normal gravity on the ellipsoid, in m/s**2.
@@ -281,6 +310,7 @@ class LevelEllipsoid(Ellipsoid):
         float or array_like of floats
             Normal gravity, in m/s**2.
         """
+        # pylint: disable=C0103
 
         if degrees:
             rlat = np.radians(rlat)
@@ -304,6 +334,10 @@ class LevelEllipsoid(Ellipsoid):
 
         return np.sqrt(u_deriv**2 + rlat_deriv**2)
 
+    #########################################################################
+    # Spherical approximation
+    #########################################################################
+
     def j2n(self, n):
         """Return even zonal coefficients J with a degree of 2*n.
 
@@ -318,6 +352,7 @@ class LevelEllipsoid(Ellipsoid):
         n : int
             Degree of the J coefficient.
         """
+        # pylint: disable=C0103
         j2n = (-1)**(n + 1) * (3 * self.e2**(n - 1)) / ((2 * n + 1) * (2 * n + 3)) * \
             ((1 - n) * self.e2 + 5 * n * self.j2)
         return j2n
