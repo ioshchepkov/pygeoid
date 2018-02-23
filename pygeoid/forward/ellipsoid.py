@@ -7,7 +7,7 @@ from scipy import (optimize, special)
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 
-_pj_ellps = {
+LEVEL_ELLIPSOIDS = {
     'GRS80': {'description': 'GRS 80', 'a': 6378137.0, 'j2': 108263e-8,
               'gm': 3986005e8, 'omega': 7292115e-11},
     'WGS84': {'description': 'WGS 84', 'a': 6378137.0, 'rf': 298.2572235630,
@@ -54,25 +54,25 @@ class LevelEllipsoid(Ellipsoid):
 
     def __init__(self, ellps=None, **kwargs):
         if not kwargs:
-            if ellps in _pj_ellps:
-                kwargs = _pj_ellps[ellps]
+            if ellps in LEVEL_ELLIPSOIDS:
+                kwargs = LEVEL_ELLIPSOIDS[ellps]
             elif ellps is None or ellps.lower() == 'default':
-                kwargs = _pj_ellps[DEFAULT_LEVEL_ELLIPSOID]
+                kwargs = LEVEL_ELLIPSOIDS[DEFAULT_LEVEL_ELLIPSOID]
             else:
                 raise ValueError(
                     'No ellipsoid with name {:%s}, possible values \
                         are:\n{:%s}'.format(ellps,
-                                            _pj_ellps.keys()))
+                                            LEVEL_ELLIPSOIDS.keys()))
 
         if 'j2' in kwargs:
             kwargs['f'] = _j2_to_flattening(kwargs['j2'], kwargs['a'],
                                             kwargs['gm'], kwargs['omega'])
             kwargs['_j2'] = kwargs.pop('j2')
 
-        super().__init__(self, **kwargs)
+        self.gm = kwargs['gm']
+        self.omega = kwargs['omega']
 
-        self.gm = kwargs.pop('gm')
-        self.omega = kwargs.pop('omega')
+        super().__init__(self, **kwargs)
 
         # define useful short-named attributes
         # pylint: disable=C0103
@@ -292,17 +292,17 @@ class LevelEllipsoid(Ellipsoid):
         w = np.sqrt((u**2 + E**2 * np.sin(rlat)**2) / uE)
         q1 = 3 * (1 + u**2 / E**2) * (1 - u / E * np.arctan2(E, u)) - 1
 
-        yu = self.gm / uE
-        yu += self.omega**2 * self.a ** 2 * E / uE * q1 / self._q0 * (
+        u_deriv = self.gm / uE
+        u_deriv += self.omega**2 * self.a ** 2 * E / uE * q1 / self._q0 * (
             0.5 * np.sin(rlat)**2 - 1 / 6)
-        yu -= self.omega**2 * u * np.cos(rlat)**2
-        yu *= -1 / w
+        u_deriv -= self.omega**2 * u * np.cos(rlat)**2
+        u_deriv *= -1 / w
 
-        yrlat = -self.omega**2 * self.a**2 / np.sqrt(uE) * _qr
-        yrlat += self.omega**2 * np.sqrt(uE)
-        yrlat *= -1 / w * np.sin(rlat) * np.cos(rlat)
+        rlat_deriv = -self.omega**2 * self.a**2 / np.sqrt(uE) * _qr
+        rlat_deriv += self.omega**2 * np.sqrt(uE)
+        rlat_deriv *= -1 / w * np.sin(rlat) * np.cos(rlat)
 
-        return np.sqrt(yu**2 + yrlat**2)
+        return np.sqrt(u_deriv**2 + rlat_deriv**2)
 
     def j2n(self, n):
         """Return even zonal coefficients J with a degree of 2*n.
@@ -343,11 +343,11 @@ class LevelEllipsoid(Ellipsoid):
         if degrees:
             lat = np.radians(lat)
 
-        Vns = 0
-        for l in range(1, n_max + 1):
-            leg = special.eval_legendre(2 * l, np.sin(lat))
-            Vns += self.j2n(l) * (self.a / radius) ** (2 * l) * leg
-        return self.gm / radius * (1 - Vns)
+        out = 0
+        for degree in range(1, n_max + 1):
+            leg = special.eval_legendre(2 * degree, np.sin(lat))
+            out += self.j2n(degree) * (self.a / radius) ** (2 * degree) * leg
+        return self.gm / radius * (1 - out)
 
     def gravity_potential_sph(self, lat, radius, degrees=True, **kwargs):
         """Return normal gravitational potential V, in m**2/s**2.
@@ -376,7 +376,7 @@ class LevelEllipsoid(Ellipsoid):
         return gravitational_sph + centrifugal
 
 
-normal_gravity_coeffs = {
+NORMAL_GRAVITY_COEFFS = {
     'helmert': (978030, 0.005302, 0.000007),
     'helmert_14mGal': (978030 - 14, 0.005302, 0.000007),
     '1930': (978049, 0.0052884, 0.0000059),
@@ -400,8 +400,8 @@ def surface_normal_gravity_clairaut(lat, model=None, degrees=True):
         Default is True.
     """
 
-    if model is not None and model in normal_gravity_coeffs:
-        gamma_e, beta, beta1 = normal_gravity_coeffs[model]
+    if model is not None and model in NORMAL_GRAVITY_COEFFS:
+        gamma_e, beta, beta1 = NORMAL_GRAVITY_COEFFS[model]
     else:
         msg = 'No formula with name {:%s}, possible values are:\n{:%s}'
         raise ValueError(msg.format(model, model.keys()))
