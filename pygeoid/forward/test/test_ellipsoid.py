@@ -2,9 +2,8 @@
 #import os
 import pytest
 import numpy as np
+import pygeoid.coordinates.transform as transform
 from pygeoid.forward.ellipsoid import LevelEllipsoid
-# from pygeoid.coordinates.transform import (geodetic_to_cartesian,
-#                                           geodetic_to_spherical)
 
 
 def test_init():
@@ -81,3 +80,70 @@ def test_against_GRS80():
 
     np.testing.assert_almost_equal(ell.surface_normal_gravity(45.),
                                    9.806199203, decimal=9)
+
+    # other
+    np.testing.assert_almost_equal(ell.mean_normal_gravity,
+                                   9.797644656, decimal=9)
+    np.testing.assert_almost_equal(
+            ell.surface_normal_gravity(45.),
+                                   9.806199203, decimal=9)
+
+def test_surface_gravity_potential():
+    ell = LevelEllipsoid('GRS80')
+    # geodetic latitude
+    lat = np.arange(-90, 90, 0.1, dtype=float)
+    rlat, _, u = transform.geodetic_to_ellipsoidal(lat=lat,
+            lon=0.0, height=0.0, ell=ell)
+    gravity_potential_0 = ell.gravity_potential(rlat, u)
+    np.testing.assert_almost_equal(
+            ell.surface_potential,
+            gravity_potential_0, decimal=5)
+    geoclat, _, radius = transform.geodetic_to_spherical(lat=lat,
+            lon=0.0, height=0.0, ell=ell)
+    gravity_potential_sph_0 = ell.gravity_potential_sph(geoclat, radius)
+    np.testing.assert_almost_equal(
+            ell.surface_potential,
+            gravity_potential_sph_0, decimal=5)
+    np.testing.assert_almost_equal(
+            gravity_potential_sph_0,
+            gravity_potential_0, decimal=5)
+
+def test_potential():
+    ell = LevelEllipsoid('GRS80')
+
+    n_test = 100  # * 2
+    r_ = np.geomspace(ell.b, 1e8, num=n_test)
+    r_ = np.append(-r_[::-1], r_)
+    x, y, z = np.meshgrid(r_, r_, r_, indexing='ij')
+
+    sphlat, _, radius = transform.cartesian_to_spherical(x, y, z)
+    cond = radius < ell.polar_equation(sphlat)
+
+    x_ = np.ma.masked_where(cond, x).compressed()
+    y_ = np.ma.masked_where(cond, y).compressed()
+    z_ = np.ma.masked_where(cond, z).compressed()
+
+    sphlat, _, radius = transform.cartesian_to_spherical(x_, y_, z_)
+    rlat, _, u = transform.cartesian_to_ellipsoidal(x_, y_, z_, ell=ell)
+    gravity_potential_ell = ell.gravity_potential(rlat, u)
+    gravity_potential_sph = ell.gravity_potential_sph(sphlat, radius)
+
+    np.testing.assert_almost_equal(
+            gravity_potential_sph,
+            gravity_potential_ell, decimal=4)
+
+    gravitational_potential_ell = ell.gravitational_potential(rlat, u)
+    gravitational_potential_sph = ell.gravitational_potential_sph(sphlat, radius)
+
+    np.testing.assert_almost_equal(
+            gravitational_potential_sph,
+            gravitational_potential_ell, decimal=4)
+
+def test_surface_normal_gravity():
+    ell = LevelEllipsoid('GRS80')
+    np.testing.assert_almost_equal(
+            ell.surface_normal_gravity(0.),
+            ell.equatorial_normal_gravity, decimal=9)
+    np.testing.assert_almost_equal(
+            ell.surface_normal_gravity(90.),
+            ell.polar_normal_gravity, decimal=9)

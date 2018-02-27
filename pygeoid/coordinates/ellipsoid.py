@@ -30,7 +30,6 @@ class Ellipsoid:
         Ellipsoid name, most common ellipsoids are accepted.
         Default is 'GRS80'.
     """
-    # pylint: disable=R0904
     def __init__(self, ellps=None, **kwargs):
         if not kwargs:
             if ellps in _proj.pj_ellps:
@@ -44,7 +43,6 @@ class Ellipsoid:
                                             _proj.pj_ellps.keys()))
 
         # define useful short-named attributes
-        # pylint: disable=C0103
         self.geod = _proj.Geod(**kwargs)
         self.a = self.geod.a
         self.b = self.geod.b
@@ -524,7 +522,6 @@ class Ellipsoid:
         return self.inv(lat, lon1, lat, lon2, degrees=degrees)[-1]
 
     def fwd(self, lat, lon, azimuth, distance, degrees=True):
-        # pylint: disable=W0221,R0913
         """Solve forward geodetic problem.
 
         Returns latitudes, longitudes and back azimuths of terminus points
@@ -565,7 +562,6 @@ class Ellipsoid:
         return out_lat, out_lon, out_baz
 
     def inv(self, lat1, lon1, lat2, lon2, degrees=True):
-        # pylint: disable=W0221,R0913
         """Solve inverse geodetic problem.
 
         Returns forward and back azimuths, plus distances between initial
@@ -602,7 +598,6 @@ class Ellipsoid:
         return self.geod.inv(lon1, lat1, lon2, lat2, radians=radians)
 
     def npts(self, lat1, lon1, lat2, lon2, npts, degrees=True):
-        # pylint: disable=W0221,R0913
         """Return equaly spaced points along geodesic line.
 
         Given a single initial point and terminus point (specified by

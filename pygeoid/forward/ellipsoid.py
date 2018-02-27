@@ -26,7 +26,6 @@ def _j2_to_flattening(j2, a, gm, omega):
     """Calculate flattening from J2, a, GM and omega.
 
     """
-    # pylint: disable=C0103
     _m1 = omega**2 * a**3 / gm
 
     def e2(e2, j2, _m1):
@@ -54,7 +53,6 @@ class LevelEllipsoid(Ellipsoid):
     ellps : {'GRS80', 'WGS84', 'PZ90', 'GSK2011'}, optional
         Ellipsoid name. Default is 'GRS80'.
     """
-    # pylint: disable=R0904
     def __init__(self, ellps=None, **kwargs):
         if not kwargs:
             if ellps in LEVEL_ELLIPSOIDS:
@@ -78,8 +76,7 @@ class LevelEllipsoid(Ellipsoid):
         super().__init__(self, **kwargs)
 
         # define useful short-named attributes
-        # pylint: disable=C0103
-        self.m = self.omega**2 * self.a**2 * self.b / self.gm
+        self._m = self.omega**2 * self.a**2 * self.b / self.gm
         self._q0 = 0.5*((1 + 3 / self.e1**2) *
                         np.arctan(self.e1) - 3 / self.e1)
 
@@ -100,6 +97,7 @@ class LevelEllipsoid(Ellipsoid):
         self._gamma_p = self.gm / self.a**2 * (1 +
                                                self.m / 3 * self.e1 * self._q01 /
                                                self._q0)
+
         self._gravity_flattening = (self._gamma_p - self._gamma_e) /\
             self._gamma_e
 
@@ -111,7 +109,6 @@ class LevelEllipsoid(Ellipsoid):
         """Return dynamic form factor J2.
 
         """
-        # pylint: disable=C0103
         return self._j2
 
     @property
@@ -119,7 +116,6 @@ class LevelEllipsoid(Ellipsoid):
         """Return geocentric gravitational constant.
 
         """
-        # pylint: disable=C0103
         return self._gm
 
     @property
@@ -129,10 +125,20 @@ class LevelEllipsoid(Ellipsoid):
         """
         return self._omega
 
+    @property
+    def m(self):
+        r"""Auxiliary constant.
+
+        Notes
+        -----
+        .. math::
+            m = \frac{{\omega}^2 a^2 b}{GM}.
+        """
+        return self._m
+
     #########################################################################
     # Potential
     #########################################################################
-
     @property
     def surface_potential(self):
         """Return normal gravity potential on the ellipsoid, in m**2/s**2.
@@ -146,7 +152,6 @@ class LevelEllipsoid(Ellipsoid):
         """Return auxiliary function q(u).
 
         """
-        # pylint: disable=C0103
         E = self.linear_eccentricity
         return 0.5 * ((1 + 3 * u**2 / E**2) * np.arctan2(E, u) - 3 * u / E)
 
@@ -170,7 +175,6 @@ class LevelEllipsoid(Ellipsoid):
         float or array_like of floats
             Normal gravitational potential, in m/s**2.
         """
-        # pylint: disable=C0103
         if degrees:
             rlat = np.radians(rlat)
 
@@ -202,7 +206,6 @@ class LevelEllipsoid(Ellipsoid):
         float or array_like of floats
             Normal gravity potential, in m**2/s**2.
         """
-        # pylint: disable=C0103
         if degrees:
             rlat = np.radians(rlat)
 
@@ -214,7 +217,6 @@ class LevelEllipsoid(Ellipsoid):
     #########################################################################
     # Normal gravity
     #########################################################################
-
     @property
     def equatorial_normal_gravity(self):
         """Return normal gravity at the equator, in m/s**2.
@@ -228,6 +230,14 @@ class LevelEllipsoid(Ellipsoid):
 
         """
         return self._gamma_p
+
+    @property
+    def mean_normal_gravity(self):
+        """Return mean normal gravity over ellipsoid, in m/s**2.
+
+        """
+        return 4 * np.pi / self.surface_area * (self._gm -
+                2/3*self._omega**2 * self.a**2 * self.b)
 
     @property
     def gravity_flattening(self):
@@ -310,7 +320,6 @@ class LevelEllipsoid(Ellipsoid):
         float or array_like of floats
             Normal gravity, in m/s**2.
         """
-        # pylint: disable=C0103
 
         if degrees:
             rlat = np.radians(rlat)
@@ -337,7 +346,6 @@ class LevelEllipsoid(Ellipsoid):
     #########################################################################
     # Spherical approximation
     #########################################################################
-
     def j2n(self, n):
         """Return even zonal coefficients J with a degree of 2*n.
 
@@ -352,7 +360,6 @@ class LevelEllipsoid(Ellipsoid):
         n : int
             Degree of the J coefficient.
         """
-        # pylint: disable=C0103
         j2n = (-1)**(n + 1) * (3 * self.e2**(n - 1)) / ((2 * n + 1) * (2 * n + 3)) * \
             ((1 - n) * self.e2 + 5 * n * self.j2)
         return j2n
