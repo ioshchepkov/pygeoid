@@ -45,7 +45,8 @@ def _j2_to_flattening(j2, a, gm, omega):
 class LevelEllipsoid(Ellipsoid):
     """Class represents the gravity field of the level ellipsoid.
 
-    This class intialize `Ellipsoid` class from `pygeoid.coordinates.ellipsoid`, so
+    This class intialize `Ellipsoid` class from
+    `pygeoid.coordinates.ellipsoid`, so
     all geometrical methods and parameters are available too.
 
     Parameters
@@ -53,6 +54,7 @@ class LevelEllipsoid(Ellipsoid):
     ellps : {'GRS80', 'WGS84', 'PZ90', 'GSK2011'}, optional
         Ellipsoid name. Default is 'GRS80'.
     """
+
     def __init__(self, ellps=None, **kwargs):
         if not kwargs:
             if ellps in LEVEL_ELLIPSOIDS:
@@ -83,26 +85,25 @@ class LevelEllipsoid(Ellipsoid):
         if not hasattr(self, '_j2'):
             self._j2 = self.e2 / 3 * (1 - 2/15*self.m*self.e1/self._q0)
 
-        self._q01 = 3 * (1 + 1 / self.e12) * (1 -
-                                              np.arctan(self.e1) / self.e1) - 1
+        self._q01 = 3 * (1 +
+                         1 / self.e12) * (1 - np.arctan(self.e1) / self.e1) - 1
 
         self._surface_potential = self.gm / self.linear_eccentricity *\
             np.arctan(self.second_eccentricity) +\
             1 / 3 * self.omega ** 2 * self.a ** 2
 
-        self._gamma_e = self.gm / (self.a * self.b) * (1 -
-                                                       self.m - self.m / 6 *
-                                                       self.e1 * self._q01 / self._q0)
+        self._gamma_e = self.gm / (self.a *
+                                   self.b) * (1 - self.m -
+                                              self.m / 6 * self.e1 * self._q01 / self._q0)
 
-        self._gamma_p = self.gm / self.a**2 * (1 +
-                                               self.m / 3 * self.e1 * self._q01 /
-                                               self._q0)
+        self._gamma_p = self.gm / self.a**2 *\
+            (1 + self.m / 3 * self.e1 * self._q01 / self._q0)
 
-        self._gravity_flattening = (self._gamma_p - self._gamma_e) /\
-            self._gamma_e
+        self._gravity_flattening = (self._gamma_p -
+                                    self._gamma_e) / self._gamma_e
 
-        self._k = (self.b * self._gamma_p - self.a * self._gamma_e) / (self.a *
-                                                                       self._gamma_e)
+        self._k = (self.b * self._gamma_p -
+                   self.a * self._gamma_e) / (self.a * self._gamma_e)
 
     @property
     def j2(self):
@@ -237,7 +238,7 @@ class LevelEllipsoid(Ellipsoid):
 
         """
         return 4 * np.pi / self.surface_area * (self._gm -
-                2/3*self._omega**2 * self.a**2 * self.b)
+                                                2/3*self._omega**2 * self.a**2 * self.b)
 
     @property
     def gravity_flattening(self):
@@ -318,10 +319,12 @@ class LevelEllipsoid(Ellipsoid):
             lat = np.radians(lat)
 
         gammae = self.equatorial_normal_gravity
-        grad = -2*gammae/self.a * (1 + self.f + self.m + (-3*self.f +
-            2.5*self.m)*np.sin(lat)**2)*height + 3*gammae*height**2 / self.a**2
+        out = -2*gammae/self.a * (1 +
+                                  self.f + self.m + (-3*self.f +
+                                                     2.5*self.m)*np.sin(lat)**2)*height +\
+            3*gammae*height**2 / self.a**2
 
-        return grad
+        return out
 
     def normal_gravity(self, rlat, u, degrees=True):
         """Return normal gravity, in m/s**2.
@@ -437,7 +440,9 @@ class LevelEllipsoid(Ellipsoid):
             lat = np.radians(lat)
 
         gravitational_sph = self.gravitational_potential_sph(lat=lat,
-                                                             radius=radius, degrees=False, **kwargs)
+                                                             radius=radius,
+                                                             degrees=False,
+                                                             **kwargs)
         centrifugal = 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
         return gravitational_sph + centrifugal
 

@@ -6,6 +6,7 @@ Welcome to pygeoid's documentation!
    :maxdepth: 2
 
    coordinates/index
+   reduction/ellipsoid
 
 
 
