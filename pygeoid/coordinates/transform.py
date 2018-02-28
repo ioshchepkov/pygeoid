@@ -6,6 +6,10 @@ import functools as _functools
 import numpy as _np
 
 
+##############################################################################
+# 3D coordinates
+##############################################################################
+
 def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
     """Convert geodetic to 3D cartesian coordinates.
 
@@ -214,7 +218,8 @@ def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
 
     if _np.any(k < 0):
         raise ValueError(
-            'x**2 + y**2 + z**2 must be grater or equal to the linear eccentricity of the reference ellipsoid')
+            'x**2 + y**2 + z**2 must be grater or equal to ' +
+            'the linear eccentricity of the reference ellipsoid.')
 
     u = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * le2 * z**2) / k**2))
 
@@ -324,7 +329,7 @@ def spherical_to_geodetic(lat, lon, radius, ell, degrees=True):
 
 
 def geodetic_to_ellipsoidal(lat, lon, height, ell, degrees=True):
-    """Convert from geodetic to ellipsoidal-harmonic coordinates
+    """Convert from geodetic to ellipsoidal-harmonic coordinates.
 
     Parameters
     ----------
@@ -356,7 +361,7 @@ def geodetic_to_ellipsoidal(lat, lon, height, ell, degrees=True):
 
 
 def ellipsoidal_to_geodetic(rlat, lon, u, ell, degrees=True):
-    """Convert from ellipsoidal-harmonic to geodetic coordinates
+    """Convert from ellipsoidal-harmonic to geodetic coordinates.
 
     Parameters
     ----------
@@ -382,3 +387,55 @@ def ellipsoidal_to_geodetic(rlat, lon, u, ell, degrees=True):
     return cartesian_to_geodetic(
         *ellipsoidal_to_cartesian(rlat, lon, u, ell=ell, degrees=degrees),
         ell=ell, degrees=degrees)
+
+##############################################################################
+# 2D coordinates
+##############################################################################
+
+
+def polar_to_cartesian(theta, radius, degrees=True):
+    """Convert polar coordinates to 2D cartesian.
+
+    Parameters
+    ----------
+    theta : float or array_like of floats
+        Polar angle.
+    radius : float or array_like of floats
+        Radius, in metres.
+
+    Returns
+    -------
+    x, y : float or array_like of floats
+        Cartesian coordinates, in metres.
+    """
+    if degrees:
+        theta = _np.radians(theta)
+
+    return radius * _np.cos(theta), radius * _np.sin(theta)
+
+
+def cartesian_to_polar(x, y, degrees=True):
+    """Convert 2D cartesian coordinates to polar coordinates.
+
+    Parameters
+    ----------
+    x, y : float or array_like of floats
+        Cartesian coordinates, in metres.
+    degrees : bool, optional
+        If True, the output azimuth will be in degrees, otherwise radians.
+
+    Returns
+    -------
+    theta : float or array_like of floats
+        Polar angle.
+    radius : float or array_like of floats
+        Radius, in metres.
+    """
+
+    radius = _np.sqrt(x ** 2 + y ** 2)
+    theta = _np.arctan2(y, x)
+
+    if degrees:
+        theta = _np.degrees(theta)
+
+    return theta, radius

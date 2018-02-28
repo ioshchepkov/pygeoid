@@ -1,5 +1,5 @@
 """
-Geometry of the reference ellipsoid
+Geometry of the reference ellipsoid.
 """
 
 import numpy as _np
@@ -16,10 +16,10 @@ _proj.pj_ellps.update({
 DEFAULT_ELLIPSOID = 'GRS80'
 
 
-class Ellipsoid(_proj.Geod):
+class Ellipsoid:
     """Class represents an ellipsoid of revolution and its geometry.
 
-    This class intialize proj.Geod class from pyproj package, so any valid init
+    This class uses proj.Geod class from pyproj package, so any valid init
     string for Proj are accepted as arguments. See `pyproj.Geod.__new__`
     documentation (https://jswhit.github.io/pyproj/pyproj.Geod-class.html)
     for more information.
@@ -30,9 +30,7 @@ class Ellipsoid(_proj.Geod):
         Ellipsoid name, most common ellipsoids are accepted.
         Default is 'GRS80'.
     """
-    # pylint: disable=R0904
-
-    def __new__(cls, ellps=None, **kwargs):
+    def __init__(self, ellps=None, **kwargs):
         if not kwargs:
             if ellps in _proj.pj_ellps:
                 kwargs['ellps'] = ellps
@@ -45,14 +43,14 @@ class Ellipsoid(_proj.Geod):
                                             _proj.pj_ellps.keys()))
 
         # define useful short-named attributes
-        # pylint: disable=C0103
-        geod = _proj.Geod.__new__(cls, **kwargs)
-        geod.e2 = _np.float64(geod.es)  # eccentricity squared
-        geod.e = _np.sqrt(geod.e2)  # eccentricity
-        geod.e12 = geod.e2 / (1 - geod.e2)  # 2nd eccentricity squared
-        geod.e1 = _np.sqrt(geod.e12)  # 2nd eccentricity
-
-        return geod
+        self.geod = _proj.Geod(**kwargs)
+        self.a = self.geod.a
+        self.b = self.geod.b
+        self.f = self.geod.f  # flattening
+        self.e2 = _np.float64(self.geod.es)  # eccentricity squared
+        self.e = _np.sqrt(self.e2)  # eccentricity
+        self.e12 = self.e2 / (1 - self.e2)  # 2nd eccentricity squared
+        self.e1 = _np.sqrt(self.e12)  # 2nd eccentricity
 
     @property
     def equatorial_radius(self):
@@ -524,7 +522,6 @@ class Ellipsoid(_proj.Geod):
         return self.inv(lat, lon1, lat, lon2, degrees=degrees)[-1]
 
     def fwd(self, lat, lon, azimuth, distance, degrees=True):
-        # pylint: disable=W0221,R0913
         """Solve forward geodetic problem.
 
         Returns latitudes, longitudes and back azimuths of terminus points
@@ -558,14 +555,13 @@ class Ellipsoid(_proj.Geod):
             Back geodetic azimuth.
         """
         radians = not degrees
-        out_lon, out_lat, out_baz = super().fwd(lon,
-                                                lat, azimuth,
-                                                distance,
-                                                radians=radians)
+        out_lon, out_lat, out_baz = self.geod.fwd(lon,
+                                                  lat, azimuth,
+                                                  distance,
+                                                  radians=radians)
         return out_lat, out_lon, out_baz
 
     def inv(self, lat1, lon1, lat2, lon2, degrees=True):
-        # pylint: disable=W0221,R0913
         """Solve inverse geodetic problem.
 
         Returns forward and back azimuths, plus distances between initial
@@ -599,10 +595,9 @@ class Ellipsoid(_proj.Geod):
             Distance, in metres.
         """
         radians = not degrees
-        return super().inv(lon1, lat1, lon2, lat2, radians=radians)
+        return self.geod.inv(lon1, lat1, lon2, lat2, radians=radians)
 
     def npts(self, lat1, lon1, lat2, lon2, npts, degrees=True):
-        # pylint: disable=W0221,R0913
         """Return equaly spaced points along geodesic line.
 
         Given a single initial point and terminus point (specified by
@@ -636,7 +631,7 @@ class Ellipsoid(_proj.Geod):
             List of latitudes and longitudes of the intermediate points.
         """
         radians = not degrees
-        return super().npts(lon1, lat1, lon2, lat2, npts, radians=radians)
+        return self.geod.npts(lon1, lat1, lon2, lat2, npts, radians=radians)
 
     #########################################################################
     # Radii
