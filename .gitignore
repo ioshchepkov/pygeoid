@@ -102,6 +102,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# pytest
+.pytest_cache/
+
 # Spyder project settings
 .spyderproject
 .spyproject
