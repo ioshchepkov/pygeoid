@@ -250,9 +250,9 @@ class LevelEllipsoid(Ellipsoid):
     def conventional_gravity_coeffs(self):
         """Return coefficients for the conventional gravity formula.
 
+        gamma_0 = gamma_e*(1 + beta*sin(lat)**2 - beta1*sin(2*lat)**2)
         """
-        f4_coeff = -0.5 * self.f**2 +\
-                2.5 * self.f * self.m * self.polar_radius / self.a
+        f4_coeff = -0.5 * self.f**2 + 2.5 * self.f * self.m
         return (self.gravity_flattening, 0.25 * f4_coeff)
 
     def surface_normal_gravity(self, lat, degrees=True):
@@ -298,6 +298,30 @@ class LevelEllipsoid(Ellipsoid):
         gamma = self.surface_normal_gravity(lat, degrees=False)
         return -2 * gamma * self.average_curvature(lat, degrees=False) -\
             2 * self.omega ** 2
+
+    def height_correction(self, lat, height, degrees=True):
+        """Return height correction, in m/s**2.
+
+        Second-order approximation formula is used instead of -0.3086*height.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude.
+        height : float or array_like of floats
+            Geodetic height, in metres.
+        degrees : bool, optional
+            If True, the input `lat` is given in degrees, otherwise radians.
+            Default is True.
+        """
+        if degrees:
+            lat = np.radians(lat)
+
+        gammae = self.equatorial_normal_gravity
+        grad = -2*gammae/self.a * (1 + self.f + self.m + (-3*self.f +
+            2.5*self.m)*np.sin(lat)**2)*height + 3*gammae*height**2 / self.a**2
+
+        return grad
 
     def normal_gravity(self, rlat, u, degrees=True):
         """Return normal gravity, in m/s**2.
