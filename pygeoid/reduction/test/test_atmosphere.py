@@ -6,7 +6,7 @@ import pygeoid.reduction.atmosphere as atm
 
 def test_ussa1976_density():
     fname = os.path.join(os.path.dirname(__file__),
-                         'data/ussa1976_density.txt')
+                         'data/ussa1976_density.txt.gz')
     test_heights, test_density = np.loadtxt(fname, unpack=True,
                                             delimiter='\t', skiprows=6, dtype=float)
 
