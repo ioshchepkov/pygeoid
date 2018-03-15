@@ -46,6 +46,15 @@ class Prism(ForwardModel):
         West, east, south, north, top and bottom of the prism, in metres.
     density : float
         Density of the prism, in kg/m**3.
+
+    Notes
+    -----
+    The formulas from Nagy et al.[1]_ are used in this class.
+
+    References
+    ----------
+    .. [1] Nagy, D., Papp, G. and Benedek, J., 2000. The gravitational potential
+    and its derivatives for the prism. Journal of Geodesy, 74(7-8), pp.552-560.
     """
 
     def __init__(self, bounds, density=1.0):

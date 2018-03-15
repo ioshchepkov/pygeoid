@@ -1,11 +1,14 @@
 pygeoid
 =======
 
-.. image:: https://travis-ci.org/ioshchepkov/pygeoid.svg?branch=master
+.. image:: https://img.shields.io/pypi/v/pygeoid.svg
+    :target: https://pypi.org/project/pygeoid/
+
+.. image:: https://travis-ci.org/ioshchepkov/pygeoid.svg
     :target: https://travis-ci.org/ioshchepkov/pygeoid
 
-.. image:: https://coveralls.io/repos/github/ioshchepkov/pygeoid/badge.svg?branch=master
-    :target: https://coveralls.io/github/ioshchepkov/pygeoid?branch=master
+.. image:: https://coveralls.io/repos/github/ioshchepkov/pygeoid/badge.svg
+    :target: https://coveralls.io/github/ioshchepkov/pygeoid
 
 .. image:: https://readthedocs.org/projects/pygeoid/badge/?version=latest
     :target: http://pygeoid.readthedocs.io/en/latest/?badge=latest
@@ -31,3 +34,9 @@ Documentation
 -------------
 
 Full documentation is available at https://pygeoid.readthedocs.io
+
+License
+-------
+
+This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details
+
