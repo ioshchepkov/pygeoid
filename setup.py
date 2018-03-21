@@ -67,7 +67,7 @@ setup(name=name,
       packages=find_packages(),
       include_package_data=True,
       tests_require=['pytest'],
-      install_requires=['numpy', 'scipy', 'pyproj', 'pint'],
+      install_requires=['numpy', 'scipy', 'pyproj', 'pint', 'pyshtools'],
       python_requires='>=3.4',
       cmdclass=cmdclass,
       command_options={

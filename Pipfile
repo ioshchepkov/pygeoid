@@ -11,8 +11,10 @@ numpy = "*"
 pint = "*"
 pyproj = "*"
 scipy = "*"
+pyshtools = "*"
 sphinx = "*"
 numpydoc = "*"
+matplotlib = "*"
 
 
 [dev-packages]
