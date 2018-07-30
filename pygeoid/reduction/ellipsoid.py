@@ -22,6 +22,100 @@ LEVEL_ELLIPSOIDS = {
 DEFAULT_LEVEL_ELLIPSOID = 'GRS80'
 
 
+class Centrifugal:
+    """Centrifugal potential and its derivatives.
+
+    Parameters
+    ----------
+    omega : float
+        Angular rotation rate of the body, in rad/s.
+        Default value is the angular speed of
+        Earth's rotation 7292115e-11 rad/s
+    """
+
+    def __init__(self, omega=7292115e-11):
+        self.omega = omega
+
+    def potential(self, lat, radius, degrees=True):
+        """Return centrifugal potential, in m**2/s**2.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Spherical (geocentric) latitude.
+        radius : float or array_like of floats
+            Radius, in metres.
+        degrees : bool, optional
+            If True, the input `lat` is given in degrees,
+            otherwise radians.
+        """
+
+        if degrees:
+            lat = np.radians(lat)
+
+        return 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
+
+    def r_derivative(self, lat, radius, degrees=True):
+        """Return radial derivative, in 1/s**2.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Spherical (geocentric) latitude.
+        radius : float or array_like of floats
+            Radius, in metres.
+        degrees : bool, optional
+            If True, the input `lat` is given in degrees,
+            otherwise radians.
+        """
+
+        if degrees:
+            lat = np.radians(lat)
+
+        return self.omega**2 * radius * np.cos(lat) ** 2
+
+    def lat_derivative(self, lat, radius, degrees=True):
+        """Return latitude derivative, in 1/s**2.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Spherical (geocentric) latitude.
+        radius : float or array_like of floats
+            Radius, in metres.
+        degrees : bool, optional
+            If True, the input `lat` is given in degrees,
+            otherwise radians.
+        """
+
+        if degrees:
+            lat = np.radians(lat)
+
+        return -self.omega**2 * radius**2 * np.cos(lat) * np.sin(lat)
+
+    def gradient(self, lat, radius, degrees=True):
+        """Return centrifugal force, in m/s**2.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Spherical (geocentric) latitude.
+        radius : float or array_like of floats
+            Radius, in metres.
+        degrees : bool, optional
+            If True, the input `lat` is given in degrees,
+            otherwise radians.
+        """
+
+        if degrees:
+            lat = np.radians(lat)
+
+        cr = self.r_derivative(lat, radius, degrees=False)
+        clat = 1 / r * self.lat_derivative(lat, radius, degrees=False)
+
+        return np.sqrt(cr**2 + clat**2)
+
+
 def _j2_to_flattening(j2, a, gm, omega):
     """Calculate flattening from J2, a, GM and omega.
 
@@ -33,10 +127,10 @@ def _j2_to_flattening(j2, a, gm, omega):
 
         """
         e1 = np.sqrt(e2 / (1 - e2))
-        q0 = 0.5*((1 + 3 / e1**2) * np.arctan(e1) - 3 / e1)
-        return 3*j2 + 2/15 * _m1 * np.sqrt(e2)**3 / q0 - e2
+        q0 = 0.5 * ((1 + 3 / e1**2) * np.arctan(e1) - 3 / e1)
+        return 3 * j2 + 2 / 15 * _m1 * np.sqrt(e2)**3 / q0 - e2
 
-    _e2_0 = 3 * j2 + 2/15 * _m1
+    _e2_0 = 3 * j2 + 2 / 15 * _m1
     _e2 = optimize.fsolve(e2, _e2_0, args=(j2, _m1), xtol=1e-10)[0]
 
     return 1 - np.sqrt(1 - _e2)
@@ -79,11 +173,11 @@ class LevelEllipsoid(Ellipsoid):
 
         # define useful short-named attributes
         self._m = self.omega**2 * self.a**2 * self.b / self.gm
-        self._q0 = 0.5*((1 + 3 / self.e1**2) *
-                        np.arctan(self.e1) - 3 / self.e1)
+        self._q0 = 0.5 * ((1 + 3 / self.e1**2) *
+                          np.arctan(self.e1) - 3 / self.e1)
 
         if not hasattr(self, '_j2'):
-            self._j2 = self.e2 / 3 * (1 - 2/15*self.m*self.e1/self._q0)
+            self._j2 = self.e2 / 3 * (1 - 2 / 15 * self.m * self.e1 / self._q0)
 
         self._q01 = 3 * (1 +
                          1 / self.e12) * (1 - np.arctan(self.e1) / self.e1) - 1
@@ -238,7 +332,7 @@ class LevelEllipsoid(Ellipsoid):
 
         """
         return 4 * np.pi / self.surface_area * (self._gm -
-                                                2/3*self._omega**2 * self.a**2 * self.b)
+                                                2 / 3 * self._omega**2 * self.a**2 * self.b)
 
     @property
     def gravity_flattening(self):
@@ -319,10 +413,10 @@ class LevelEllipsoid(Ellipsoid):
             lat = np.radians(lat)
 
         gammae = self.equatorial_normal_gravity
-        out = -2*gammae/self.a * (1 +
-                                  self.f + self.m + (-3*self.f +
-                                                     2.5*self.m)*np.sin(lat)**2)*height +\
-            3*gammae*height**2 / self.a**2
+        out = -2 * gammae / self.a * (1 +
+                                      self.f + self.m + (-3 * self.f +
+                                                         2.5 * self.m) * np.sin(lat)**2) * height +\
+            3 * gammae * height**2 / self.a**2
 
         return out
 
@@ -480,4 +574,4 @@ def surface_normal_gravity_clairaut(lat, model=None, degrees=True):
     if degrees:
         lat = np.radians(lat)
 
-    return gamma_e * (1 + beta * np.sin(lat)**2 - beta1 * np.sin(2*lat)**2)
+    return gamma_e * (1 + beta * np.sin(lat)**2 - beta1 * np.sin(2 * lat)**2)
