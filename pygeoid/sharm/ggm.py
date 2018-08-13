@@ -55,7 +55,7 @@ class GlobalGravityFieldModel:
             omega = self._ell.omega
 
         self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
-                                                errors=errors, omega=None, copy=True)
+                                                errors=errors, omega=omega, copy=True)
 
     @property
     def resolution(self):
@@ -148,7 +148,7 @@ class GlobalGravityFieldModel:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -183,7 +183,7 @@ class GlobalGravityFieldModel:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -218,7 +218,7 @@ class GlobalGravityFieldModel:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -257,7 +257,7 @@ class GlobalGravityFieldModel:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -290,7 +290,7 @@ class GlobalGravityFieldModel:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -341,7 +341,7 @@ class GlobalGravityFieldModel:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -397,7 +397,7 @@ class SHGravPotential:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -443,7 +443,7 @@ class SHGravPotential:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -458,7 +458,7 @@ class SHGravPotential:
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
         _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                               self.r0, lmax_comp)
+                                                               self._coeffs.r0, lmax_comp)
 
         args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
                 lmax_comp, degrees, cosin, cilm)
@@ -466,7 +466,7 @@ class SHGravPotential:
         values = _expand.expand_parallel(x, q, *args)
 
         ri = 1 / r
-        out = _np.squeeze(-self.gm * ri**2 * values)
+        out = _np.squeeze(-self._coeffs.gm * ri**2 * values)
 
         if self._coeffs.omega is not None:
             out += self.centrifugal.r_derivative(lat, r, degrees=False)
@@ -488,7 +488,7 @@ class SHGravPotential:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -533,7 +533,7 @@ class SHGravPotential:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
 
         Returns
@@ -580,7 +580,7 @@ class SHGravPotential:
             Maximum degree of the coefficients. Default is `None` (use all
             the coefficients).
         degrees : bool, optional
-            If True, the i_np.t `lat` and `lon` are given in degrees,
+            If True, the input `lat` and `lon` are given in degrees,
             otherwise radians.
         """
 
@@ -611,7 +611,7 @@ class SHGravPotential:
             rad_d += self.centrifugal.r_derivative(lat, r, degrees=False)
 
         # total
-        clati = _np.atleast_2d(1 / _np.ma.masked_valggues(clat, 0.0))
+        clati = _np.atleast_2d(1 / _np.ma.masked_values(clat, 0.0))
         clati = clati.filled(0.0)
 
         total = _np.sqrt((ri * lat_d)**2 + (clati * ri * lon_d)**2 + rad_d**2)

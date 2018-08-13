@@ -13,6 +13,7 @@ recursive-include pygeoid/reduction/data *
 # tests
 recursive-include pygeoid/coordinates/test *
 recursive-include pygeoid/reduction/test *
+recursive-include pygeoid/sharm/test *
 
 global-exclude __pycache__ *.pyc
 
