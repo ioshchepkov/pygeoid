@@ -1,19 +1,19 @@
 -i https://pypi.python.org/simple
 alabaster==0.7.11
+astropy==3.0.4; python_version != '3.0.*'
 babel==2.6.0
-certifi==2018.4.16
+certifi==2018.8.24
 chardet==3.0.4
 cycler==0.10.0
 docutils==0.14
-git+https://github.com/SHTOOLS/SHTOOLS.git@e4701fd325db6036fceceee6f0a1cb4971df402b#egg=pyshtools
 idna==2.7
 imagesize==1.0.0
 jinja2==2.10
-joblib==0.12.2
-kiwisolver==1.0.1
+joblib==0.12.3
+kiwisolver==1.0.1; python_version != '3.0.*'
 markupsafe==1.0
-matplotlib==2.2.2
-numpy==1.15.0
+matplotlib==2.2.3
+numpy==1.15.1
 numpydoc==0.8.0
 packaging==17.1
 pandas==0.23.4
@@ -21,12 +21,13 @@ pint==0.8.1
 pygments==2.2.0
 pyparsing==2.2.0
 pyproj==1.9.5.1
+pyshtools==4.3
 python-dateutil==2.7.3
 pytz==2018.5
 requests==2.19.1
 scipy==1.1.0
 six==1.11.0
 snowballstemmer==1.2.1
-sphinx==1.7.6
-sphinxcontrib-websupport==1.1.0; python_version != '3.3.*'
-urllib3==1.23; python_version != '3.1.*'
+sphinx==1.7.8
+sphinxcontrib-websupport==1.1.0; python_version != '3.0.*'
+urllib3==1.23; python_version >= '2.6'

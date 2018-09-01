@@ -6,10 +6,10 @@ name = "pypi"
 [packages]
 numpy = "*"
 pint = "*"
-pyproj = "*"
+pyproj="*"
 scipy = "*"
 pandas = "*"
-pyshtools = {ref = "develop", git = "https://github.com/SHTOOLS/SHTOOLS.git"}
+pyshtools = "*"
 sphinx = "*"
 numpydoc = "*"
 matplotlib = "*"

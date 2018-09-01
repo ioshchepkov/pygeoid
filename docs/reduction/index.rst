@@ -7,3 +7,4 @@ Gravity Reduction (`pygeoid.reduction`)
    :maxdepth: 1
 
    ellipsoid.rst
+   topography.rst
