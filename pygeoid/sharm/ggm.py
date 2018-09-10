@@ -3,8 +3,8 @@ import numpy as _np
 
 from pyshtools.shclasses import SHGravCoeffs as _SHGravCoeffs
 
-from pygeoid.reduction.ellipsoid import Centrifugal as _Centrifugal
-from pygeoid.reduction.ellipsoid import LevelEllipsoid as _LevelEllipsoid
+from pygeoid.reduction.normal import Centrifugal as _Centrifugal
+from pygeoid.reduction.normal import LevelEllipsoid as _LevelEllipsoid
 from pygeoid.coordinates import transform as _transform
 from pygeoid.sharm import expand as _expand
 from pygeoid.sharm.utils import get_lmax as _get_lmax

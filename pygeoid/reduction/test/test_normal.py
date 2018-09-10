@@ -3,8 +3,8 @@
 import pytest
 import numpy as np
 import pygeoid.coordinates.transform as transform
-from pygeoid.reduction.ellipsoid import LevelEllipsoid
-from pygeoid.reduction.ellipsoid import surface_normal_gravity_clairaut
+from pygeoid.reduction.normal import LevelEllipsoid
+from pygeoid.reduction.normal import surface_normal_gravity_clairaut
 
 
 def test_init():

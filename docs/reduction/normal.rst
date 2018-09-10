@@ -1,7 +1,7 @@
 
 *******************************************************************
-Normal Gravity Field (`pygeoid.reduction.ellipsoid`)
+Normal Gravity Field (`pygeoid.reduction.normal`)
 *******************************************************************
 
-.. automodule:: pygeoid.reduction.ellipsoid
+.. automodule:: pygeoid.reduction.normal
    :members:

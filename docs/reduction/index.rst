@@ -6,5 +6,5 @@ Gravity Reduction (`pygeoid.reduction`)
 .. toctree::
    :maxdepth: 1
 
-   ellipsoid.rst
+   normal.rst
    topography.rst
