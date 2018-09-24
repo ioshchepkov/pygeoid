@@ -8,7 +8,7 @@ import pandas as pd
 
 from pyshtools.shio import read_icgem_gfc
 from pygeoid.sharm.ggm import GlobalGravityFieldModel
-from pygeoid.reduction.ellipsoid import LevelEllipsoid
+from pygeoid.reduction.normal import LevelEllipsoid
 from pygeoid.coordinates.transform import geodetic_to_spherical
 
 ell = LevelEllipsoid('GRS80')

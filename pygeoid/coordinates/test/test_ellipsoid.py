@@ -89,7 +89,7 @@ def test_fwd():
     path = os.path.dirname(os.path.abspath(__file__))
     fname = os.path.join(path, 'data/GeodTest-short.dat.gz')
     (lat1, lon1, azi1, lat2, lon2, azi2, dist12) = np.loadtxt(fname,
-            usecols=(0, 1, 2, 3, 4, 5, 6), unpack=True, dtype=np.float64)
+                                                              usecols=(0, 1, 2, 3, 4, 5, 6), unpack=True, dtype=np.float64)
 
     # test forward
     b_lat2, b_lon2, b_azi2 = ell.fwd(lat1, lon1, azi1, dist12)
@@ -156,3 +156,16 @@ def test_latitudes():
 
     np.testing.assert_array_almost_equal(ell.reduced_latitude(lat),
                                          reduced_latitude, decimal=8)
+
+    # compare with series from
+    # J. P. Snyder, Map projections - a working  manual, 1926, page 16
+    latr = np.radians(lat)
+    s2lat = (ell.e2 / 3 + 31*ell.e2**2 / 180 +
+             59*ell.e2**3 / 560)*np.sin(2*latr)
+    s4lat = (17*ell.e2**2 / 360 + 61*ell.e2**3 / 1260) * np.sin(4*latr)
+    s6lat = (383 * ell.e2**3 / 45360) * np.sin(6 * latr)
+
+    authalic_latitude = np.degrees(latr - s2lat + s4lat - s6lat)
+
+    np.testing.assert_array_almost_equal(ell.authalic_latitude(lat),
+                                         authalic_latitude, decimal=6)

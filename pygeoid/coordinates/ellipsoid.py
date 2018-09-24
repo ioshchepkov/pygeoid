@@ -30,6 +30,7 @@ class Ellipsoid:
         Ellipsoid name, most common ellipsoids are accepted.
         Default is 'GRS80'.
     """
+
     def __init__(self, ellps=None, **kwargs):
         if not kwargs:
             if ellps in _proj.pj_ellps:
@@ -235,7 +236,7 @@ class Ellipsoid:
 
             * 'arithmetic' returns the arithmetic mean value
                 :math:`R_m` of the 3 semi-axis of the ellipsoid.
-            * 'same_area' returns the radius :math:`R_A` of
+            * 'same_area' returns the authalic radius :math:`R_A` of
                 the sphere with the same surface
                 area as the ellipsoid.
             * 'same_volume' returns the radius :math:`R_V` of
@@ -246,7 +247,7 @@ class Ellipsoid:
         Returns
         -------
         float
-            mean radius of the ellipsoid, in metres.
+            Mean radius of the ellipsoid, in metres.
 
         Notes
         -----
@@ -674,7 +675,7 @@ class Ellipsoid:
 
         Returns
         -------
-        float
+        float or array_like of floats
             Geocentric radius of the parallel, in metres.
 
         Notes
@@ -710,8 +711,8 @@ class Ellipsoid:
 
         Returns
         -------
-        float
-            Geocentric (spherical) latitude, in radians.
+        float or array_like of floats
+            Geocentric (spherical) latitude, in degrees or radians.
 
         Notes
         -----
@@ -747,8 +748,8 @@ class Ellipsoid:
 
         Returns
         -------
-        float
-            Reduced latitude, in radians.
+        float or array_like of floats
+            Reduced latitude, in degrees or radians.
 
         Notes
         -----
@@ -769,3 +770,39 @@ class Ellipsoid:
             red_lat = _np.degrees(red_lat)
 
         return red_lat
+
+    def authalic_latitude(self, lat, degrees=True):
+        r"""Convert geodetic latitude to authalic latitude.
+
+        Authalic latitude will return a geocentric latitude on a sphere having
+        the same surface area as the ellipsoid. It will preserve areas with
+        relative to the ellipsoid. The authalic radius can be
+        calculated from `mean_radius(kind='same_area')` method.
+
+        Parameters
+        ----------
+        lat : float or array_like of floats
+            Geodetic latitude.
+        degrees : bool, optional
+            If True, the input and output latitudes are given in degrees,
+            otherwise radians. Default is True.
+
+        Returns
+        -------
+        auth_lat : float or array_like of floats
+            Authalic latitude, in degrees or radians.
+        """
+        if degrees:
+            lat = _np.radians(lat)
+
+        def q(lat):
+            slat = _np.sin(lat)
+            log = 0.5 / self.e * _np.log((1 - self.e*slat)/(1 + self.e*slat))
+            return (1 - self.e2) * (slat / (1 - self.e2 * slat**2) - log)
+
+        auth_lat = _np.arcsin(q(lat) / q(_np.pi/2))
+
+        if degrees:
+            auth_lat = _np.degrees(auth_lat)
+
+        return auth_lat
