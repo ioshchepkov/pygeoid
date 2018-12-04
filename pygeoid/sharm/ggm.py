@@ -2,6 +2,7 @@
 import numpy as _np
 
 from pyshtools.shclasses import SHGravCoeffs as _SHGravCoeffs
+from pyshtools.shclasses import SHCoeffs as _SHCoeffs
 
 from pygeoid.reduction.normal import Centrifugal as _Centrifugal
 from pygeoid.reduction.normal import LevelEllipsoid as _LevelEllipsoid
@@ -376,11 +377,16 @@ class SHGravPotential:
     def __init__(self, coeffs, gm, r0, omega=None, errors=None, lmax=None,
                  copy=False):
 
-        self._coeffs = _SHGravCoeffs.from_array(coeffs, gm=gm, r0=r0,
-                                                omega=omega, errors=errors, lmax=lmax, copy=copy)
+        #self._coeffs = _SHGravCoeffs.from_array(coeffs, gm=gm, r0=r0,
+        #                                        omega=omega, errors=errors, lmax=lmax, copy=copy)
+        self._coeffs = _SHCoeffs.from_array(coeffs, lmax=lmax, copy=copy)
+        self.gm = gm
+        self.r0 = r0
+        self.omega = omega
+        self.errors = errors
 
-        if self._coeffs.omega is not None:
-            self.centrifugal = _Centrifugal(omega=self._coeffs.omega)
+        if self.omega is not None:
+            self.centrifugal = _Centrifugal(omega=self.omega)
 
     def potential(self, lat, lon, r, lmax=None, degrees=True):
         """Return potential value.
@@ -413,7 +419,7 @@ class SHGravPotential:
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
 
         _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon,
-                                                               r, self._coeffs.r0, lmax_comp)
+                                                               r, self.r0, lmax_comp)
         args = (_expand.in_coeff_potential, _expand.sum_potential,
                 lmax_comp, degrees, cosin, cilm)
 
@@ -421,9 +427,9 @@ class SHGravPotential:
 
         ri = 1 / r
 
-        out = _np.squeeze(self._coeffs.gm * ri * values)
+        out = _np.squeeze(self.gm * ri * values)
 
-        if self._coeffs.omega is not None:
+        if self.omega is not None:
             out += self.centrifugal.potential(lat, r, degrees=False)
 
         return out
@@ -458,7 +464,7 @@ class SHGravPotential:
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
         _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                               self._coeffs.r0, lmax_comp)
+                                                               self.r0, lmax_comp)
 
         args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
                 lmax_comp, degrees, cosin, cilm)
@@ -466,9 +472,9 @@ class SHGravPotential:
         values = _expand.expand_parallel(x, q, *args)
 
         ri = 1 / r
-        out = _np.squeeze(-self._coeffs.gm * ri**2 * values)
+        out = _np.squeeze(-self.gm * ri**2 * values)
 
-        if self._coeffs.omega is not None:
+        if self.omega is not None:
             out += self.centrifugal.r_derivative(lat, r, degrees=False)
 
         return out
@@ -503,7 +509,7 @@ class SHGravPotential:
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
         lat, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                                 self._coeffs.r0, lmax_comp)
+                                                                 self.r0, lmax_comp)
 
         args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
                 lmax_comp, degrees, cosin, cilm)
@@ -511,9 +517,9 @@ class SHGravPotential:
         values = _expand.expand_parallel(x, q, *args)
 
         ri = 1 / r
-        out = _np.squeeze(self._coeffs.gm * ri * _np.cos(lat) * values)
+        out = _np.squeeze(self.gm * ri * _np.cos(lat) * values)
 
-        if self._coeffs.omega is not None:
+        if self.omega is not None:
             out += self.centrifugal.lat_derivative(lat, r, degrees=False)
 
         return out
@@ -548,7 +554,7 @@ class SHGravPotential:
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
         _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                               self._coeffs.r0, lmax_comp)
+                                                               self.r0, lmax_comp)
         m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
 
         args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
@@ -557,7 +563,7 @@ class SHGravPotential:
         values = _expand.expand_parallel(x, q, *args)
 
         ri = 1 / r
-        out = -self._coeffs.gm * ri * values
+        out = -self.gm * ri * values
 
         return _np.squeeze(out)
 
@@ -590,7 +596,7 @@ class SHGravPotential:
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
         lat, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                                 self._coeffs.r0, lmax_comp)
+                                                                 self.r0, lmax_comp)
 
         m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
         args = (_expand.in_coeff_gradient, _expand.sum_gradient, lmax_comp, degrees,
@@ -599,14 +605,14 @@ class SHGravPotential:
         values = _expand.expand_parallel(x, q, *args)
 
         ri = 1 / r
-        gmri = self._coeffs.gm * ri
+        gmri = self.gm * ri
         clat = _np.cos(lat)
 
         lat_d = gmri * clat * values[:, :, 0]
         lon_d = -gmri * values[:, :, 1]
-        rad_d = -self._coeffs.gm * ri**2 * values[:, :, 2]
+        rad_d = -self.gm * ri**2 * values[:, :, 2]
 
-        if self._coeffs.omega is not None:
+        if self.omega is not None:
             lat_d += self.centrifugal.lat_derivative(lat, r, degrees=False)
             rad_d += self.centrifugal.r_derivative(lat, r, degrees=False)
 
