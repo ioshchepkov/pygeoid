@@ -5,6 +5,7 @@
 - Add simple Bouguer and spherical Bouguer corrections.
 - Add gravity field of a prism.
 - Add `coordinates.position.Position3D` class.
+- Add spherical harmonics.
 
 0.0.2
 =====
