@@ -170,3 +170,29 @@ class Position3D:
         rlat, lon, u = transform.cartesian_to_ellipsoidal(
             self._x, self._y, self._z, ell=ell, degrees=degrees)
         return rlat, lon, u
+
+    def enu(self, origin, ell=None, degrees=True):
+        """Return local east-north-up cartesian coordinates.
+
+        Parameters
+        ----------
+        origin : array_like of floats
+            Ggeocentric (spherical) or geodetic coordinates of the origin
+            (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
+        ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
+            Reference ellipsoid to which geodetic coordinates
+            are referenced to. Default is None, meaning spherical
+            coordinates instead of geodetic.
+        degrees : bool, optional
+            If True, the input `lat0` and `lon0` are given in degrees,
+            otherwise radians.
+
+        Returns
+        -------
+        x, y, z : float or array_like of floats
+            Local east-north-up cartesian coordinates, in metres.
+        """
+        east, north, up = transform.ecef_to_enu(
+                self._x, self._y, self._z, origin, ell=ell, degrees=degrees)
+
+        return east, north, up

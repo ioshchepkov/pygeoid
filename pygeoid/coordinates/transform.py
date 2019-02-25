@@ -76,8 +76,8 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
 
     References
     ----------
-    .. [1] Vermeille, H., 2011. An analytical method to transform geocentric into
-    geodetic coordinates. Journal of Geodesy, 85(2), pp.105-117.
+    .. [1] Vermeille, H., 2011. An analytical method to transform geocentric
+    into geodetic coordinates. Journal of Geodesy, 85(2), pp.105-117.
     """
     e4 = ell.e2 ** 2
 
@@ -92,8 +92,8 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
 
     if (t > 0) or (t <= 0 and q != 0):
         if t > 0:
-            l = _np.power(_np.sqrt(t) + _np.sqrt(e4pq), 1 / 3)
-            u = 3 / 2 * r**2 / l**2 + 0.5 * (l + r / l)**2
+            li = _np.power(_np.sqrt(t) + _np.sqrt(e4pq), 1 / 3)
+            u = 3 / 2 * r**2 / li**2 + 0.5 * (li + r / li)**2
         elif t <= 0 and q != 0:
             u_aux = 2 / 3 * _np.arctan2(_np.sqrt(e4pq), _np.sqrt(-t) +
                                         _np.sqrt(-8 * r**3))
@@ -133,8 +133,8 @@ def cartesian_to_spherical(x, y, z, degrees=True):
     x, y, z : float or array_like of floats
         Cartesian coordinates, in metres.
     degrees : bool, optional
-        If True, the output spherical latitude and longitude will be in degrees,
-        otherwise radians.
+        If True, the output spherical latitude and longitude
+        will be in degrees, otherwise radians.
 
     Returns
     -------
@@ -387,6 +387,105 @@ def ellipsoidal_to_geodetic(rlat, lon, u, ell, degrees=True):
     return cartesian_to_geodetic(
         *ellipsoidal_to_cartesian(rlat, lon, u, ell=ell, degrees=degrees),
         ell=ell, degrees=degrees)
+
+
+def _ecef_to_enu_rotation_matrix(lat, lon):
+    """Return ECEF to ENU rotation matrix.
+
+    """
+    clat = _np.cos(lat)
+    slat = _np.sin(lat)
+    clon = _np.cos(lon)
+    slon = _np.sin(lon)
+
+    rotation_matrix = _np.array([
+        [-slon, clon, 0],
+        [-slat*clon, -slat*slon, clat],
+        [clat*clon, clat*slon, slat]])
+
+    return rotation_matrix
+
+
+def ecef_to_enu(x, y, z, origin, ell=None, degrees=True):
+    """Convert geocentric cartesian to local cartesian coordinates.
+
+    Convert Earth Centered Earth Fixed (ECEF) cartesian coordinates
+    (`x`,`y`,`z`) to the local east-north-up (ENU) local cartesian
+    coordinate system with the origin in (`lat0`, `lon0`, `height0`)
+    or in (`lat0`, `lon0`, `r0`).
+
+    Parameters
+    ----------
+    x, y, z : float or array_like of floats
+        Geocentric cartesian coordinates, in metres.
+    origin : array_like of floats
+        Ggeocentric (spherical) or geodetic coordinates of the origin
+        (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
+        Reference ellipsoid to which geodetic coordinates are referenced to.
+        Default is None, meaning spherical coordinates instead of geodetic.
+    degrees : bool, optional
+        If True, the input `lat0` and `lon0` in the origin
+        are given in degrees, otherwise radians.
+
+    Returns
+    -------
+    x, y, z : float or array_like of floats
+        Local east-north-up cartesian coordinates, in metres.
+    """
+    if degrees:
+        lat0 = _np.radians(origin[0])
+        lon0 = _np.radians(origin[1])
+
+    rotation_matrix = _ecef_to_enu_rotation_matrix(lat0, lon0)
+    if ell is None:
+        x0, y0, z0 = spherical_to_cartesian(*origin, degrees=True)
+    else:
+        x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell, degrees=True)
+
+    xyz_shifted = _np.array([x - x0, y - y0, z - z0])
+
+    return _np.dot(rotation_matrix, xyz_shifted)
+
+
+def enu_to_ecef(x, y, z, origin, ell=None, degrees=True):
+    """Convert local cartesian to geocentric cartesian coordinates.
+
+    Convert local east-north-up (ENU) local cartesian
+    coordinate system with the origin in (`lat0`, `lon0`, `height0`)
+    to the Earth Centered Earth Fixed (ECEF) cartesian coordinates.
+
+    Parameters
+    ----------
+    x, y, z : float or array_like of floats
+        Local east-north-uo cartesian coordinates, in metres.
+    origin : array_like of floats
+        Ggeocentric (spherical) or geodetic coordinates of the origin
+        (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
+        Reference ellipsoid to which geodetic coordinates are referenced to.
+        Default is None, meaning spherical coordinates instead of geodetic.
+    degrees : bool, optional
+        If True, the input `lat0` and `lon0` are given in degrees,
+        otherwise radians.
+
+    Returns
+    -------
+    x, y, z : float or array_like of floats
+        Geocentric cartesian coordinates, in metres.
+    """
+    if degrees:
+        lat0 = _np.radians(origin[0])
+        lon0 = _np.radians(origin[1])
+
+    rotation_matrix = _ecef_to_enu_rotation_matrix(lat0, lon0).T
+    x, y, z = _np.dot(rotation_matrix, _np.array([x, y, z]))
+    if ell is None:
+        x0, y0, z0 = spherical_to_cartesian(*origin, degrees=True)
+    else:
+        x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell, degrees=True)
+
+    return _np.array([x + x0, y + y0, z + z0])
 
 ##############################################################################
 # 2D coordinates
