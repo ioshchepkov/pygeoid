@@ -487,6 +487,70 @@ def enu_to_ecef(x, y, z, origin, ell=None, degrees=True):
 
     return _np.array([x + x0, y + y0, z + z0])
 
+
+def geodetic_to_enu(lat, lon, height, origin, ell, degrees=True):
+    """Convert geodetic coordinates to local cartesian coordinates.
+
+    Convert geodetic coordinates
+    (`lat`,`lon`,`height`) to the local east-north-up (ENU) local cartesian
+    coordinate system with the origin in (`lat0`, `lon0`, `height0`).
+
+    Parameters
+    ----------
+    lat : float or array_like of floats
+        Geodetic latitude.
+    lon : float or array_like of floats
+        Geodetic longitude.
+    height : float or array_like of floats
+        Geodetic height, in metres.
+    origin : array_like of floats
+        Geodetic coordinates of the origin (`lat0`, `lon0`, `h0`).
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
+        Reference ellipsoid to which geodetic coordinates are referenced to.
+    degrees : bool, optional
+        If True, the input `lat` and `lon` are given in degrees,
+        otherwise radians.
+
+    Returns
+    -------
+    x, y, z : float or array_like of floats
+        Local east-north-up cartesian coordinates, in metres.
+    """
+    return ecef_to_enu(
+        *geodetic_to_cartesian(lat, lon, height, ell=ell, degrees=degrees),
+        origin=origin, ell=ell, degrees=degrees)
+
+
+def enu_to_geodetic(x, y, z, origin, ell, degrees=True):
+    """Convert local cartesian coordinates to geodetic coordinates.
+
+    Convert the local east-north-up (ENU) local cartesian
+    coordinate system with the origin in (`lat0`, `lon0`, `height0`)
+    to the geodetic coordinates.
+
+    Parameters
+    ----------
+    x, y, z : float or array_like of floats
+        Local east-north-uo cartesian coordinates, in metres.
+    origin : array_like of floats
+        Geodetic coordinates of the origin (`lat0`, `lon0`, `h0`).
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
+        Reference ellipsoid to which geodetic coordinates are referenced to.
+    degrees : bool, optional
+        If True, the input `lat` and `lon` are given in degrees,
+        otherwise radians.
+
+    Returns
+    -------
+    lat, lon : float or array_like of floats
+        Geodetic latitude and longitude.
+    height : float or array_like of floats
+        Geodetic height, in metres.
+    """
+    return cartesian_to_geodetic(
+            *enu_to_ecef(x, y, z, origin=origin, ell=ell, degrees=degrees),
+            ell=ell, degrees=degrees)
+
 ##############################################################################
 # 2D coordinates
 ##############################################################################

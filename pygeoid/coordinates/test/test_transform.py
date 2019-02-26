@@ -104,6 +104,21 @@ def test_ecef_to_enef_and_back():
     np.testing.assert_array_almost_equal(b_z, z_, decimal=5)
 
 
+def test_geodetic_to_enu_and_back():
+    lat, lon, height = cartesian_to_geodetic(
+            x.flatten(), y.flatten(), z.flatten(), ell)
+
+    origin = (55.0, 37.0, 100.0)
+    enu = geodetic_to_enu(lat, lon, height, origin, ell=ell, degrees=True)
+    b_lat, b_lon, b_height = enu_to_geodetic(
+        *enu, origin, ell, degrees=True)
+
+    # NOTE: Why decimal=6?
+    np.testing.assert_array_almost_equal(b_lat, lat, decimal=6)
+    np.testing.assert_array_almost_equal(b_lon, lon, decimal=6)
+    np.testing.assert_array_almost_equal(b_height, height, decimal=5)
+
+
 def test_cartesian_to_polar_and_back():
     values = np.round(np.linspace(-100000, 100000, 1000), 5)
     x, y = np.meshgrid(values, values, indexing='ij')
