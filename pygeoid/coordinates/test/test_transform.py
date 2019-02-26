@@ -89,6 +89,36 @@ def test_geodetic_to_elliposidal_and_back():
     np.testing.assert_array_almost_equal(b_lon, lon, decimal=9)
     np.testing.assert_array_almost_equal(b_height, height, decimal=5)
 
+
+def test_ecef_to_enef_and_back():
+    x_, y_, z_ = x.flatten(), y.flatten(), z.flatten()
+
+    lat0, lon0, height0 = 55.0, 37.0, 100.0
+
+    enu = ecef_to_enu(x_, y_, z_, origin=(lat0, lon0, height0), ell=ell)
+
+    b_x, b_y, b_z = enu_to_ecef(*enu, origin=(lat0, lon0, height0), ell=ell)
+
+    np.testing.assert_array_almost_equal(b_x, x_, decimal=5)
+    np.testing.assert_array_almost_equal(b_y, y_, decimal=5)
+    np.testing.assert_array_almost_equal(b_z, z_, decimal=5)
+
+
+def test_geodetic_to_enu_and_back():
+    lat, lon, height = cartesian_to_geodetic(
+            x.flatten(), y.flatten(), z.flatten(), ell)
+
+    origin = (55.0, 37.0, 100.0)
+    enu = geodetic_to_enu(lat, lon, height, origin, ell=ell, degrees=True)
+    b_lat, b_lon, b_height = enu_to_geodetic(
+        *enu, origin, ell, degrees=True)
+
+    # NOTE: Why decimal=6?
+    np.testing.assert_array_almost_equal(b_lat, lat, decimal=6)
+    np.testing.assert_array_almost_equal(b_lon, lon, decimal=6)
+    np.testing.assert_array_almost_equal(b_height, height, decimal=5)
+
+
 def test_cartesian_to_polar_and_back():
     values = np.round(np.linspace(-100000, 100000, 1000), 5)
     x, y = np.meshgrid(values, values, indexing='ij')
@@ -97,4 +127,3 @@ def test_cartesian_to_polar_and_back():
 
     np.testing.assert_array_almost_equal(b_x, x, decimal=5)
     np.testing.assert_array_almost_equal(b_y, y, decimal=5)
-
