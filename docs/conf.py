@@ -39,11 +39,7 @@ extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-#    'numpydoc'
-    ]
-
-#numpydoc_show_class_members = False
+    'sphinx.ext.viewcode']
 
 # sorting for autodoc
 autodoc_member_order='bysource'
