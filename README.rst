@@ -1,6 +1,10 @@
 pygeoid
 =======
 
+.. image:: https://badges.gitter.im/PyGeoid/community.svg
+   :alt: Join the chat at https://gitter.im/PyGeoid/community
+   :target: https://gitter.im/PyGeoid/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 .. image:: https://img.shields.io/pypi/v/pygeoid.svg
     :target: https://pypi.org/project/pygeoid/
 
