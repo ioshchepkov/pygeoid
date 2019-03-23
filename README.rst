@@ -14,6 +14,10 @@ pygeoid
     :target: http://pygeoid.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://img.shields.io/gitter/room/opengrav/pygeoid.svg 
+    :target: https://gitter.im/opengrav/pygeoid
+    :alt: Chat room on Gitter
+
 Local gravity field modelling with Python.
 
 The main purpose of the package is to realise common algorithms and
