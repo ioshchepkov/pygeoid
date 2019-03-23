@@ -4,9 +4,8 @@
 import os
 import sys
 from setuptools import setup, find_packages
-from sphinx.setup_command import BuildDoc
 
-import pygeoid
+import versioneer
 
 # Get the long description from the README file
 with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),
@@ -14,14 +13,16 @@ with open(os.path.join(os.path.abspath(os.path.dirname(__file__)),
     long_description = f.read()
 
 name = 'pygeoid'
-version = pygeoid.__version__
+version = versioneer.get_version()
 
-cmdclass = {
-    'build_sphinx': BuildDoc,
-}
+#cmdclass = {
+#    'build_sphinx': BuildDoc,
+cmdclass = versioneer.get_cmdclass()
+#}
 
 setup(name=name,
       version=version,
+      cmdclass=cmdclass,
       description='Local gravity field modelling with Python',
       long_description=long_description,
       url='https://github.com/ioshchepkov/pygeoid',
@@ -52,11 +53,4 @@ setup(name=name,
       setup_requires=['pytest-runner'],
       install_requires=['numpy', 'scipy', 'pyproj', 'pint', 'pyshtools',
           'joblib'],
-      python_requires='>=3.5',
-      cmdclass=cmdclass,
-      command_options={
-          'build_sphinx': {
-              'project': ('setup.py', name),
-              'version': ('setup.py', version),
-              'release': ('setup.py', version)}},
-      )
+      python_requires='>=3.5')

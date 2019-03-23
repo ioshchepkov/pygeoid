@@ -17,3 +17,5 @@ recursive-include pygeoid/sharm/test *
 
 global-exclude __pycache__ *.pyc
 
+include versioneer.py
+include pygeoid/_version.py
