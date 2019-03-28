@@ -111,7 +111,7 @@ class Centrifugal:
             lat = np.radians(lat)
 
         cr = self.r_derivative(lat, radius, degrees=False)
-        clat = 1 / r * self.lat_derivative(lat, radius, degrees=False)
+        clat = 1 / radius * self.lat_derivative(lat, radius, degrees=False)
 
         return np.sqrt(cr**2 + clat**2)
 

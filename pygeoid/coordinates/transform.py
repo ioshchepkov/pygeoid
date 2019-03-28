@@ -400,8 +400,8 @@ def _ecef_to_enu_rotation_matrix(lat, lon):
 
     rotation_matrix = _np.array([
         [-slon, clon, 0],
-        [-slat*clon, -slat*slon, clat],
-        [clat*clon, clat*slon, slat]])
+        [-slat * clon, -slat * slon, clat],
+        [clat * clon, clat * slon, slat]])
 
     return rotation_matrix
 
@@ -548,8 +548,8 @@ def enu_to_geodetic(x, y, z, origin, ell, degrees=True):
         Geodetic height, in metres.
     """
     return cartesian_to_geodetic(
-            *enu_to_ecef(x, y, z, origin=origin, ell=ell, degrees=degrees),
-            ell=ell, degrees=degrees)
+        *enu_to_ecef(x, y, z, origin=origin, ell=ell, degrees=degrees),
+        ell=ell, degrees=degrees)
 
 ##############################################################################
 # 2D coordinates

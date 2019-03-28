@@ -11,7 +11,8 @@ def _limits_sum(function):
 
     def wraper(self, x, y, z):
         x1b, x2b, y1b, y2b, z1b, z2b = self._bounds
-        cond = (x >= x1b)&(x <= x2b)&(y >= y1b)&(y <= y2b)&(z >= z1b)&(z <= z2b)
+        cond = (x >= x1b) & (x <= x2b) & (y >= y1b) & (
+            y <= y2b) & (z >= z1b) & (z <= z2b)
 
         if np.any(cond):
             raise ValueError('Point within or on the prism!')

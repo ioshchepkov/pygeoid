@@ -8,4 +8,3 @@ def get_lmax(cilm, lmax=None):
         cilm = cilm[:, :lmax + 1, :lmax + 1]
         lmax_comp = lmax
     return cilm, lmax_comp
-

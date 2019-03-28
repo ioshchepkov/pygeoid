@@ -193,6 +193,6 @@ class Position3D:
             Local east-north-up cartesian coordinates, in metres.
         """
         east, north, up = transform.ecef_to_enu(
-                self._x, self._y, self._z, origin, ell=ell, degrees=degrees)
+            self._x, self._y, self._z, origin, ell=ell, degrees=degrees)
 
         return east, north, up

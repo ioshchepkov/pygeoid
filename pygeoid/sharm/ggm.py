@@ -377,8 +377,6 @@ class SHGravPotential:
     def __init__(self, coeffs, gm, r0, omega=None, errors=None, lmax=None,
                  copy=False):
 
-        #self._coeffs = _SHGravCoeffs.from_array(coeffs, gm=gm, r0=r0,
-        #                                        omega=omega, errors=errors, lmax=lmax, copy=copy)
         self._coeffs = _SHCoeffs.from_array(coeffs, lmax=lmax, copy=copy)
         self.gm = gm
         self.r0 = r0

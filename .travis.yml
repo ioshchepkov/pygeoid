@@ -2,12 +2,14 @@ language: python
 python:
     - 3.5
     - 3.6
+    - 3.7
 before_install:
     - sudo apt-get install -y libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
 install: 
     - pip install pipenv
     - pipenv install --dev --skip-lock
 script: 
+    - pipenv run flake8 pygeoid
     - pipenv run pytest
     - pipenv run coverage run --source=pygeoid setup.py test
 after_success:

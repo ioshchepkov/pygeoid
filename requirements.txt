@@ -9,15 +9,19 @@ coverage==4.5.3
 coveralls==1.7.0
 docopt==0.6.2
 docutils==0.14
+entrypoints==0.3
+flake8==3.7.7
 idna==2.8
 imagesize==1.1.0
 jinja2==2.10
 markupsafe==1.1.1
-more-itertools==6.0.0 ; python_version > '2.7'
-numpydoc==0.8.0
+mccabe==0.6.1
+more-itertools==7.0.0 ; python_version > '2.7'
 packaging==19.0
 pluggy==0.9.0
 py==1.8.0
+pycodestyle==2.5.0
+pyflakes==2.1.1
 pygments==2.3.1
 pyparsing==2.3.1
 pytest-runner==4.4
@@ -26,6 +30,13 @@ pytz==2018.9
 requests==2.21.0
 six==1.12.0
 snowballstemmer==1.2.1
-sphinx==1.8.5
-sphinxcontrib-websupport==1.1.0
+sphinx-rtd-theme==0.4.3
+sphinx==2.0.0
+sphinxcontrib-applehelp==1.0.1
+sphinxcontrib-devhelp==1.0.1
+sphinxcontrib-htmlhelp==1.0.1
+sphinxcontrib-jsmath==1.0.1
+sphinxcontrib-qthelp==1.0.2
+sphinxcontrib-serializinghtml==1.1.1
 urllib3==1.24.1
+versioneer==0.18

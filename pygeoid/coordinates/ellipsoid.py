@@ -797,10 +797,10 @@ class Ellipsoid:
 
         def q(lat):
             slat = _np.sin(lat)
-            log = 0.5 / self.e * _np.log((1 - self.e*slat)/(1 + self.e*slat))
+            log = 0.5 / self.e * _np.log((1 - self.e * slat) / (1 + self.e * slat))
             return (1 - self.e2) * (slat / (1 - self.e2 * slat**2) - log)
 
-        auth_lat = _np.arcsin(q(lat) / q(_np.pi/2))
+        auth_lat = _np.arcsin(q(lat) / q(_np.pi / 2))
 
         if degrees:
             auth_lat = _np.degrees(auth_lat)
