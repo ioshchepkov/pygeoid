@@ -39,6 +39,13 @@ Documentation
 
 Full documentation is available at https://pygeoid.readthedocs.io
 
+Code of Conduct
+---------------
+
+Please note that *PyGeoid* is released with a Code of Conduct
+(see `CODE_OF_CONDUCT.md <https://github.com/ioshchepkov/pygeoid/blob/master/CODE_OF_CONDUCT.md>`__).
+By participating in this project you agree that you will follow all its terms.
+
 License
 -------
 

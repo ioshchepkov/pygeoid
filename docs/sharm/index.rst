@@ -1,11 +1,11 @@
 
 **************************************************************
-Gravity Reduction (`pygeoid.reduction`)
+Spherical Harmonics (`pygeoid.sharm`)
 **************************************************************
 
 .. toctree::
    :maxdepth: 1
 
-   normal.rst
-   topography.rst
-   atmosphere.rst
+   ggm.rst
+   legendre.rst
+

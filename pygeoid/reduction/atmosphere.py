@@ -71,7 +71,7 @@ def ussa76_density(alt_arr=0.0):
 
 
 def iag_atm_corr_sph(density_function, height, height_max, samples=1e4):
-    """Return atmospheric correction to the gravity anomalies by IAG approach.
+    r"""Return atmospheric correction to the gravity anomalies by IAG approach.
 
     This function numerically integrates samples from density function by
     trapezoidal rule. The spherical layering of the atmosphere is considered.
@@ -97,6 +97,7 @@ def iag_atm_corr_sph(density_function, height, height_max, samples=1e4):
         Maximum height of the atmosphere layer above sea level, in metres.
     samples : float
         Number of samples for integration. Default is 1e4.
+
     """
     Rearth = 6378e3
     r = (Rearth + height)**2
@@ -135,6 +136,7 @@ def grs80_atm_corr_interp(height, kind='linear'):
     ----------
     .. [1] Moritz, H. (1980). Geodetic reference system 1980.
     Bulletin Géodésique, 54(3), 395-405
+
     """
     fname = os.path.join(os.path.dirname(__file__),
                          'data/IAG_atmosphere_correction_table.txt')
