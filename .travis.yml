@@ -1,19 +1,25 @@
 dist: xenial
 language: python
 python:
-    - 3.5
-    - 3.6
-    - 3.7
+- 3.5
+- 3.6
+- 3.7
 before_install:
-    - sudo apt-get install -y libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
-install: 
-    - pip install pipenv
-    - pipenv install --dev --skip-lock
-script: 
-    - pipenv run flake8 pygeoid
-    - pipenv run pytest
-    - pipenv run coverage run --source=pygeoid setup.py test
-after_success:
-    pipenv run coveralls
+- sudo apt-get install -y libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
+install:
+- pip install pipenv
+- pipenv install --dev --skip-lock
+script:
+- pipenv run flake8 pygeoid
+- pipenv run pytest
+- pipenv run coverage run --source=pygeoid setup.py test
+after_success: pipenv run coveralls
 notifications:
-    email: false
+  email: false
+deploy:
+  provider: pypi
+  user: iao
+  password:
+    secure: YXJT7IY338yDSeSEve4wJFmu1i8//3VEv+/o/v1IpF7PGI7RjpCZ6HvzArVpnQFWYDrMAPJifdAiEgaTFCX/gmqIuERSYbbsKnJe90utR63aE8K5LZaG9bdQ8jtMi3lqvfzb81+h+sacBKMYwC3Ot5mx2BSb2Pi4HSADIn4OasVnMzGGZwx0xD27knF/JxDKdW8zGn2unvQSmiM895U/BwUUtG7/6dfCi3E64xFEAKC9/rb2VSPLOG0XsNtCzhCf15hQFstsqNdwbOAlVBFc0wXK7sK1F0j5WJunxPyi50JJcf/PG+dxrB+XrrThchhP6s51O6dz2ojxg9Qxxu7+j97zd84geBcABTTAr+/wuB58JquUij498D+OvjeZ+WNdFqdGmp8DBrCR1LPYSUsDznEUWXejCp4saoiFiOn9P2OMnMizF6s10qfqJBIfioEMJE+TIjPoKsKF0hPkxMvv85sVF9lubXuuyuXdbYl3jGpx1Yysqc5IkV+CaIOEMnZIMIs8azbRe2IJUkf1zSe7Au5hJG/bT4R/j7+qZF+DNL9ywhXm1TzUoUMQnr7/xUl31UkToD9IirY2Ppqm08YJZ0cLvv/FPsLATWLd1P7i6kiPDK4l4ddZB78p7hqaf0NPjLP9EL96nco3bhLUsV0SEdWJpTn/1Vz7CvzDR5hItcg=
+  on:
+      tags: true

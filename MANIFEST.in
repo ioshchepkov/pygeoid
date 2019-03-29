@@ -1,6 +1,6 @@
 include LICENSE.txt
 include README.rst
-include CHANGES.rst
+include CODE_OF_CONDUCT.md
 include requirements*txt
 include Pipfile*
 
@@ -14,6 +14,7 @@ recursive-include pygeoid/reduction/data *
 recursive-include pygeoid/coordinates/test *
 recursive-include pygeoid/reduction/test *
 recursive-include pygeoid/sharm/test *
+recursive-include pygeoid/simple/test *
 
 global-exclude __pycache__ *.pyc
 
