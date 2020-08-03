@@ -111,6 +111,10 @@ def test_inv():
     np.testing.assert_almost_equal(ell.parallel_arc_distance(0.0, 0.0, 90.),
                                    circle_length / 4, decimal=5)
 
+    # equator = geodesic
+    np.testing.assert_almost_equal(ell.parallel_arc_distance(0.0, 0.0, 90.),
+                                   ell.inv(0.0, 0.0, 0.0, 90.0)[-1], decimal=5)
+
     # Load short test data from Geographiclib
     # https://geographiclib.sourceforge.io/html/geodesic.html#testgeod
     path = os.path.dirname(os.path.abspath(__file__))

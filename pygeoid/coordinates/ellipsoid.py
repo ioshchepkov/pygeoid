@@ -518,9 +518,14 @@ class Ellipsoid:
         Returns
         -------
         float or array_like of floats
-            The distance between two meridians, in metres.
+            The distance between two meridians along the parallel, in metres.
         """
-        return self.inv(lat, lon1, lat, lon2, degrees=degrees)[-1]
+        if degrees:
+            lat = _np.radians(lat)
+            lon1 = _np.radians(lon1)
+            lon2 = _np.radians(lon2)
+
+        return self.circle_radius(lat, degrees=False) * (lon2 - lon1)
 
     def fwd(self, lat, lon, azimuth, distance, degrees=True):
         """Solve forward geodetic problem.
