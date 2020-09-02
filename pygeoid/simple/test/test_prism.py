@@ -32,8 +32,8 @@ def test_gxx_gyy_gzz():
 
     xx, yy, zz = np.meshgrid(x, y, z)
 
-    gxx = p.gxx(xx, yy, zz).magnitude
-    gyy = p.gyy(xx, yy, zz).magnitude
-    gzz = p.gzz(xx, yy, zz).magnitude
+    gxx = p.gxx(xx, yy, zz)
+    gyy = p.gyy(xx, yy, zz)
+    gzz = p.gzz(xx, yy, zz)
 
     np.testing.assert_almost_equal(gxx + gyy, -gzz, decimal=10)

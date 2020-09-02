@@ -30,7 +30,7 @@ def _limits_sum(function):
             index = np.asarray(index)
             coords = np.asarray(bounds)[index - 1]
             total_sum += (-1)**(index.sum()) * function(self, *coords)
-        return total_sum * G * self.density
+        return total_sum * G.m * self.density
     return wraper
 
 

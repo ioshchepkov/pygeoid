@@ -12,6 +12,9 @@ G = G * u.m**3 / (u.kg * u.s**2)
 # Potential of the geoid for the Iternational Height Reference Frame (IHRF)
 W0_IHRF = 62636853.4 * u.m**2 / u.s**2
 
+# Mean Earth's radius
+R_earth = 6371000 * u.m
+
 ####################################################
 # IERS2010 Convention
 ####################################################

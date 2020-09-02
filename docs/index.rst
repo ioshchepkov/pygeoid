@@ -18,6 +18,7 @@ Welcome to pygeoid's documentation!
 
   Coordinate Systems and Transformations <coordinates/index>
   Gravity Reduction <reduction/index>
+  Geodetic Integrals <integrals/index>
   Spherical Harmonics <sharm/index>
 
 .. toctree::
