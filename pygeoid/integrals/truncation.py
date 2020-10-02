@@ -7,7 +7,7 @@ import scipy.integrate as spi
 
 from pyshtools.legendre import PLegendre
 
-from pygeoid.integrals.stokes import StokesKernel
+from pygeoid.integrals.stokes import Stokes
 
 __all__ = ['molodensky_truncation_coefficients', 'paul_coefficients']
 
@@ -32,8 +32,8 @@ def _qn_hagiwara(t, n_max):
     for i in n:
         K[i] = -In[i - 1] / np.sqrt(2 * (1 - t)) + 2 * K[i - 1] - K[i - 2]
 
-    q = n * StokesKernel()._kernel_t(t) * (p[n - 1] - t * p[n])
-    q -= (1 - t**2) * p[n] * StokesKernel()._derivative_t(t)
+    q = n * Stokes._kernel_t(t) * (p[n - 1] - t * p[n])
+    q -= (1 - t**2) * p[n] * Stokes._derivative_t(t)
     q += 2 * K[n] + 2 * In[n] + 9 * J[n]
     q *= -1 / ((n - 1) * (n + 2))
 
@@ -45,7 +45,7 @@ def _qn_numerical(t, n_max, **kwargs):
 
     """
     def f(x, n):
-        return StokesKernel()._kernel_t(x) * PLegendre(n, x)[-1]
+        return Stokes._kernel_t(x) * PLegendre(n, x)[-1]
 
     q = [spi.quad(f, -1, t, args=(i,), **kwargs)[0]
          for i in range(2, n_max + 1)]

@@ -1,11 +1,11 @@
-"""Core classes for the geodetic integrals and their kernels.
+"""Core classes for the geodetic integrals.
 
 """
 
 import numpy as np
 
 
-class Kernel:
+class Integral:
     """Base class for all kernels.
 
     """
@@ -20,27 +20,13 @@ class Kernel:
         return self._name
 
 
-class SphericalKernel(Kernel):
-    """Base class for all spherical kernels.
-
-    """
-
-    def _check_spherical_distance(self, spherical_distance, degrees):
-        """Check spherical distance.
-
-        """
-        if degrees:
-            spherical_distance = np.radians(spherical_distance)
-
-        if not np.logical_and(spherical_distance >= 0,
-                              spherical_distance <= np.pi).any():
-            raise ValueError('spherical_distance must be between 0 and 180 degrees.')
-
-        return spherical_distance
+class SphericalKernel:
+    def plot_kernel(self, ax=None):
+        raise NotImplementedError
 
 
-class Integral:
-    """Base class for all integrals.
+class SphericalIntegral(Integral):
+    """Base class for all spherical integrals.
 
     """
     pass
