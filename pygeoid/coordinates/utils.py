@@ -53,3 +53,17 @@ def spherical_distance(lat1, lon1, lat2, lon2, degrees=True):
         psi = np.degrees(psi)
 
     return psi
+
+def check_spherical_distance(spherical_distance, degrees):
+    """Check spherical distance.
+
+    """
+    if degrees:
+        spherical_distance = np.radians(spherical_distance)
+
+    if not np.logical_and(spherical_distance >= 0,
+            spherical_distance <= np.pi).any():
+        raise ValueError('spherical_distance must be between 0 and 180 degrees.')
+
+    return spherical_distance
+
