@@ -555,6 +555,63 @@ def enu_to_geodetic(x, y, z, origin, ell, degrees=True):
 # 2D coordinates
 ##############################################################################
 
+def latlon_to_metres(lat, lon, origin, degrees=True):
+    r"""Convert geographical coordinates to metres.
+
+    This function returns planar coordinates `(x, y)` (or `(east, north)`)
+    in very simple right-rectangular coordinate system that describe distances
+    in metres between the origin point and the points specified by `(lat, lon)`.
+
+    Parameters
+    ----------
+    lat, lon : float or array_like of floats
+        Ggeocentric (spherical) or geodetic coordinates to be converted.
+    origin : array_like of floats
+        Ggeocentric (spherical) or geodetic coordinates
+        of the origin (`lat0`, `lon0`).
+    degrees : bool, optional
+        If True, the input `lat` and `lon` are given in degrees,
+        otherwise radians.
+
+    Returns
+    -------
+    east, north : float or array_like of floats
+        Planar coordinates on the unit sphere.
+
+    Notes
+    -----
+
+    For the planarisation, we introduce right-rectangular
+    coordinates :math:`(x, y)` that describe distances between the
+    computation point :math:`P (\phi_P, \lambda_P)`
+    and the data points :math:`Q (\phi_Q, \lambda_Q)`
+    in planar approximation, while also accounting for meridional
+    convergence [1]_:
+
+    .. math::
+
+        x &= \left( \lambda_Q - \lambda_P \right) \cos{\phi_Q} \\
+        y &= \phi_Q - \phi_P.
+
+    References
+    ----------
+    .. [1] Hirt C, Featherstone WE, Claessens SJ (2011) On the accurate numerical
+        evaluation of geodetic convolution integrals. J Geod 85:519–538.
+        https://doi.org/10.1007/s00190-011-0451-5
+
+    """
+    if degrees:
+        lat = _np.radians(lat)
+        lon = _np.radians(lon)
+        origin = _np.radians(origin)
+
+    lat0, lon0 = origin
+
+    north = (lon - lon0) * _np.cos(lat)
+    east = lat - lat0
+
+    return north, east
+
 
 def polar_to_cartesian(theta, radius, degrees=True):
     """Convert polar coordinates to 2D cartesian.

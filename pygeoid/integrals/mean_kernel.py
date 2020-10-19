@@ -12,6 +12,7 @@ import numpy as np
 import numpy.ma as ma
 
 
+from pygeoid.coordinates.transform import latlon_to_metres
 from pygeoid.coordinates.utils import spherical_distance
 
 
@@ -95,7 +96,6 @@ class MeanKernel:
             relative to computational point.
 
         """
-        # weighting factor
         planar_kernel = self._planar_kernel(x, y)
         mean_planar_kernel = self.mean_planar_kernel(x1, y1, x2, y2)
         return mean_planar_kernel / planar_kernel
@@ -121,19 +121,15 @@ class MeanKernel:
 
         """
 
-        # TODO: check latitudes and longitudes
-
         # coordinates transformation
-        clatq = np.cos(np.radians(latq))
-        x = np.radians((lonq - lonp)) * clatq
-        y = np.radians(latq - latp)
+        origin = (latp, lonp)
+        x, y = latlon_to_metres(latq, lonq, origin)
 
         # cell boundaries
-        x1 = np.radians((lonq - lonp - 0.5 * dlon)) * clatq
-        x2 = np.radians((lonq - lonp + 0.5 * dlon)) * clatq
-
-        y1 = np.radians(latq - latp - 0.5 * dlat)
-        y2 = np.radians(latq - latp + 0.5 * dlat)
+        x1, y1 = latlon_to_metres(latq - 0.5 * dlat,
+                lonq - 0.5 * dlon, origin)
+        x2, y2 = latlon_to_metres(latq + 0.5 * dlat,
+                lonq + 0.5 * dlon, origin)
 
         weight = self._kernel_weighting_factor_planar(x, y, x1, y1, x2, y2)
 
