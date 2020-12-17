@@ -13,7 +13,7 @@ version = versioneer.get_version()
 cmdclass = versioneer.get_cmdclass()
 
 install_requires = ['numpy', 'scipy', 'pyproj',
-                    'pint', 'pyshtools', 'joblib'],
+                    'astropy', 'pyshtools', 'joblib'],
 
 setup(name=name,
       version=version,

@@ -104,7 +104,7 @@ def iag_atm_corr_sph(density_function, height, height_max, samples=1e4):
     hinf = np.linspace(height, height_max, samples)
     density = density_function(hinf) * r
     M = 4 * np.pi * trapz(density, hinf)
-    gc = (G.magnitude * M / r) * 1e5
+    gc = (G.value * M / r) * 1e5
     return gc
 
 

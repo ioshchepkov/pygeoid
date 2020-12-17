@@ -1,8 +1,9 @@
 """Topographic reduction in gravity and geoid modelling"""
 
 import numpy as np
+import astropy.units as u
+
 from pygeoid.constants import _2piG
-from pygeoid.units import units as u
 
 
 def bouguer_plate(height, density=2670, units='mGal'):
@@ -27,7 +28,7 @@ def bouguer_plate(height, density=2670, units='mGal'):
     """
     height = height * u.m
     density = density * (u.kg / u.m**3)
-    return (_2piG * density * height).to(units).magnitude
+    return (_2piG * density * height).to(units).value
 
 
 def spherical_bouguer_cap(height, density=2670, units='mGal'):
@@ -69,7 +70,7 @@ def spherical_bouguer_cap(height, density=2670, units='mGal'):
     # Bullard B surfase radius
     S = 166.735 * u.km  # km
 
-    alpha = S / R0
+    alpha = S.value / R0.value
     R = R0 + height
 
     delta = R0 / R
@@ -90,4 +91,4 @@ def spherical_bouguer_cap(height, density=2670, units='mGal'):
 
     out = _2piG * density * ((1 + mu) * height - llambda * R)
 
-    return (out).to(units).magnitude
+    return (out).to(units).value

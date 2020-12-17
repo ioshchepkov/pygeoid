@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 numpy = "*"
-pint = "*"
+astropy = "*"
 pyproj="*"
 scipy = "*"
 pandas = "*"
