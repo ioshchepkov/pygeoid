@@ -6,17 +6,15 @@ from numpy import pi
 import astropy.units as u
 from astropy.constants import Constant as _Constant
 
+from .gm import get_body_gm
+
 ####################################################
 # Import constants
 ####################################################
 
 from astropy.constants import G
 from astropy.constants import g0
-
-# Standard gravitational parameters (for tides)
-from pyshtools.constants.Moon import gm as GM_moon
-from .iers2010 import GM_earth_tt as GM_earth
-from .iers2010 import GM_sun
+from .iers2010 import GM_earth_tt as gm_earth
 
 ####################################################
 # Define constants
@@ -41,7 +39,6 @@ LOVE_L = 0.08
 ####################################################
 # Frequently used expressions
 ####################################################
-
 
 # n*pi
 _2pi = 2 * pi
