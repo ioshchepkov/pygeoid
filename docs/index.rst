@@ -20,6 +20,7 @@ Welcome to pygeoid's documentation!
   Gravity Reduction <reduction/index>
   Geodetic Integrals <integrals/index>
   Spherical Harmonics <sharm/index>
+  Tides <tides/index>
 
 .. toctree::
   :maxdepth: 1

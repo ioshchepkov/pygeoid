@@ -6,7 +6,7 @@ from numpy import pi
 import astropy.units as u
 from astropy.constants import Constant as _Constant
 
-from .gm import get_body_gm
+from .solar_system_gm import get_body_gm
 
 ####################################################
 # Import constants
@@ -14,7 +14,10 @@ from .gm import get_body_gm
 
 from astropy.constants import G
 from astropy.constants import g0
+from astropy.constants import R_earth
 from .iers2010 import GM_earth_tt as gm_earth
+
+from .iers2010 import DEGREE2_LOVE_NUMBERS
 
 ####################################################
 # Define constants
@@ -27,14 +30,6 @@ W0_IHRF = _Constant(
     unit='m**2 / s**2',
     uncertainty=0.02,
     reference='IAG 2015 Resolution No.1')
-
-####################################################
-# Approximate Love numbers
-####################################################
-
-LOVE_K = 0.30
-LOVE_H = 0.63
-LOVE_L = 0.08
 
 ####################################################
 # Frequently used expressions

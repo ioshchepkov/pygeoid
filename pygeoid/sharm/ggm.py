@@ -478,7 +478,7 @@ class SHGravPotential:
         return out
 
     def lat_derivative(self, lat, lon, r, lmax=None, degrees=True):
-        """Return latitudinal derivative of the potential, in m/s**2.
+        """Return latitudinal derivative of the potential, in m2/s2.
 
         Parameters
         ----------
@@ -523,7 +523,7 @@ class SHGravPotential:
         return out
 
     def lon_derivative(self, lat, lon, r, lmax=None, degrees=True):
-        """Return longitudinal derivative of the potential, in m/s**2.
+        """Return longitudinal derivative of the potential, in m2/s2.
 
         Parameters
         ----------

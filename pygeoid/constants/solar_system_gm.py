@@ -5,7 +5,7 @@
 from astropy.constants import Constant as _Constant
 
 __all__ = ['gm_moon', 'gm_sun', 'gm_mars', 'gm_venus', 'gm_mercury',
-           'gm_jupyter', 'gm_saturn', 'gm_uranus', 'gm_neptune']
+           'gm_jupiter', 'gm_saturn', 'gm_uranus', 'gm_neptune']
 
 # Import Moon and Sun
 from pyshtools.constants.Moon import gm as gm_moon
@@ -17,9 +17,9 @@ from pyshtools.constants.Venus import gm as gm_venus
 from pyshtools.constants.Mercury import gm as gm_mercury
 
 # Define planets
-gm_jupyter = _Constant(
-    abbrev='gm_jupyter',
-    name='Gravitational constant times the mass of Jupyter',
+gm_jupiter = _Constant(
+    abbrev='gm_jupiter',
+    name='Gravitational constant times the mass of Jupiter',
     value=126686536.1e9,
     unit='m3 / s2',
     uncertainty=2.7e9,
@@ -61,7 +61,7 @@ gm_neptune = _Constant(
 
 
 _gm_body = {'moon' : gm_moon, 'sun' : gm_sun, 'mars' : gm_mars,
-            'venus': gm_venus, 'mercury' : gm_mercury, 'jupyter': gm_jupyter,
+            'venus': gm_venus, 'mercury' : gm_mercury, 'jupiter': gm_jupiter,
             'saturn': gm_saturn, 'uranus': gm_uranus, 'neptune': gm_neptune}
 
 bodies = tuple(_gm_body)

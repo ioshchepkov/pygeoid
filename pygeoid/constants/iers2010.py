@@ -2,6 +2,8 @@
 
 """
 
+import numpy as _np
+import astropy.units as _u
 from astropy.constants import Constant as _Constant
 
 ####################################################
@@ -162,3 +164,99 @@ def tcg_to_tt(x):
 
     """
     return x * (1 - L_G)
+
+####################################################
+# Love and Shida numbers of the second-degree
+####################################################
+
+
+k2 = _Constant(
+    abbrev='k2',
+    name='Nominal degree 2 Love number k2',
+    value=0.29525,
+    unit='',
+    uncertainty=0,
+    reference='IERS Conventions(2010), '
+    'IERS Technical Note 36, '
+    'Verlagdes Bundesamts für Kartographie und Geodäsie, '
+    'Frankfurt am Main, Germany.')
+
+h2 = _Constant(
+    abbrev='h2',
+    name='Nominal degree 2 Love number h2',
+    value=0.6078,
+    unit='',
+    uncertainty=0,
+    reference='IERS Conventions(2010), '
+    'IERS Technical Note 36, '
+    'Verlagdes Bundesamts für Kartographie und Geodäsie, '
+    'Frankfurt am Main, Germany.')
+
+l2 = _Constant(
+    abbrev='l2',
+    name='Nominal degree 2 Shida number l2',
+    value=0.0847,
+    unit='',
+    uncertainty=0,
+    reference='IERS Conventions(2010), '
+    'IERS Technical Note 36, '
+    'Verlagdes Bundesamts für Kartographie und Geodäsie, '
+    'Frankfurt am Main, Germany.')
+
+DEGREE2_LOVE_NUMBERS = {'k': k2, 'l': l2, 'h': h2}
+
+
+def l2_shida_number(lat: _u.deg = None) -> float:
+    """Return degree 2 Shida number (l2,0).
+
+    If `lat` is None, the nominal degree 2 Shida number l2=0.0847
+    will be returned.
+
+    Parameters
+    ----------
+    lat : ~astropy.units.Quantity, optional
+        Geocentric (spherical) latitude. If given, a small latitude
+        dependence will be considered.
+
+    Returns
+    -------
+    l2 : ~astropy.units.Quantity
+        Nominal degree 2 Shida number.
+
+    References
+    ----------
+    .. [1] IERS Conventions(2010), section 7.1.1, page 105.
+
+    """
+    l2_ = l2
+    if lat is not None:
+        l2_ = l2_ + 0.0002 * (3 * _np.sin(lat)**2 - 1) / 2
+    return float(l2_)
+
+
+def h2_love_number(lat: _u.deg = None) -> float:
+    """Return degree 2 Love number (h2,0).
+
+    If `lat` is None, the nominal degree 2 Love number h2=0.6078
+    will be returned.
+
+    Parameters
+    ----------
+    lat : ~astropy.units.Quantity, optional
+        Geocentric (spherical) latitude. If given, a small latitude
+        dependence will be considered.
+
+    Returns
+    -------
+    h2 : ~astropy.units.Quantity
+        Nominal degree 2 Love number.
+
+    References
+    ----------
+    .. [1] IERS Conventions(2010), section 7.1.1, page 105.
+
+    """
+    h2_ = h2
+    if lat is not None:
+        h2_ = h2_ - 0.0006 * (3 * _np.sin(lat)**2 - 1) / 2
+    return float(h2_)
