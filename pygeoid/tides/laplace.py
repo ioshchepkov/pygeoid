@@ -528,7 +528,7 @@ class LaplaceTidalEquation:
         """
         xi = -self.potential_lat_derivative(
             time=time, lat=lat, lon=lon, r=r)
-        eta = -1 / np.cos(lat) * self.potential_lat_derivative(
+        eta = -1 / np.cos(lat) * self.potential_lon_derivative(
             time=time, lat=lat, lon=lon, r=r)
 
         if azimuth is not None:
@@ -570,7 +570,7 @@ class LaplaceTidalEquation:
             Geoidal height tidal variation.
 
         """
-        potential = self.potential_lat_derivative(
+        potential = self.potential(
             time, lat, lon, r)
 
         return (1 + self.love['k']) / gravity * potential
@@ -604,7 +604,7 @@ class LaplaceTidalEquation:
             Physical heights tidal variation.
 
         """
-        potential = self.potential_lat_derivative(
+        potential = self.potential(
             time, lat, lon, r)
 
         return -self.diminishing_factor / gravity * potential
