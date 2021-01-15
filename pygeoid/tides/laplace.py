@@ -103,8 +103,8 @@ class LaplaceTidalEquation:
     instead of more advanced and complicated harmonic decomposition.
 
     If some tidal effect calculated from this class with all parts included
-    (by default) is applied as a correction (effect taken with the
-    negative sign), then the corrected value will be in the conventional
+    (by default) and fot the elastic Earth is applied as a correction
+    (effect taken with the negative sign), then the corrected value will be in the conventional
     tide free system, because a permanent part of the tide will also be removed.
     If mean or zero tide systems are desired, then permanent part
     of the tide should be restored in some way.

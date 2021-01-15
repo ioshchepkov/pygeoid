@@ -6,23 +6,68 @@ import numpy as np
 import astropy.units as u
 
 from pygeoid.coordinates.ellipsoid import Ellipsoid
+from pygeoid.coordinates.transform import geodetic_to_cartesian
+
 from pygeoid.constants import (solar_system_gm, g0)
 from pygeoid.constants import iers2010
 
-A = -2.9166 * u.m**2 / u.s**2
+DEFAULT_COEFF_A = -2.9166 * u.m**2 / u.s**2
 
 DEFAULT_FROM_SYSTEM = 'non-tidal'
 DEFAULT_TO_SYSTEM = 'mean-tide'
 
 
 class PermanentTide:
-    def __init__(self, m0s0: u.m**2 / u.s**2 = A, a: u.m = 6378137 * u.m,
+    """Class for permanent part of the tide-generating potential M0S0.
+
+    The permanent part of the tide-generating potential can be written as
+
+    M0S0 = A * (r / r0)**2 * (sin(lat)**2 - 1/3)
+
+    where lat is the geocentric latitude, r is the rasial distance of the
+    observation point and r0 a scaling factor for distances.
+
+    With the normalization r0 = 6378136.3 m used in the tidal
+    potential coefficients in Hartmann and Wenzel (1995) which
+    is commonly applied in software for tidal analysis and prediction,
+    the value A = -2.9166 m**2 / s**2 in the epoch 2000.0
+    can be deduced from the IERS Conventions (2010).
+
+    Attributes
+    ----------
+    coeff   : ~astropy.units.Quantity, optional
+        Coefficient A for M0S0 in given representaion.
+    r0   : ~astropy.units.Quantity, optional
+        Scaling factor for distance.
+    love : dict, optional
+        Approximate Love numbers for elastic deformation calculations. This
+        dictionary should contain 'k', 'l' and 'h' numbers of the second degree.
+        Default values are taken from IERS Conventions 2010.
+    gravimetric_factor : float, optional
+        Gravimetric factor (delta). If None it will be calculated from Love
+        numbers as delta = 1 + h - 3/2*k. Default value is approximate gravimetric
+        factor from PREM model.
+    diminishing_factor : float, optional
+        Diminishing factor (gamma). If None then it will be calculated from Love
+        numbers as gamma = 1 + k - h. Default value is approximate diminishing
+        factor from PREM model.
+
+    References
+    ----------
+    .. [1] Mäkinen J (2020, submitted) The permanent tide and the
+        International Height Reference Frame IHRF. Journal of Geodesy
+        arXiv:2006.08440
+
+    """
+
+    def __init__(self, coeff: u.m**2 / u.s**2 = DEFAULT_COEFF_A,
+                 r0: u.m = 6378137 * u.m,
                  love: dict = iers2010.DEGREE2_LOVE_NUMBERS,
                  gravimetric_factor: float = 1.1563,
                  diminishing_factor: float = 0.6947):
 
-        self.a = a
-        self.coeff = m0s0
+        self.coeff = coeff
+        self.r0 = r0
         self.love = love
 
         if gravimetric_factor is None:
@@ -53,7 +98,7 @@ class PermanentTide:
             Permanent tidal potential.
 
         """
-        return self.coeff * (r / self.a)**2 * (np.sin(lat)**2 - 1 / 3)
+        return self.coeff * (r / self.r0)**2 * (np.sin(lat)**2 - 1 / 3)
 
     @u.quantity_input
     def potential_lat_derivative(self, lat: u.deg, r: u.m) -> u.m**2 / u.s**2:
@@ -72,7 +117,7 @@ class PermanentTide:
             Permanent Tidal potential latitude derivative.
 
         """
-        return self.coeff * (r / self.a)**2 * np.sin(2 * lat)
+        return self.coeff * (r / self.r0)**2 * np.sin(2 * lat)
 
     @u.quantity_input
     def potential_r_derivative(self, lat: u.deg, r: u.m) -> u.m / u.s**2:
@@ -91,7 +136,7 @@ class PermanentTide:
             Permanent tidal potential radial derivative.
 
         """
-        return self.coeff * 2 * r / self.a**2 * (np.sin(lat)**2 - 1 / 3)
+        return self.coeff * 2 * r / self.r0**2 * (np.sin(lat)**2 - 1 / 3)
 
     @u.quantity_input
     def gradient(self, lat: u.deg, r: u.m) -> u.m / u.s**2:
@@ -111,8 +156,8 @@ class PermanentTide:
 
         """
         r_part = self.potential_r_derivative(lat=lat, r=r)
-        lat_part = 1 / r * self.potential_lat_derivative(
-            lat=lat, r=r)
+        lat_part = 1 / r * self.potential_lat_derivative(lat=lat, r=r)
+
         return np.sqrt(r_part**2 + lat_part**2)
 
     @u.quantity_input
@@ -255,9 +300,45 @@ class PermanentTide:
         return -radial_derivative
 
     @u.quantity_input
-    def gravity_correction(self, lat: u.deg, r: u.m,
-                           from_system: str = DEFAULT_FROM_SYSTEM,
-                           to_system: str = DEFAULT_TO_SYSTEM) -> u.m**2 / u.s**2:
+    def gravity_ell(self, lat: u.deg,
+                    height: u.m, ell: Ellipsoid,
+                    elastic: bool = True) -> u.m / u.s**2:
+        """Return permanent tidal gravity variation along the ellipsoidal normal.
+
+        Parameters
+        ----------
+        lat : ~astropy.units.Quantity
+            Geodetic latitude.
+        height : ~astropy.units.Quantity
+            Geodetic height.
+        ell : ~pygeoid.coordinates.ellipsoid.Ellipsoid
+            Reference ellipsoid to which geodetic coordinates are referenced to.
+        elastic : bool, optional
+            If True then the Earth is elastic (deformable)
+            and gravity change is multiplied by the gravimetric factor
+            specified in the class instance.
+
+        Returns
+        -------
+        delta_g : ~astropy.units.Quantity
+            Permanent tidal potential gravity variation.
+
+        """
+        pvcr = ell.prime_vertical_curvature_radius(lat.radian) * u.m
+
+        delta_g = 2 / 3 * self.coeff / self.r0**2 * (
+            (pvcr * (3 - 2 * ell.e2) + 3 * height) * np.sin(lat)**2 -
+            (pvcr + height))
+
+        if elastic:
+            delta_g *= self.gravimetric_factor
+
+        return -delta_g
+
+    @u.quantity_input
+    def convert_gravity_correction(self, lat: u.deg, r: u.m,
+                                   from_system: str = DEFAULT_FROM_SYSTEM,
+                                   to_system: str = DEFAULT_TO_SYSTEM) -> u.m**2 / u.s**2:
         """Return correction to convert gravity between tide systems.
 
         Add this value to the gravity in the tide system specified by `from_system`
@@ -371,10 +452,10 @@ class PermanentTide:
         return (1 + self.love['k']) / gravity * potential
 
     @u.quantity_input
-    def geoidal_height_correction(self, lat: u.deg, r: u.m,
-                                  from_system: str = DEFAULT_FROM_SYSTEM,
-                                  to_system: str = DEFAULT_TO_SYSTEM,
-                                  gravity: u.m / u.s**2 = g0) -> u.m:
+    def convert_geoidal_height_correction(self, lat: u.deg, r: u.m,
+                                          from_system: str = DEFAULT_FROM_SYSTEM,
+                                          to_system: str = DEFAULT_TO_SYSTEM,
+                                          gravity: u.m / u.s**2 = g0) -> u.m:
         """Return correction to convert geoidal height between tide systems.
 
         Add this value to the geoidal height (or height anomaly)
@@ -451,10 +532,10 @@ class PermanentTide:
         return -self.diminishing_factor / gravity * potential
 
     @u.quantity_input
-    def physical_height_correction(self, lat: u.deg, r: u.m,
-                                   from_system: str = DEFAULT_FROM_SYSTEM,
-                                   to_system: str = DEFAULT_TO_SYSTEM,
-                                   gravity: u.m / u.s**2 = g0) -> u.m:
+    def convert_physical_height_correction(self, lat: u.deg, r: u.m,
+                                           from_system: str = DEFAULT_FROM_SYSTEM,
+                                           to_system: str = DEFAULT_TO_SYSTEM,
+                                           gravity: u.m / u.s**2 = g0) -> u.m:
         """Return correction to convert physical heights between tide systems.
 
         Add this value to the physical height in the tide system specified by
@@ -500,33 +581,3 @@ class PermanentTide:
             factor = (self.diminishing_factor - 1)
 
         return factor * pot
-
-    @u.quantity_input
-    def physical_height_difference(self, lat: u.deg, r: u.m,
-                                   azimuth: u.deg, length: u.m,
-                                   gravity: u.m / u.s**2 = g0) -> u.m:
-        """Return permanent tidal variation of the physical heights difference.
-
-        Parameters
-        ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
-        azimuth : ~astropy.units.Quantity
-            Azimuth of the levelling line.
-        length : ~astropy.units.Quantity
-            Length of the levelling line.
-        gravity : ~astropy.units.Quantity, optional
-            Mean global gravity of the Earth.
-
-        Returns
-        -------
-        delta_h : ~astropy.units.Quantity
-            Physical heights difference permanent tidal variation.
-
-        """
-        tilt = self.tilt(lat=lat, r=r,
-                         azimuth=azimuth, gravity=gravity, elastic=True)
-
-        return length * tilt
