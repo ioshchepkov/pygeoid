@@ -642,4 +642,4 @@ class LaplaceTidalEquation:
         tilt = self.tilt(time=time, lat=lat, lon=lon, r=r,
                          azimuth=azimuth, gravity=gravity, elastic=True)
 
-        return length * tilt
+        return -length * tilt
