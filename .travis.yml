@@ -1,8 +1,7 @@
 dist: xenial
 language: python
 python:
-- 3.7
-- 3.8
+- 3.9
 before_install:
 - sudo apt-get install -y libblas-dev liblapack-dev g++ gfortran libfftw3-dev tcsh
 install:
