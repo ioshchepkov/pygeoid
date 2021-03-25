@@ -3,6 +3,8 @@
 """
 
 import numpy as np
+import astropy.units as u
+from astropy.coordinates import Angle
 
 
 class Kernel:
@@ -25,15 +27,14 @@ class SphericalKernel(Kernel):
 
     """
 
-    def _check_spherical_distance(self, spherical_distance, degrees):
+    def _check_spherical_distance(self, spherical_distance):
         """Check spherical distance.
 
         """
-        if degrees:
-            spherical_distance = np.radians(spherical_distance)
-
-        if not np.logical_and(spherical_distance >= 0,
-                              spherical_distance <= np.pi).any():
+        # if not np.logical_and(spherical_distance >= 0 * u.deg,
+        #                      spherical_distance <= np.pi * u.rad).any():
+        if not Angle(spherical_distance).is_within_bounds(0 * u.deg,
+                                                          180 * u.deg):
             raise ValueError('spherical_distance must be between 0 and 180 degrees.')
 
         return spherical_distance

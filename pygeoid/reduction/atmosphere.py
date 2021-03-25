@@ -1,13 +1,18 @@
-"""Calculate atmospheric correction for the gravity anomalies."""
+"""Calculate atmospheric correction for the gravity anomalies.
+
+"""
 
 import os
 import numpy as np
+from typing import Callable
 from scipy.interpolate import interp1d
 from scipy.integrate import trapz
+import astropy.units as u
 from pygeoid.constants import G
 
 
-def ussa76_density(alt_arr=0.0):
+@u.quantity_input
+def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
     """Return atmospheric density from USSA76 model.
 
     Refer to the following document (2 doc codes) for details of this model:
@@ -17,24 +22,30 @@ def ussa76_density(alt_arr=0.0):
     All assumptions are the same as those in the source documents.
 
     Derived from: https://github.com/mattljc/atmosphere-py
+
+    Parameters
+    ----------
+    alt_arr : ~astropy.units.Quantity
+        Altitude above sea level.
+
     """
     # Constants
-    g0 = 9.80665
-    Rstar = 8.31432e3
+    g0 = 9.80665 * u.m / u.s**2
+    Rstar = 8.31432e3 * u.newton * u.m / u.kilomole / u.K
 
     # Model Parameters
-    altitude_max = 84852
-    base_alt = np.array([0.0, 11.0, 20.0, 32.0, 47.0, 51.0, 71.0]) * 1000
-    base_lapse = np.array([-6.5, 0.0, 1.0, 2.8, 0.0, -2.8, -2.0]) / 1000
-    base_temp = np.array(
-        [288.15, 216.65, 216.650, 228.650, 270.650, 270.650, 214.650])
+    altitude_max = 84852 * u.m
+    base_alt = np.array([0.0, 11.0, 20.0, 32.0, 47.0, 51.0, 71.0]) * u.km
+    base_lapse = np.array([-6.5, 0.0, 1.0, 2.8, 0.0, -2.8, -2.0]) * u.K / u.km
+    base_temp = np.array([288.15, 216.65, 216.650, 228.650, 270.650, 270.650,
+                          214.650]) * u.K
     base_press = np.array([1.01325e3, 2.2632e2, 5.4748e1, 8.6801, 1.1090,
-                           6.6938e-1, 3.9564e-2]) * 100
-    M0 = 28.9644
+                           6.6938e-1, 3.9564e-2]) * u.mbar
+    M0 = 28.9644 * u.kg / u.kilomole
 
     # Initialize Outputs
     alt_arr = np.atleast_1d(alt_arr)
-    dens_arr = np.zeros_like(alt_arr)
+    dens_arr = np.zeros(alt_arr.size) * u.kg / u.m**3
 
     for idx in range(alt_arr.size):
         alt = alt_arr[idx]
@@ -70,7 +81,9 @@ def ussa76_density(alt_arr=0.0):
     return dens_arr
 
 
-def iag_atm_corr_sph(density_function, height, height_max, samples=1e4):
+@u.quantity_input
+def iag_atm_corr_sph(density_function: Callable[[u.Quantity], u.Quantity],
+                     height: u.m, height_max: u.m, samples=1e4) -> u.mGal:
     r"""Return atmospheric correction to the gravity anomalies by IAG approach.
 
     This function numerically integrates samples from density function by
@@ -91,24 +104,29 @@ def iag_atm_corr_sph(density_function, height, height_max, samples=1e4):
     density_function : callable
         The `density_funtion` is called for all height samples to calculate
         density of the atmosphere.
-    height : float or array_like of floats
-        Height above sea level, in metres.
-    height_max : float or array_like of floats
-        Maximum height of the atmosphere layer above sea level, in metres.
+    height : ~astropy.units.Quantity
+        Height above sea level.
+    height_max : ~astropy.units.Quantity
+        Maximum height of the atmosphere layer above sea level.
     samples : float
         Number of samples for integration. Default is 1e4.
 
+    ~astropy.units.Quantity
+        Atmospheric correction.
+
     """
-    Rearth = 6378e3
-    r = (Rearth + height)**2
+    Rearth = 6378e3 * u.m
+    r2 = (Rearth + height)**2
     hinf = np.linspace(height, height_max, samples)
-    density = density_function(hinf) * r
-    M = 4 * np.pi * trapz(density, hinf)
-    gc = (G.value * M / r) * 1e5
+    density = density_function(hinf) * r2
+    M = 4 * np.pi * trapz(density.to('kg / m').value,
+                          hinf.to('m').value) * u.kg
+    gc = (G * M / r2)
     return gc
 
 
-def grs80_atm_corr_interp(height, kind='linear'):
+@u.quantity_input
+def grs80_atm_corr_interp(height: u.m, kind: str = 'linear') -> u.mGal:
     """Return GRS 80 atmospheric correction, in mGal.
 
     Interpolated from the table data [1]_.
@@ -117,8 +135,8 @@ def grs80_atm_corr_interp(height, kind='linear'):
 
     Parameters
     ----------
-    height : float or array_like of floats
-        Height above sea level, in metres.
+    height : ~astropy.units.Quantity
+        Height above sea level.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
         ('linear', 'nearest', 'zero', 'slinear', 'quadratic', 'cubic'
@@ -129,8 +147,8 @@ def grs80_atm_corr_interp(height, kind='linear'):
 
     Returns
     -------
-    float or array_like of floats
-        Atmospheric correction, in mGal.
+    ~astropy.units.Quantity
+        Atmospheric correction.
 
     References
     ----------
@@ -144,16 +162,22 @@ def grs80_atm_corr_interp(height, kind='linear'):
                                      skiprows=4, dtype=float)
     interp = interp1d(table_heights * 1000, corr, kind=kind,
                       fill_value='extrapolate', assume_sorted=True)
-    return interp(height)
+    return interp(height.to('m').value) * u.mGal
 
 
-def wenzel_atm_corr(height):
+@u.quantity_input
+def wenzel_atm_corr(height: u.m) -> u.mGal:
     """Return atmospheric correction by Wenzel, in mGal.
 
     Parameters
     ----------
-    height : float or array_like of floats
-        Height above sea level, in metres.
+    height : ~astropy.units.Quantity
+        Height above sea level.
+
+    Returns
+    -------
+    ~astropy.units.Quantity
+        Atmospheric correction.
 
     References
     ----------
@@ -161,15 +185,24 @@ def wenzel_atm_corr(height):
     Gravitationspotential der Erde [1]: Wissenschaftliche arbeiten der
     Fachrichtung Vermessungswesen der Universitat Hannover, 137
     """
-    return 0.874 - 9.9e-5 * height + 3.56e-9 * height**2
+    height = height.to('m').value
+    return (0.874 - 9.9e-5 * height + 3.56e-9 * height**2) * u.mGal
 
 
-def pz90_atm_corr(height):
+@u.quantity_input
+def pz90_atm_corr(height: u.m) -> u.mGal:
     """Return PZ-90 atmospheric correction, in mGal.
 
     Parameters
     ----------
-    height : float or array_like of floats
-        Height above sea level, in metres.
+    height : ~astropy.units.Quantity
+        Height above sea level.
+
+    Returns
+    -------
+    ~astropy.units.Quantity
+        Atmospheric correction.
+
     """
-    return 0.87 * np.exp(-0.116 * (height / 1e3)**(1.047))
+    height = height.to('km').value
+    return 0.87 * np.exp(-0.116 * (height)**(1.047)) * u.mGal

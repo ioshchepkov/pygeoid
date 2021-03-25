@@ -4,6 +4,7 @@
 """
 
 import numpy as np
+import astropy.units as u
 
 from pygeoid.integrals.core import SphericalKernel
 from pygeoid.integrals.veningmeinesz import VeningMeineszKernel
@@ -18,18 +19,16 @@ class StokesKernel(SphericalKernel):
 
     _name = 'Stokes'
 
-    def kernel(self, spherical_distance, degrees=True):
+    @u.quantity_input
+    def kernel(self, spherical_distance: u.deg):
         r"""Evaluate Stokes spherical kernel.
 
         This method will calculate the original Stokes's function.
 
         Parameters
         ----------
-        spherical_distance : float or array_like of floats
+        spherical_distance : ~astropy.units.Quantity
             Spherical distance, in radians.
-        degrees : bool, optional
-            If True, the spherical distance is given in degrees,
-            otherwise radians.
 
         Notes
         -----
@@ -48,8 +47,7 @@ class StokesKernel(SphericalKernel):
 
         """
         psi = self._check_spherical_distance(
-            spherical_distance=spherical_distance,
-            degrees=degrees)
+            spherical_distance=spherical_distance)
 
         spsi2 = np.sin(psi / 2)
         cpsi = np.cos(psi)
@@ -57,17 +55,16 @@ class StokesKernel(SphericalKernel):
         return 1 + 1 / spsi2 - 6 * spsi2 - 5 * cpsi -\
             3 * cpsi * np.log(spsi2 + spsi2**2)
 
-    def derivative_spherical_distance(self, spherical_distance, degrees=True):
+    @u.quantity_input
+    def derivative_spherical_distance(self, spherical_distance):
         r"""Evaluate Stokes's spherical kernel derivative.
 
         The derivative of the Stokes function is the Vening-Meinesz function.
 
         Parameters
         ----------
-        spherical_distance : float or array_like of floats
+        spherical_distance : ~astropy.units.Quantity
             Spherical distance.
-        degrees : bool, optional
-            If True, the input `psi` is given in degrees, otherwise radians.
 
         Notes
         -----
@@ -87,8 +84,7 @@ class StokesKernel(SphericalKernel):
 
         """
         return VeningMeineszKernel().kernel(
-            spherical_distance=spherical_distance,
-            degrees=degrees)
+            spherical_distance=spherical_distance)
 
     def _kernel_t(self, t):
         r"""Evaluate Stokes kernel for -1 <= t <= 1.
@@ -176,11 +172,11 @@ class StokesExtendedKernel(SphericalKernel):
 
     _name = 'Extended Stokes'
 
-    def kernel(self, radius, spherical_distance, degrees=True):
+    def kernel(self, radius, spherical_distance):
         raise NotImplementedError
 
-    def derivative_radius(self, radius, spherical_distance, degrees=True):
+    def derivative_radius(self, radius, spherical_distance):
         raise NotImplementedError
 
-    def derivative_spherical_distance(self, radius, spherical_distance, degrees=True):
+    def derivative_spherical_distance(self, radius, spherical_distance):
         raise NotImplementedError

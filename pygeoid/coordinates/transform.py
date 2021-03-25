@@ -4,13 +4,16 @@
 
 import functools as _functools
 import numpy as _np
+import astropy.units as u
 
 
 ##############################################################################
 # 3D coordinates
 ##############################################################################
 
-def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
+@u.quantity_input
+def geodetic_to_cartesian(
+        lat: u.deg, lon: u.deg, height: u.m, ell):
     """Convert geodetic to 3D cartesian coordinates.
 
     Convert geodetic coordinates (`lat`, `lon`, `height`) given w.r.t.
@@ -18,27 +21,20 @@ def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
 
     Parameters
     ----------
-    lat : float or array_like of floats
+    lat : ~astropy.units.Quantity
         Geodetic latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Geodetic longitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
+    height : ~astropy.units.Quantity
+        Geodetic height.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input `lat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    x, y, z : float or array_like of floats
-        Cartesian coordinates, in metres.
+    x, y, z : ~astropy.units.Quantity
+        Cartesian coordinates.
     """
-
-    if degrees:
-        lat = _np.radians(lat)
-        lon = _np.radians(lon)
 
     N = ell.prime_vertical_curvature_radius(lat)
     x = (N + height) * _np.cos(lat) * _np.cos(lon)
@@ -48,9 +44,9 @@ def geodetic_to_cartesian(lat, lon, height, ell, degrees=True):
     return x, y, z
 
 
-@_functools.partial(_np.vectorize, otypes=(_np.float64, _np.float64,
-                                           _np.float64), excluded=[3, 4])
-def cartesian_to_geodetic(x, y, z, ell, degrees=True):
+@_functools.partial(_np.vectorize,
+                    otypes=(_np.float64, _np.float64, _np.float64), excluded=[3, 4])
+def _cartesian_to_geodetic(x, y, z, ell, degrees=True):
     """Convert 3D cartesian to geodetic coordinates.
 
     Parameters
@@ -79,11 +75,14 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
     .. [1] Vermeille, H., 2011. An analytical method to transform geocentric
     into geodetic coordinates. Journal of Geodesy, 85(2), pp.105-117.
     """
-    e4 = ell.e2 ** 2
+    e2 = ell.e2.value
+    a = ell.a.value
+
+    e4 = e2 ** 2
 
     # Step 1
-    p = (x**2 + y**2) / ell.a ** 2
-    q = (1 - ell.e2) * z ** 2 / ell.a ** 2
+    p = (x**2 + y**2) / a ** 2
+    q = (1 - e2) * z ** 2 / a ** 2
     r = (p + q - e4) / 6
 
     # Step 2 - 3
@@ -101,19 +100,19 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
             u = -4 * r * _np.sin(u_aux) * _np.cos(_np.pi / 6 + u_aux)
 
         v = _np.sqrt(u**2 + e4 * q)
-        w = ell.e2 * (u + v - q) / (2 * v)
+        w = e2 * (u + v - q) / (2 * v)
         k = (u + v) / (_np.sqrt(w**2 + u + v) + w)
-        D = (k * _np.sqrt(x**2 + y**2)) / (k + ell.e2)
+        D = (k * _np.sqrt(x**2 + y**2)) / (k + e2)
 
-        height = (k + ell.e2 - 1) * _np.sqrt(D**2 + z**2) / k
+        height = (k + e2 - 1) * _np.sqrt(D**2 + z**2) / k
         lat = 2 * _np.arctan2(z, D + _np.sqrt(D**2 + z**2))
     # Step 4
     elif q == 0 and p <= e4:
-        e2p = _np.sqrt(ell.e2 - p)
-        me2 = _np.sqrt(1 - ell.e2)
+        e2p = _np.sqrt(e2 - p)
+        me2 = _np.sqrt(1 - e2)
 
-        height = - (ell.a * me2 * e2p) / _np.sqrt(ell.e2)
-        lat = 2 * _np.arctan2(_np.sqrt(e4 - p), _np.sqrt(ell.e2) * e2p +
+        height = - (a * me2 * e2p) / _np.sqrt(e2)
+        lat = 2 * _np.arctan2(_np.sqrt(e4 - p), _np.sqrt(e2) * e2p +
                               me2 * _np.sqrt(p))
 
     lon = _np.arctan2(y, x)
@@ -125,58 +124,87 @@ def cartesian_to_geodetic(x, y, z, ell, degrees=True):
     return lat, lon, height
 
 
-def cartesian_to_spherical(x, y, z, degrees=True):
+@u.quantity_input
+def cartesian_to_geodetic(x: u.m, y: u.m, z: u.m, ell):
+    """Convert 3D cartesian to geodetic coordinates.
+
+    Parameters
+    ----------
+    x, y, z : ~astropy.units.Quantity
+        Cartesian coordinates.
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
+        Reference ellipsoid to which geodetic coordinates are referenced to.
+
+    Returns
+    -------
+    lat : ~astropy.units.Quantity
+        Geodetic latitude.
+    lon : ~astropy.units.Quantity
+        Geodetic longitude.
+    height : float or array_like of floats
+        Geodetic height.
+
+    Notes
+    -----
+    The algorithm of H. Vermeille is used for this transformation [1]_.
+
+    References
+    ----------
+    .. [1] Vermeille, H., 2011. An analytical method to transform geocentric
+    into geodetic coordinates. Journal of Geodesy, 85(2), pp.105-117.
+    """
+
+    lat, lon, height = _cartesian_to_geodetic(
+        x.to('m').value, y.to('m').value, z.to('m').value, ell=ell,
+        degrees=True)
+
+    return lat * u.deg, lon * u.deg, height * u.m
+
+
+@u.quantity_input
+def cartesian_to_spherical(x: u.m, y: u.m, z: u.m):
     """Convert 3D cartesian to spherical coordinates.
 
     Parameters
     ----------
-    x, y, z : float or array_like of floats
-        Cartesian coordinates, in metres.
-    degrees : bool, optional
-        If True, the output spherical latitude and longitude
-        will be in degrees, otherwise radians.
+    x, y, z : ~astropy.units.Quantity
+        Cartesian coordinates.
 
     Returns
     -------
-    lat, lon : float or array_like of floats
-        Spherical latitude and longitude.
-    r : float or array_like of floats
-        Radius, in metres.
+    lat : ~astropy.units.Quantity
+        Spherical latitude.
+    lon : ~astropy.units.Quantity
+        Spherical longitude.
+    r : ~astropy.units.Quantity
+        Radius.
     """
 
     radius = _np.sqrt(x ** 2 + y ** 2 + z ** 2)
     lat = _np.arctan2(z, _np.sqrt(x ** 2 + y ** 2))
     lon = _np.arctan2(y, x)
 
-    if degrees:
-        lat = _np.degrees(lat)
-        lon = _np.degrees(lon)
-
     return lat, lon, radius
 
 
-def spherical_to_cartesian(lat, lon, radius, degrees=True):
+@u.quantity_input
+def spherical_to_cartesian(lat: u.deg, lon: u.deg, radius: u.m):
     """Convert spherical to 3D cartesian coordinates.
 
     Parameters
     ----------
-    lat, lon : float or array_like of floats
-        Spherical latitude and longitude.
-    radius : float or array_like of floats
-        Radius, in metres.
-    degrees : bool, optional
-        If True, the input `lat` and `lon` are given in degrees,
-        otherwise radians.
+    lat : ~astropy.units.Quantity
+        Spherical latitude.
+    lon : ~astropy.units.Quantity
+        Spherical longitude.
+    r : ~astropy.units.Quantity
+        Radius.
 
     Returns
     -------
-    x, y, z : float or array_like of floats
-        Cartesian coordinates, in metres.
+    x, y, z : ~astropy.units.Quantity
+        Cartesian coordinates.
     """
-
-    if degrees:
-        lat = _np.radians(lat)
-        lon = _np.radians(lon)
 
     x = radius * _np.cos(lat) * _np.cos(lon)
     y = radius * _np.cos(lat) * _np.sin(lon)
@@ -185,7 +213,8 @@ def spherical_to_cartesian(lat, lon, radius, degrees=True):
     return x, y, z
 
 
-def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
+@u.quantity_input
+def cartesian_to_ellipsoidal(x: u.m, y: u.m, z: u.m, ell):
     """Convert 3D cartesian to ellipsoidal-harmonic coordinates.
 
     Note that point (x, y, z) must be on or outside of the sphere with the
@@ -194,21 +223,18 @@ def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
 
     Parameters
     ----------
-    x, y, z : float or array_like of floats
-        Cartesian coordinates, in metres.
+    x, y, z : ~astropy.units.Quantity
+        Cartesian coordinates.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which ellipsoidal coordinates are referenced to.
-    degrees : bool, optional
-        If True, the output reduced latitude and longitude will
-        be in degrees, otherwise radians.
 
     Returns
     -------
-    rlat : float or array_like of floats
+    rlat : ~astropy.units.Quantity
         Reduced latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Longitude.
-    u : float or array_like of floats
+    u : ~astropy.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
     """
 
@@ -229,39 +255,29 @@ def cartesian_to_ellipsoidal(x, y, z, ell, degrees=True):
 
     lon = _np.arctan2(y, x)
 
-    if degrees:
-        rlat = _np.degrees(rlat)
-        lon = _np.degrees(lon)
-
     return rlat, lon, u
 
 
-def ellipsoidal_to_cartesian(rlat, lon, u, ell, degrees=True):
+@u.quantity_input
+def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u: u.m, ell):
     """Convert ellipsoidal-harmonic coordinates to 3D cartesian coordinates.
 
     Parameters
     ----------
-    rlat : float or array_like of floats
+    rlat : ~astropy.units.Quantity
         Reduced latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Longitude.
-    u : float or array_like of floats
-        Polar axis of the ellipsoid passing through the point.
+    u : ~astropy.units.Quantity
+        Polar axis of the ellipsoid passing through the given point.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input `rlat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    x, y, z : float or array_like of floats
-        Cartesian coordinates, in metres.
+    x, y, z : ~astropy.units.Quantity
+        Cartesian coordinates.
     """
-
-    if degrees:
-        rlat = _np.radians(rlat)
-        lon = _np.radians(lon)
 
     k = _np.sqrt(u**2 + ell.linear_eccentricity**2)
 
@@ -272,125 +288,123 @@ def ellipsoidal_to_cartesian(rlat, lon, u, ell, degrees=True):
     return x, y, z
 
 
-def geodetic_to_spherical(lat, lon, height, ell, degrees=True):
+@u.quantity_input
+def geodetic_to_spherical(lat: u.deg, lon: u.deg, height: u.m, ell):
     """Convert from geodetic to spherical coordinates.
 
     Parameters
     ----------
-    lat : float or array_like of floats
+    lat : ~astropy.units.Quantity
         Geodetic latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Geodetic longitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
+    height : ~astropy.units.Quantity
+        Geodetic height.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input and output `lat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    lat, lon : float or array_like of floats
+    lat, lon : ~astropy.units.Quantity
         Spherical latitude and longitude.
-    r : float or array_like of floats
-        Radius, in metres.
+    r : ~astropy.units.Quantity
+        Radius.
     """
     return cartesian_to_spherical(
-        *geodetic_to_cartesian(lat, lon, height, ell=ell, degrees=degrees),
-        degrees=degrees)
+        *geodetic_to_cartesian(lat, lon, height, ell=ell))
 
 
-def spherical_to_geodetic(lat, lon, radius, ell, degrees=True):
+@u.quantity_input
+def spherical_to_geodetic(lat: u.deg, lon: u.deg, radius: u.m, ell):
     """Convert spherical to geodetic coordinates.
 
     Parameters
     ----------
-    lat, lon : float or array_like of floats
+    lat, lon : ~astropy.units.Quantity
         Spherical latitude and longitude.
-    radius : float or array_like of floats
-        Radius, in metres.
+    r : ~astropy.units.Quantity
+        Radius.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input and output `lat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    lat, lon : float or array_like of floats
-        Geodetic latitude and lonfitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
+    lat : ~astropy.units.Quantity
+        Geodetic latitude.
+    lon : ~astropy.units.Quantity
+        Geodetic longitude.
+    height : ~astropy.units.Quantity
+        Geodetic height.
     """
     return cartesian_to_geodetic(
-        *spherical_to_cartesian(lat, lon, radius, degrees=degrees),
-        ell=ell, degrees=degrees)
+        *spherical_to_cartesian(lat, lon, radius), ell=ell)
 
 
-def geodetic_to_ellipsoidal(lat, lon, height, ell, degrees=True):
+@u.quantity_input
+def geodetic_to_ellipsoidal(lat: u.deg, lon: u.deg, height: u.m, ell):
     """Convert from geodetic to ellipsoidal-harmonic coordinates.
 
     Parameters
     ----------
-    lat : float or array_like of floats
+    lat : ~astropy.units.Quantity
         Geodetic latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Geodetic longitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
+    height : ~astropy.units.Quantity
+        Geodetic height.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input `lat`, `lon` are and the output `rlat`,`lon`
-        will be given in degrees, otherwise radians.
 
     Returns
     -------
-    rlat : float or array_like of floats
+    rlat : ~astropy.units.Quantity
         Reduced latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Longitude.
-    u : float or array_like of floats
-        Polar axis of the ellipsoid passing through
-        the given point.
+    u : ~astropy.units.Quantity
+        Polar axis of the ellipsoid passing through the given point.
+
     """
     return cartesian_to_ellipsoidal(
-        *geodetic_to_cartesian(lat, lon, height, ell=ell, degrees=degrees),
-        ell=ell, degrees=degrees)
+        *geodetic_to_cartesian(lat, lon, height, ell=ell), ell=ell)
 
 
-def ellipsoidal_to_geodetic(rlat, lon, u, ell, degrees=True):
+@u.quantity_input
+def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u: u.m, ell):
     """Convert from ellipsoidal-harmonic to geodetic coordinates.
 
     Parameters
     ----------
-    rlat : float or array_like of floats
+    rlat : ~astropy.units.Quantity
         Reduced latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Longitude.
-    u : float or array_like of floats
-        Polar axis of the ellipsoid passing through the point.
+    u : ~astropy.units.Quantity
+        Polar axis of the ellipsoid passing through the given point.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input `rlat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    lat, lon : float or array_like of floats
+    lat, lon : ~astropy.units.Quantity
         Geodetic latitude and longitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
+    height : ~astropy.units.Quantity
+        Geodetic height.
     """
     return cartesian_to_geodetic(
-        *ellipsoidal_to_cartesian(rlat, lon, u, ell=ell, degrees=degrees),
-        ell=ell, degrees=degrees)
+        *ellipsoidal_to_cartesian(rlat, lon, u, ell=ell), ell=ell)
 
 
-def _ecef_to_enu_rotation_matrix(lat, lon):
+@u.quantity_input
+def _ecef_to_enu_rotation_matrix(lat: u.deg, lon: u.deg):
     """Return ECEF to ENU rotation matrix.
+
+    Parameters
+    ----------
+    lat : ~astropy.units.Quantity
+        Geodetic or spherical latitude.
+    lon : ~astropy.units.Quantity
+        Geodetic or spherical longitude.
 
     """
     clat = _np.cos(lat)
@@ -406,7 +420,8 @@ def _ecef_to_enu_rotation_matrix(lat, lon):
     return rotation_matrix
 
 
-def ecef_to_enu(x, y, z, origin, ell=None, degrees=True):
+@u.quantity_input
+def ecef_to_enu(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=None):
     """Convert geocentric cartesian to local cartesian coordinates.
 
     Convert Earth Centered Earth Fixed (ECEF) cartesian coordinates
@@ -416,39 +431,36 @@ def ecef_to_enu(x, y, z, origin, ell=None, degrees=True):
 
     Parameters
     ----------
-    x, y, z : float or array_like of floats
-        Geocentric cartesian coordinates, in metres.
-    origin : array_like of floats
+    x, y, z : ~astropy.units.Quantity
+        Geocentric cartesian coordinates.
+    origin : tuple of ~astropy.units.Quantity
         Ggeocentric (spherical) or geodetic coordinates of the origin
         (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`, optional
         Reference ellipsoid to which geodetic coordinates are referenced to.
         Default is None, meaning spherical coordinates instead of geodetic.
-    degrees : bool, optional
-        If True, the input `lat0` and `lon0` in the origin
-        are given in degrees, otherwise radians.
 
     Returns
     -------
-    x, y, z : float or array_like of floats
-        Local east-north-up cartesian coordinates, in metres.
+    x, y, z : ~astropy.units.Quantity
+        Local east-north-up cartesian coordinates.
     """
-    if degrees:
-        lat0 = _np.radians(origin[0])
-        lon0 = _np.radians(origin[1])
-
-    rotation_matrix = _ecef_to_enu_rotation_matrix(lat0, lon0)
+    rotation_matrix = _ecef_to_enu_rotation_matrix(origin[0], origin[1])
     if ell is None:
-        x0, y0, z0 = spherical_to_cartesian(*origin, degrees=True)
+        x0, y0, z0 = spherical_to_cartesian(*origin)
     else:
-        x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell, degrees=True)
+        x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell)
 
-    xyz_shifted = _np.array([x - x0, y - y0, z - z0])
+    xyz_shifted = _np.array([
+        (x - x0).to('m').value,
+        (y - y0).to('m').value,
+        (z - z0).to('m').value])
 
-    return _np.dot(rotation_matrix, xyz_shifted)
+    return _np.dot(rotation_matrix, xyz_shifted) * u.m
 
 
-def enu_to_ecef(x, y, z, origin, ell=None, degrees=True):
+@u.quantity_input
+def enu_to_ecef(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=None):
     """Convert local cartesian to geocentric cartesian coordinates.
 
     Convert local east-north-up (ENU) local cartesian
@@ -457,38 +469,36 @@ def enu_to_ecef(x, y, z, origin, ell=None, degrees=True):
 
     Parameters
     ----------
-    x, y, z : float or array_like of floats
-        Local east-north-uo cartesian coordinates, in metres.
-    origin : array_like of floats
+    x, y, z : ~astropy.units.Quantity
+        Local east-north-uo cartesian coordinates.
+    origin : tuple of ~astropy.units.Quantity
         Ggeocentric (spherical) or geodetic coordinates of the origin
         (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
         Default is None, meaning spherical coordinates instead of geodetic.
-    degrees : bool, optional
-        If True, the input `lat0` and `lon0` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    x, y, z : float or array_like of floats
+    x, y, z : ~astropy.units.Quantity
         Geocentric cartesian coordinates, in metres.
     """
-    if degrees:
-        lat0 = _np.radians(origin[0])
-        lon0 = _np.radians(origin[1])
-
-    rotation_matrix = _ecef_to_enu_rotation_matrix(lat0, lon0).T
-    x, y, z = _np.dot(rotation_matrix, _np.array([x, y, z]))
+    rotation_matrix = _ecef_to_enu_rotation_matrix(origin[0], origin[1]).T
+    x, y, z = _np.dot(rotation_matrix, _np.array([
+        x.to('m').value,
+        y.to('m').value,
+        z.to('m').value])) * u.m
     if ell is None:
-        x0, y0, z0 = spherical_to_cartesian(*origin, degrees=True)
+        x0, y0, z0 = spherical_to_cartesian(*origin)
     else:
-        x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell, degrees=True)
+        x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell)
 
-    return _np.array([x + x0, y + y0, z + z0])
+    return x + x0, y + y0, z + z0
 
 
-def geodetic_to_enu(lat, lon, height, origin, ell, degrees=True):
+@u.quantity_input
+def geodetic_to_enu(lat: u.deg, lon: u.deg, height: u.m,
+                    origin: tuple[u.deg, u.deg, u.m], ell):
     """Convert geodetic coordinates to local cartesian coordinates.
 
     Convert geodetic coordinates
@@ -497,31 +507,28 @@ def geodetic_to_enu(lat, lon, height, origin, ell, degrees=True):
 
     Parameters
     ----------
-    lat : float or array_like of floats
+    lat : ~astropy.units.Quantity
         Geodetic latitude.
-    lon : float or array_like of floats
+    lon : ~astropy.units.Quantity
         Geodetic longitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
-    origin : array_like of floats
+    height : ~astropy.units.Quantity
+        Geodetic height.
+    origin : tuple of ~astropy.units.Quantity
         Geodetic coordinates of the origin (`lat0`, `lon0`, `h0`).
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input `lat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    x, y, z : float or array_like of floats
-        Local east-north-up cartesian coordinates, in metres.
+    x, y, z : ~astropy.units.Quantity
+        Local east-north-up cartesian coordinates.
     """
     return ecef_to_enu(
-        *geodetic_to_cartesian(lat, lon, height, ell=ell, degrees=degrees),
-        origin=origin, ell=ell, degrees=degrees)
+        *geodetic_to_cartesian(lat, lon, height, ell=ell), origin=origin, ell=ell)
 
 
-def enu_to_geodetic(x, y, z, origin, ell, degrees=True):
+@u.quantity_input
+def enu_to_geodetic(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell):
     """Convert local cartesian coordinates to geodetic coordinates.
 
     Convert the local east-north-up (ENU) local cartesian
@@ -530,75 +537,67 @@ def enu_to_geodetic(x, y, z, origin, ell, degrees=True):
 
     Parameters
     ----------
-    x, y, z : float or array_like of floats
-        Local east-north-uo cartesian coordinates, in metres.
-    origin : array_like of floats
+    x, y, z : ~astropy.units.Quantity
+        Local east-north-uo cartesian coordinates.
+    origin : tuple of ~astropy.units.Quantity
         Geodetic coordinates of the origin (`lat0`, `lon0`, `h0`).
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
-    degrees : bool, optional
-        If True, the input `lat` and `lon` are given in degrees,
-        otherwise radians.
 
     Returns
     -------
-    lat, lon : float or array_like of floats
-        Geodetic latitude and longitude.
-    height : float or array_like of floats
-        Geodetic height, in metres.
+    lat : ~astropy.units.Quantity
+        Geodetic latitude.
+    lon : ~astropy.units.Quantity
+        Geodetic longitude.
+    height : ~astropy.units.Quantity
+        Geodetic height.
     """
     return cartesian_to_geodetic(
-        *enu_to_ecef(x, y, z, origin=origin, ell=ell, degrees=degrees),
-        ell=ell, degrees=degrees)
+        *enu_to_ecef(x, y, z, origin=origin, ell=ell), ell=ell)
 
 ##############################################################################
 # 2D coordinates
 ##############################################################################
 
 
-def polar_to_cartesian(theta, radius, degrees=True):
+@u.quantity_input
+def polar_to_cartesian(theta: u.deg, radius: u.m):
     """Convert polar coordinates to 2D cartesian.
 
     Parameters
     ----------
-    theta : float or array_like of floats
+    theta : ~astropy.units.Quantity
         Polar angle.
-    radius : float or array_like of floats
-        Radius, in metres.
+    radius : ~astropy.units.Quantity
+        Radius.
 
     Returns
     -------
-    x, y : float or array_like of floats
-        Cartesian coordinates, in metres.
+    x, y : ~astropy.units.Quantity
+        Local east-north-uo cartesian coordinates.
     """
-    if degrees:
-        theta = _np.radians(theta)
-
     return radius * _np.cos(theta), radius * _np.sin(theta)
 
 
-def cartesian_to_polar(x, y, degrees=True):
+@u.quantity_input
+def cartesian_to_polar(x: u.m, y: u.m):
     """Convert 2D cartesian coordinates to polar coordinates.
 
     Parameters
     ----------
-    x, y : float or array_like of floats
-        Cartesian coordinates, in metres.
-    degrees : bool, optional
-        If True, the output azimuth will be in degrees, otherwise radians.
+    x, y : ~astropy.units.Quantity
+        Cartesian coordinates.
 
     Returns
     -------
-    theta : float or array_like of floats
+    theta : ~astropy.units.Quantity
         Polar angle.
-    radius : float or array_like of floats
-        Radius, in metres.
+    radius : ~astropy.units.Quantity
+        Radius.
     """
 
     radius = _np.sqrt(x ** 2 + y ** 2)
     theta = _np.arctan2(y, x)
-
-    if degrees:
-        theta = _np.degrees(theta)
 
     return theta, radius

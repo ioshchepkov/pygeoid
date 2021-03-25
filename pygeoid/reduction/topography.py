@@ -6,17 +6,17 @@ import astropy.units as u
 from pygeoid.constants import _2piG
 
 
-def bouguer_plate(height, density=2670, units='mGal'):
+@u.quantity_input
+def bouguer_plate(height: u.m,
+                  density: u.kg / u.m**3 = 2670 * u.kg / u.m**3) -> u.mGal:
     r"""Return an attraction of an infinite Bouguer plate.
 
     Parameters
     ----------
-    height : float or array_like of floats
-        Height above sea level, in metres.
-    density : float
-        Density of the prism, in kg/m**3. Default is 2670 kg/m**3.
-    units : str
-        Units in which attraction is returned. Default is mGal.
+    height : ~astropy.units.Quantity
+        Height above sea level.
+    density : ~astropy.units.Quantity
+        Density of the prism. Default is 2670 kg/m**3.
 
     Notes
     -----
@@ -26,22 +26,20 @@ def bouguer_plate(height, density=2670, units='mGal'):
     where :math:`G` -- gravitational constant, :math:`\delta` -- density,
     :math:`H` -- height above sea level.
     """
-    height = height * u.m
-    density = density * (u.kg / u.m**3)
-    return (_2piG * density * height).to(units).value
+    return _2piG * density * height
 
 
-def spherical_bouguer_cap(height, density=2670, units='mGal'):
+@u.quantity_input
+def spherical_bouguer_cap(height: u.m,
+                          density: u.kg / u.m**3 = 2670 * u.kg / u.m**3) -> u.mGal:
     r"""Return spherical Bouguer correction.
 
     Parameters
     ----------
-    height : float or array_like of floats
-        Height above sea level, in metres.
-    density : float
-        Density of the prism, in kg/m**3. Default is 2670 kg/m**3.
-    units : str
-        Units in which attraction is returned. Default is mGal.
+    height : ~astropy.units.Quantity
+        Height above sea level.
+    density : ~astropy.units.Quantity
+        Density of the prism. Default is 2670 kg/m**3.
 
     Notes
     -----
@@ -50,20 +48,18 @@ def spherical_bouguer_cap(height, density=2670, units='mGal'):
     166.7 km [1_]:
 
     .. math::
-        F_B = 2\pi G ((1 + \mu) H - \lambda R),
+        F_{SB} = 2\pi G ((1 + \mu) H - \lambda R),
 
     where :math:`G` -- gravitational constant, :math:`\delta` -- density,
     :math:`H` -- height above sea level,
     :math:`\lambda` and :math:`\mu` -- dimensionless coefficients,
-    :math:`R` -- sum of the mean radius of the Earth and the height.
+    :math:`R = R_e + H` -- sum of the mean radius of the Earth and the height.
 
     References
     ----------
     .. [1] LaFehr, T.R., 1991. An exact solution for the gravity
     curvature (Bullard B) correction. Geophysics, 56(8), pp.1179-1184.
     """
-    height = height * u.m
-    density = density * (u.kg / u.m**3)
 
     # normal radius
     R0 = 6371 * u.km  # km
@@ -91,4 +87,4 @@ def spherical_bouguer_cap(height, density=2670, units='mGal'):
 
     out = _2piG * density * ((1 + mu) * height - llambda * R)
 
-    return (out).to(units).value
+    return out

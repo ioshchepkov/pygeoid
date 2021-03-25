@@ -3,19 +3,32 @@ Gravity field and geometry of the level ellipsoid.
 """
 
 import numpy as np
+import astropy.units as u
 from scipy import (optimize, special)
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 
 LEVEL_ELLIPSOIDS = {
-    'GRS80': {'description': 'GRS 80', 'a': 6378137.0, 'j2': 108263e-8,
-              'gm': 3986005e8, 'omega': 7292115e-11},
-    'WGS84': {'description': 'WGS 84', 'a': 6378137.0, 'rf': 298.2572235630,
-              'gm': 3986004.418e8, 'omega': 7292115e-11},
-    'PZ90': {'description': 'PZ 90.11', 'a': 6378136.0, 'rf': 298.25784,
-             'gm': 3986004.418e8, 'omega': 7292115e-11},
-    'GSK2011': {'description': 'GSK-2011', 'a': 6378136.5, 'rf': 298.2564151,
-                'gm': 3986004.415e8, 'omega': 7292115e-11},
+    'GRS80': {'description': 'GRS 80',
+              'a': 6378137.0 * u.m,
+              'j2': 108263e-8 * u.dimensionless_unscaled,
+              'gm': 3986005e8 * u.m**3 / u.s**2,
+              'omega': 7292115e-11 / u.s},
+    'WGS84': {'description': 'WGS 84',
+              'a': 6378137.0 * u.m,
+              'rf': 298.2572235630 * u.dimensionless_unscaled,
+              'gm': 3986004.418e8 * u.m**3 / u.s**2,
+              'omega': 7292115e-11 / u.s},
+    'PZ90': {'description': 'PZ 90.11',
+             'a': 6378136.0 * u.m,
+             'rf': 298.25784 * u.dimensionless_unscaled,
+             'gm': 3986004.418e8 * u.m**3 / u.s**2,
+             'omega': 7292115e-11 * u.rad / u.s},
+    'GSK2011': {'description': 'GSK-2011',
+                'a': 6378136.5 * u.m,
+                'rf': 298.2564151 * u.dimensionless_unscaled,
+                'gm': 3986004.415e8 * u.m**3 / u.s**2,
+                'omega': 7292115e-11 / u.s},
 }
 
 # default level ellipsoid for normal gravity field
@@ -33,85 +46,62 @@ class Centrifugal:
         Earth's rotation 7292115e-11 rad/s
     """
 
-    def __init__(self, omega=7292115e-11):
+    @u.quantity_input
+    def __init__(self, omega=7292115e-11 * u.rad / u.s):
         self.omega = omega
 
-    def potential(self, lat, radius, degrees=True):
-        """Return centrifugal potential, in m**2/s**2.
+    @u.quantity_input
+    def potential(self, lat: u.deg, radius: u.m) -> u.m**2 / u.s**2:
+        """Return centrifugal potential.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Spherical (geocentric) latitude.
-        radius : float or array_like of floats
-            Radius, in metres.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians.
+        radius : ~astropy.units.Quantity
+            Radius.
         """
-
-        if degrees:
-            lat = np.radians(lat)
-
         return 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
 
-    def r_derivative(self, lat, radius, degrees=True):
-        """Return radial derivative, in 1/s**2.
+    @u.quantity_input
+    def r_derivative(self, lat: u.deg, radius: u.m):
+        """Return radial derivative.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Spherical (geocentric) latitude.
-        radius : float or array_like of floats
-            Radius, in metres.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians.
+        radius : ~astropy.units.Quantity
+            Radius.
         """
-
-        if degrees:
-            lat = np.radians(lat)
-
         return self.omega**2 * radius * np.cos(lat) ** 2
 
-    def lat_derivative(self, lat, radius, degrees=True):
-        """Return latitude derivative, in 1/s**2.
+    @u.quantity_input
+    def lat_derivative(self, lat: u.deg, radius: u.m):
+        """Return latitude derivative.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Spherical (geocentric) latitude.
-        radius : float or array_like of floats
-            Radius, in metres.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians.
+        radius : ~astropy.units.Quantity
+            Radius.
         """
-
-        if degrees:
-            lat = np.radians(lat)
-
         return -self.omega**2 * radius**2 * np.cos(lat) * np.sin(lat)
 
-    def gradient(self, lat, radius, degrees=True):
-        """Return centrifugal force, in m/s**2.
+    @u.quantity_input
+    def gradient(self, lat: u.deg, radius: u.deg) -> u.m / u.s**2:
+        """Return centrifugal force.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Spherical (geocentric) latitude.
-        radius : float or array_like of floats
-            Radius, in metres.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians.
+        radius : ~astropy.units.Quantity
+            Radius.
         """
-
-        if degrees:
-            lat = np.radians(lat)
-
-        cr = self.r_derivative(lat, radius, degrees=False)
-        clat = 1 / radius * self.lat_derivative(lat, radius, degrees=False)
+        cr = self.r_derivative(lat, radius)
+        clat = 1 / radius * self.lat_derivative(lat, radius)
 
         return np.sqrt(cr**2 + clat**2)
 
@@ -162,28 +152,34 @@ class LevelEllipsoid(Ellipsoid):
                                             LEVEL_ELLIPSOIDS.keys()))
 
         if 'j2' in kwargs:
-            kwargs['f'] = _j2_to_flattening(kwargs['j2'], kwargs['a'],
-                                            kwargs['gm'], kwargs['omega'])
+            kwargs['f'] = _j2_to_flattening(
+                kwargs['j2'].si.value,
+                kwargs['a'].si.value,
+                kwargs['gm'].si.value,
+                kwargs['omega'].si.value) * u.dimensionless_unscaled
+
             self._j2 = kwargs['j2']
 
         self._gm = kwargs['gm']
         self._omega = kwargs['omega']
 
-        super().__init__(self, **kwargs)
+        kwargs_nounits = {key: x.si.value for key, x in kwargs.items() if hasattr(x, 'unit')}
+
+        super().__init__(self, **kwargs_nounits)
 
         # define useful short-named attributes
         self._m = self.omega**2 * self.a**2 * self.b / self.gm
         self._q0 = 0.5 * ((1 + 3 / self.e1**2) *
-                          np.arctan(self.e1) - 3 / self.e1)
+                          np.arctan(self.e1).value * u.dimensionless_unscaled - 3 / self.e1)
 
         if not hasattr(self, '_j2'):
             self._j2 = self.e2 / 3 * (1 - 2 / 15 * self.m * self.e1 / self._q0)
 
         self._q01 = 3 * (1 +
-                         1 / self.e12) * (1 - np.arctan(self.e1) / self.e1) - 1
+                         1 / self.e12) * (1 - np.arctan(self.e1).value * u.dimensionless_unscaled / self.e1) - 1
 
         self._surface_potential = self.gm / self.linear_eccentricity *\
-            np.arctan(self.second_eccentricity) +\
+            np.arctan(self.second_eccentricity).value * u.dimensionless_unscaled +\
             1 / 3 * self.omega ** 2 * self.a ** 2
 
         self._gamma_e = self.gm / (self.a *
@@ -236,76 +232,69 @@ class LevelEllipsoid(Ellipsoid):
     #########################################################################
     @property
     def surface_potential(self):
-        """Return normal gravity potential on the ellipsoid, in m**2/s**2.
+        """Return normal gravity potential on the ellipsoid.
 
         Value of the normal gravity potential on the ellipsoid, or on the
-        equipotential surface U(x, y, z) = U_0
+        equipotential surface U(x, y, z) = U_0.
+
         """
         return self._surface_potential
 
-    def _q(self, u):
+    @u.quantity_input
+    def _q(self, u_ax: u.m):
         """Return auxiliary function q(u).
 
         """
         E = self.linear_eccentricity
-        return 0.5 * ((1 + 3 * u**2 / E**2) * np.arctan2(E, u) - 3 * u / E)
+        return 0.5 * ((1 + 3 * u_ax**2 / E**2) * np.arctan2(E, u_ax).value *
+                      u.dimensionless_unscaled - 3 * u_ax / E)
 
-    def gravitational_potential(self, rlat, u, degrees=True):
-        """Return normal gravitational potential V, in m**2/s**2.
+    @u.quantity_input
+    def gravitational_potential(self, rlat: u.deg, u_ax: u.m) -> u.m**2 / u.s**2:
+        """Return normal gravitational potential V.
 
         Calculate normal gravitational potential from the rigorous formula.
 
         Parameters
         ----------
-        rlat : float or array_like of floats
+        rlat : ~astropy.units.Quantity
             Reduced latitude.
-        u : float or array_like of floats
+        u_ax : ~astropy.units.Quantity
             Polar axis of the ellipsoid passing through the point.
-        degrees : bool, optional
-            If True, the input `rlat` is given in degrees,
-            otherwise radians.
 
         Returns
         -------
-        float or array_like of floats
-            Normal gravitational potential, in m/s**2.
+        ~astropy.units.Quantity
+            Normal gravitational potential.
         """
-        if degrees:
-            rlat = np.radians(rlat)
-
         E = self.linear_eccentricity
-        arctanEu = np.arctan2(E, u)
-        _qr = self._q(u) / self._q0
+        arctanEu = np.arctan2(E, u_ax).value * u.dimensionless_unscaled
+        _qr = self._q(u_ax) / self._q0
 
         return (self.gm / E) * arctanEu + \
             0.5 * self.omega**2 * self.a**2 * \
             _qr * (np.sin(rlat)**2 - 1 / 3)
 
-    def gravity_potential(self, rlat, u, degrees=True):
-        """Return normal gravity potential U, in m**2/s**2.
+    @u.quantity_input
+    def gravity_potential(self, rlat: u.deg, u_ax: u.m) -> u.m**2 / u.s**2:
+        """Return normal gravity potential U.
 
         Calculate normal gravity potential from the rigorous formula.
 
         Parameters
         ----------
-        rlat : float or array_like of floats
+        rlat : ~astropy.units.Quantity
             Reduced latitude.
-        u : float or array_like of floats
+        u_ax : ~astropy.units.Quantity
             Polar axis of the ellipsoid passing through the point.
-        degrees : bool, optional
-            If True, the input `rlat` is given in degrees,
-            otherwise radians.
 
         Returns
         -------
-        float or array_like of floats
-            Normal gravity potential, in m**2/s**2.
+        ~astropy.units.Quantity
+            Normal gravity potential.
         """
-        if degrees:
-            rlat = np.radians(rlat)
-
-        gravitational = self.gravitational_potential(rlat, u, degrees=False)
-        centrifugal = 0.5 * self.omega**2 * (u**2 +
+        gravitational = self.gravitational_potential(rlat, u_ax)
+        centrifugal = 0.5 * self.omega**2 * (u_ax**2 +
                                              self.linear_eccentricity**2) * np.cos(rlat)**2
         return gravitational + centrifugal
 
@@ -314,21 +303,21 @@ class LevelEllipsoid(Ellipsoid):
     #########################################################################
     @property
     def equatorial_normal_gravity(self):
-        """Return normal gravity at the equator, in m/s**2.
+        """Return normal gravity at the equator.
 
         """
         return self._gamma_e
 
     @property
     def polar_normal_gravity(self):
-        """Return normal gravity at the poles, in m/s**2.
+        """Return normal gravity at the poles.
 
         """
         return self._gamma_p
 
     @property
     def mean_normal_gravity(self):
-        """Return mean normal gravity over ellipsoid, in m/s**2.
+        """Return mean normal gravity over ellipsoid.
 
         """
         return 4 * np.pi / self.surface_area * (self._gm -
@@ -350,68 +339,52 @@ class LevelEllipsoid(Ellipsoid):
         f4_coeff = -0.5 * self.f**2 + 2.5 * self.f * self.m
         return (self.gravity_flattening, 0.25 * f4_coeff)
 
-    def surface_normal_gravity(self, lat, degrees=True):
-        """Return normal gravity on the ellipsoid, in m/s**2.
+    @u.quantity_input
+    def surface_normal_gravity(self, lat: u.deg) -> u.m / u.s**2:
+        """Return normal gravity on the ellipsoid.
 
         Calculate normal gravity value on the level ellipsoid by the rigorous
         formula of Somigliana.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees, otherwise radians.
-            Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Normal gravity on the ellipsoid, in m/s**2.
+        ~astropy.units.Quantity
+            Normal gravity on the ellipsoid.
         """
-        if degrees:
-            lat = np.radians(lat)
-
         return self._gamma_e * (1 + self._k * np.sin(lat) ** 2) / self._w(lat)
 
-    def surface_vertical_normal_gravity_gradient(self, lat, degrees=True):
-        """Return the vertical gravity gradient on the ellipsoid, in 1/s**2.
+    @u.quantity_input
+    def surface_vertical_normal_gravity_gradient(self, lat: u.deg):
+        """Return the vertical gravity gradient on the ellipsoid.
 
         Vertical gradient of the normal gravity at the reference ellipsoid.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees, otherwise radians.
-            Default is True.
         """
-        if degrees:
-            lat = np.radians(lat)
+        gamma = self.surface_normal_gravity(lat)
+        return -2 * gamma * self.average_curvature(lat) - 2 * self.omega ** 2
 
-        gamma = self.surface_normal_gravity(lat, degrees=False)
-        return -2 * gamma * self.average_curvature(lat, degrees=False) -\
-            2 * self.omega ** 2
-
-    def height_correction(self, lat, height, degrees=True):
-        """Return height correction, in m/s**2.
+    @u.quantity_input
+    def height_correction(self, lat: u.deg, height: u.m) -> u.m / u.s**2:
+        """Return height correction.
 
         Second-order approximation formula is used instead of -0.3086*height.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        height : float or array_like of floats
-            Geodetic height, in metres.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees, otherwise radians.
-            Default is True.
+        height : ~astropy.units.Quantity
+            Geodetic height.
         """
-        if degrees:
-            lat = np.radians(lat)
-
         gammae = self.equatorial_normal_gravity
         out = -2 * gammae / self.a * (1 +
                                       self.f + self.m + (-3 * self.f +
@@ -420,42 +393,38 @@ class LevelEllipsoid(Ellipsoid):
 
         return out
 
-    def normal_gravity(self, rlat, u, degrees=True):
-        """Return normal gravity, in m/s**2.
+    @u.quantity_input
+    def normal_gravity(self, rlat: u.deg, u_ax: u.m) -> u.m / u.s**2:
+        """Return normal gravity.
 
         Calculate normal gravity value at any arbitrary point by the rigorous
         closed formula.
 
         Parameters
         ----------
-        rlat : float or array_like of floats
+        rlat : ~astropy.units.Quantity
             Reduced latitude.
-        u : float or array_like of floats
+        u_ax : ~astropy.units.Quantity
             Polar axis of the ellipsoid passing through the point.
-        degrees : bool, optional
-            If True, the input `rlat` is given in degrees,
-            otherwise radians.
 
         Returns
         -------
-        float or array_like of floats
-            Normal gravity, in m/s**2.
+        ~astropy.units.Quantity
+            Normal gravity.
         """
 
-        if degrees:
-            rlat = np.radians(rlat)
-
         E = self.linear_eccentricity
-        _qr = self._q(u) / self._q0
+        _qr = self._q(u_ax) / self._q0
 
-        uE = u**2 + E**2
-        w = np.sqrt((u**2 + E**2 * np.sin(rlat)**2) / uE)
-        q1 = 3 * (1 + u**2 / E**2) * (1 - u / E * np.arctan2(E, u)) - 1
+        uE = u_ax**2 + E**2
+        w = np.sqrt((u_ax**2 + E**2 * np.sin(rlat)**2) / uE)
+        arctan2Eu = np.arctan2(E, u_ax).value * u.dimensionless_unscaled
+        q1 = 3 * (1 + u_ax**2 / E**2) * (1 - u_ax / E * arctan2Eu) - 1
 
         u_deriv = self.gm / uE
         u_deriv += self.omega**2 * self.a ** 2 * E / uE * q1 / self._q0 * (
             0.5 * np.sin(rlat)**2 - 1 / 6)
-        u_deriv -= self.omega**2 * u * np.cos(rlat)**2
+        u_deriv -= self.omega**2 * u_ax * np.cos(rlat)**2
         u_deriv *= -1 / w
 
         rlat_deriv = -self.omega**2 * self.a**2 / np.sqrt(uE) * _qr
@@ -467,7 +436,8 @@ class LevelEllipsoid(Ellipsoid):
     #########################################################################
     # Spherical approximation
     #########################################################################
-    def j2n(self, n):
+    @u.quantity_input
+    def j2n(self, n: int) -> u.dimensionless_unscaled:
         """Return even zonal coefficients J with a degree of 2*n.
 
         If n = 0, the function will return -1.
@@ -485,84 +455,85 @@ class LevelEllipsoid(Ellipsoid):
             ((1 - n) * self.e2 + 5 * n * self.j2)
         return j2n
 
-    def gravitational_potential_sph(self, lat, radius, n_max=4, degrees=True):
-        """Return normal gravitational potential V, in m**2/s**2.
+    @u.quantity_input
+    def gravitational_potential_sph(
+            self, lat: u.deg, radius: u.m, n_max: int = 4) -> u.m**2 / u.s**2:
+        """Return normal gravitational potential V.
 
         Calculate normal gravitational potential from spherical approximation.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Spherical (geocentric) latitude.
-        radius : float or array_like of floats
+        radius : ~astropy.units.Quantity
             Radius, in metres.
         n_max : int
             Maximum degree.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians.
         """
-
-        if degrees:
-            lat = np.radians(lat)
-
         out = 0
         for degree in range(1, n_max + 1):
-            leg = special.eval_legendre(2 * degree, np.sin(lat))
+            leg = special.eval_legendre(2 * degree, np.sin(lat).value)
             out += self.j2n(degree) * (self.a / radius) ** (2 * degree) * leg
         return self.gm / radius * (1 - out)
 
-    def gravity_potential_sph(self, lat, radius, degrees=True, **kwargs):
-        """Return normal gravitational potential V, in m**2/s**2.
+    @u.quantity_input
+    def gravity_potential_sph(self,
+                              lat: u.deg, radius: u.m, n_max: int = 4) -> u.m**2 / u.s**2:
+        """Return normal gravitational potential V.
 
         Calculate normal gravitational potential from spherical approximation.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Spherical (geocentric) latitude.
-        radius : float or array_like of floats
+        radius : ~astropy.units.Quantity
             Radius, in metres.
         n_max : int
             Maximum degree.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians.
         """
-
-        if degrees:
-            lat = np.radians(lat)
-
         gravitational_sph = self.gravitational_potential_sph(lat=lat,
                                                              radius=radius,
-                                                             degrees=False,
-                                                             **kwargs)
+                                                             n_max=n_max)
         centrifugal = 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
         return gravitational_sph + centrifugal
 
 
 NORMAL_GRAVITY_COEFFS = {
-    'helmert': (978030, 0.005302, 0.000007),
-    'helmert_14mGal': (978030 - 14, 0.005302, 0.000007),
-    '1930': (978049, 0.0052884, 0.0000059),
-    '1930_14mGal': (978049 - 14, 0.0052884, 0.0000059),
-    '1967': (978031.8, 0.0053024, 0.0000059),
-    '1980': (978032.7, 0.0053024, 0.0000058)}
+    'helmert': (978030 * u.mGal,
+                0.005302 * u.dimensionless_unscaled,
+                0.000007 * u.dimensionless_unscaled),
+    'helmert_14mGal': (
+        (978030 - 14) * u.mGal,
+        0.005302 * u.dimensionless_unscaled,
+        0.000007 * u.dimensionless_unscaled),
+    '1930': (978049 * u.mGal,
+             0.0052884 * u.dimensionless_unscaled,
+             0.0000059 * u.dimensionless_unscaled),
+    '1930_14mGal': (
+        (978049 - 14) * u.mGal,
+        0.0052884 * u.dimensionless_unscaled,
+        0.0000059 * u.dimensionless_unscaled),
+    '1967': (978031.8 * u.mGal,
+             0.0053024 * u.dimensionless_unscaled,
+             0.0000059 * u.dimensionless_unscaled),
+    '1980': (978032.7 * u.mGal,
+             0.0053024 * u.dimensionless_unscaled,
+             0.0000058 * u.dimensionless_unscaled)}
 
 
-def surface_normal_gravity_clairaut(lat, model=None, degrees=True):
-    """Return normal gravity from the first Clairaut formula, in mGal.
+@u.quantity_input
+def surface_normal_gravity_clairaut(lat: u.deg, model: str = None) -> u.m / u.s**2:
+    """Return normal gravity from the first Clairaut formula.
 
     Parameters
     ----------
-    lat : float or array_like of floats
+    lat : ~astropy.units.Quantity
         Geodetic latitude.
     model : {'helmert', 'helmert_14mGal', '1930',\
             '1930_14mGal', '1967', '1980'}
         Which gravity formula will be used.
-    degrees : bool, optional
-        If True, the input `lat` is given in degrees, otherwise radians.
-        Default is True.
     """
 
     if model is not None and model in NORMAL_GRAVITY_COEFFS:
@@ -570,8 +541,5 @@ def surface_normal_gravity_clairaut(lat, model=None, degrees=True):
     else:
         msg = 'No formula with name {:%s}, possible values are:\n{:%s}'
         raise ValueError(msg.format(model, model.keys()))
-
-    if degrees:
-        lat = np.radians(lat)
 
     return gamma_e * (1 + beta * np.sin(lat)**2 - beta1 * np.sin(2 * lat)**2)

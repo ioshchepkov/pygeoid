@@ -1,16 +1,11 @@
-"""
-Geometry of the reference ellipsoid.
+"""Geometry of the reference ellipsoid.
+
 """
 
 import numpy as _np
 import pyproj as _proj
+import astropy.units as u
 from pygeoid.constants import _2pi, _4pi
-
-# update Proj ellipsoid Parameters
-_proj.pj_ellps.update({
-    'PZ90': {'description': 'PZ-90', 'a': 6378136.0, 'rf': 298.25784},
-    'GSK2011': {'description': 'GSK-2011', 'a': 6378136.5, 'rf': 298.2564151}
-})
 
 # default ellipsoid for geometrical (geodetic) applications
 DEFAULT_ELLIPSOID = 'GRS80'
@@ -21,7 +16,7 @@ class Ellipsoid:
 
     This class uses proj.Geod class from pyproj package, so any valid init
     string for Proj are accepted as arguments. See `pyproj.Geod.__new__`
-    documentation (https://jswhit.github.io/pyproj/pyproj.Geod-class.html)
+    documentation (https://pyproj4.github.io/pyproj/stable/api/geod.html)
     for more information.
 
     Parameters
@@ -31,7 +26,7 @@ class Ellipsoid:
         Default is 'GRS80'.
     """
 
-    def __init__(self, ellps=None, **kwargs):
+    def __init__(self, ellps: 'str' = None, **kwargs):
         if not kwargs:
             if ellps in _proj.pj_ellps:
                 kwargs['ellps'] = ellps
@@ -39,19 +34,21 @@ class Ellipsoid:
                 kwargs['ellps'] = DEFAULT_ELLIPSOID
             else:
                 raise ValueError(
-                    'No ellipsoid with name {:%s}, possible values \
-                        are:\n{:%s}'.format(ellps,
-                                            _proj.pj_ellps.keys()))
+                    'No ellipsoid with name {0}, possible values \
+                        are:\n{1}'.format(ellps, _proj.pj_ellps.keys()))
+        # else:
+            # TODO: Check if all parameters are in SI units
+        #    pass
 
         # define useful short-named attributes
         self.geod = _proj.Geod(**kwargs)
-        self.a = self.geod.a
-        self.b = self.geod.b
-        self.f = self.geod.f  # flattening
-        self.e2 = _np.float64(self.geod.es)  # eccentricity squared
-        self.e = _np.sqrt(self.e2)  # eccentricity
-        self.e12 = self.e2 / (1 - self.e2)  # 2nd eccentricity squared
-        self.e1 = _np.sqrt(self.e12)  # 2nd eccentricity
+        self.a = self.geod.a * u.m
+        self.b = self.geod.b * u.m
+        self.f = self.geod.f * u.dimensionless_unscaled  # flattening
+        self.e2 = _np.float64(self.geod.es) * u.dimensionless_unscaled  # eccentricity squared
+        self.e = _np.sqrt(self.e2) * u.dimensionless_unscaled  # eccentricity
+        self.e12 = self.e2 / (1 - self.e2) * u.dimensionless_unscaled  # 2nd eccentricity squared
+        self.e1 = _np.sqrt(self.e12) * u.dimensionless_unscaled  # 2nd eccentricity
 
     @property
     def equatorial_radius(self):
@@ -223,10 +220,11 @@ class Ellipsoid:
 
         where :math:`a` and :math:`b` -- equatorial and polar axis of the
         ellipsoid respectively.
+
         """
         return _4pi * self.a**2 * self.b / 3
 
-    def mean_radius(self, kind='arithmetic'):
+    def mean_radius(self, kind: str = 'arithmetic'):
         r"""Return the radius of a sphere.
 
         Parameters
@@ -283,13 +281,14 @@ class Ellipsoid:
     #########################################################################
     # Auxiliary methods
     #########################################################################
-    def _w(self, lat):
+    @u.quantity_input
+    def _w(self, lat: u.deg) -> u.dimensionless_unscaled:
         r"""Return auxiliary function W.
 
         Parameters
         ----------
-        lat : float or array_like of floats
-            Geodetic latitude, in radians.
+        lat : ~astropy.units.Quantity
+            Geodetic latitude.
 
         Returns
         -------
@@ -308,13 +307,14 @@ class Ellipsoid:
         """
         return _np.sqrt(1 - self.e2 * _np.sin(lat) ** 2)
 
-    def _v(self, lat):
+    @u.quantity_input
+    def _v(self, lat: u.deg) -> u.dimensionless_unscaled:
         r"""Return auxiliary function V.
 
         Parameters
         ----------
-        lat : float or array_like of floats
-            Geodetic latitude, in radians.
+        lat : ~astropy.units.Quantity
+            Geodetic latitude.
 
         Returns
         -------
@@ -336,19 +336,19 @@ class Ellipsoid:
     #########################################################################
     # Curvature
     #########################################################################
-    def meridian_curvature_radius(self, lat):
+    @u.quantity_input
+    def meridian_curvature_radius(self, lat: u.deg) -> u.m:
         r"""Return radius of curvature of meridian normal section.
 
         Parameters
         ----------
-        lat : float or array_like of floats
-            Geodetic latitude, in radians.
+        lat : ~astropy.units.Quantity
+            Geodetic latitude.
 
         Returns
         -------
-        float or array_like of floats
-            Value of the radius of curvature of meridian normal section,
-            in metres.
+        ~astropy.units.Quantity
+            Value of the radius of curvature of meridian normal section.
 
         Notes
         -----
@@ -359,22 +359,24 @@ class Ellipsoid:
 
         where :math:`c` -- polar radius of curvature, :math:`V` -- auxiliary
         function which depends on geodetic latitude.
+
         """
         return self.polar_curvature_radius / self._v(lat) ** 3
 
-    def prime_vertical_curvature_radius(self, lat):
+    @u.quantity_input
+    def prime_vertical_curvature_radius(self, lat: u.deg) -> u.m:
         r"""Return radius of curvature of prime vertical normal section.
 
         Parameters
         ----------
-        lat : float or array_like of floats
-            Geodetic latitude, in radians.
+        lat : ~astropy.units.Quantity
+            Geodetic latitude.
 
         Returns
         -------
-        float or array_like of floats
+        ~astropy.units.Quantity
             Value of the radius of curvature of prime vertical
-            normal section, in metres.
+            normal section.
 
         Notes
         -----
@@ -388,21 +390,19 @@ class Ellipsoid:
         """
         return self.polar_curvature_radius / self._v(lat)
 
-    def mean_curvature(self, lat, degrees=True):
+    @u.quantity_input
+    def mean_curvature(self, lat: u.deg) -> 1 / u.m:
         r"""Return mean curvature, in inverse metres.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees, otherwise radians.
-            Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Value of the mean curvature, in inverse metres.
+        ~astropy.units.Quantity
+            Value of the mean curvature.
 
         Notes
         -----
@@ -410,28 +410,23 @@ class Ellipsoid:
         :math:`M` -- radius of curvature of meridian normal section,
         :math:`N` -- radius of curvature of prime vertical.
         """
-        if degrees:
-            lat = _np.radians(lat)
-
         meridian_curv_radius = self.meridian_curvature_radius(lat)
         pvertical_curv_radius = self.prime_vertical_curvature_radius(lat)
         return 1 / _np.sqrt(meridian_curv_radius * pvertical_curv_radius)
 
-    def gaussian_curvature(self, lat, degrees=True):
+    @u.quantity_input
+    def gaussian_curvature(self, lat: u.deg) -> 1 / u.m:
         """Return Gaussian curvature, in inverse metres.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees, otherwise radians.
-            Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Value of the Gaussian radius of curvature, in inverse metres.
+        ~astropy.units.Quantity
+            Value of the Gaussian radius of curvature.
 
         Notes
         -----
@@ -439,28 +434,23 @@ class Ellipsoid:
         :math:`M` -- radius of curvature of meridian normal section,
         :math:`N` -- radius of curvature of prime vertical.
         """
-        if degrees:
-            lat = _np.radians(lat)
-
         meridian_curv_radius = self.meridian_curvature_radius(lat)
         pvertical_curv_radius = self.prime_vertical_curvature_radius(lat)
         return _np.sqrt(meridian_curv_radius * pvertical_curv_radius)
 
-    def average_curvature(self, lat, degrees=True):
+    @u.quantity_input
+    def average_curvature(self, lat: u.deg) -> 1 / u.m:
         r"""Return average curvature, in inverse metres.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees, otherwise radians.
-            Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Value of the average curvature, in inverse metres.
+        ~astropy.units.Quantity
+            Value of the average curvature.
 
         Notes
         -----
@@ -470,64 +460,56 @@ class Ellipsoid:
 
         where :math:`M` -- radius of curvature of meridian normal section,
         :math:`N` -- radius of curvature of prime vertical.
-        """
-        if degrees:
-            lat = _np.radians(lat)
 
+        """
         return 0.5 * (1 / self.prime_vertical_curvature_radius(lat) +
                       1 / self.meridian_curvature_radius(lat))
 
     #########################################################################
     # Arc distances, geodetic problems
     #########################################################################
-    def meridian_arc_distance(self, lat1, lat2, degrees=True):
+
+    @u.quantity_input
+    def meridian_arc_distance(self, lat1: u.deg, lat2: u.deg) -> u.m:
         """Return the distance between two parallels `lat1` and `lat2`.
 
         Parameters
         ----------
-        lat1 : float or array_like of floats
+        lat1 : ~astropy.units.Quantity
             Geodetic latitude of the first point.
-        lat2 : float or array_like of floats
+        lat2 : ~astropy.units.Quantity
             Geodetic latitude of the second point.
-        degrees : bool, optional
-            If True, the input `lat1` and `lat2` are given in degrees,
-            otherwise radians. Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            The distance between two parallels, in metres.
-        """
-        return self.inv(lat1, 0., lat2, 0., degrees=degrees)[-1]
+        ~astropy.units.Quantity
+            The distance between two parallels.
 
-    def parallel_arc_distance(self, lat, lon1, lon2, degrees=True):
+        """
+        return self.inv(lat1, 0. * u.deg, lat2, 0. * u.deg)[-1]
+
+    @u.quantity_input
+    def parallel_arc_distance(self, lat: u.deg, lon1: u.deg, lon2: u.deg):
         """Return the distance between two points on a parallel.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude of the parallel.
-        lon1 : float or array_like of floats
+        lon1 : ~astropy.units.Quantity
             Geodetic longitude of the first point.
-        lon2 : float or array_like of floats
+        lon2 : ~astropy.units.Quantity
             Geodetic longitude of the second point.
-        degrees : bool, optional
-            If True, the input `lat`, `lon1` and `lon2` are given
-            in degrees, otherwise radians. Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            The distance between two meridians along the parallel, in metres.
+        ~astropy.units.Quantity
+            The distance between two meridians along the parallel.
         """
-        if degrees:
-            lat = _np.radians(lat)
-            lon1 = _np.radians(lon1)
-            lon2 = _np.radians(lon2)
+        return self.circle_radius(lat) * (lon2 - lon1).to('radian')
 
-        return self.circle_radius(lat, degrees=False) * (lon2 - lon1)
-
-    def fwd(self, lat, lon, azimuth, distance, degrees=True):
+    @u.quantity_input
+    def fwd(self, lat: u.deg, lon: u.deg, azimuth: u.deg, distance: u.m):
         """Solve forward geodetic problem.
 
         Returns latitudes, longitudes and back azimuths of terminus points
@@ -538,36 +520,33 @@ class Ellipsoid:
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude of the initial point.
-        lon : float or array_like of floats
+        lon : ~astropy.units.Quantity
             Longitude of the initial point.
-        azimuth : float or array_like of floats
+        azimuth : ~astropy.units.Quantity
             Geodetic azimuth.
-        distance : float or array_like of floats
-            Distance, in metres.
-        degrees : bool, optional
-            If True, the input `lat`, `lon` and `azimuth` are and
-            the output `lat`, `lon`, `back_azimuth` will be
-            given in degrees, otherwise radians. Default is True.
+        distance : ~astropy.units.Quantity
+            Distance.
 
         Returns
         -------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude of the terminus point.
-        lon : float or array_like of floats
+        lon : ~astropy.units.Quantity
             Longitude of the terminus point.
-        back_azimuth : float or array_like of floats
+        back_azimuth : ~astropy.units.Quantity
             Back geodetic azimuth.
         """
-        radians = not degrees
-        out_lon, out_lat, out_baz = self.geod.fwd(lon,
-                                                  lat, azimuth,
-                                                  distance,
-                                                  radians=radians)
-        return out_lat, out_lon, out_baz
+        out_lon, out_lat, out_baz = self.geod.fwd(lon.to('radian').value,
+                                                  lat.to('radian').value,
+                                                  azimuth.to('radian').value,
+                                                  distance.to('m').value,
+                                                  radians=True)
+        return out_lat * u.rad, out_lon * u.rad, out_baz * u.rad
 
-    def inv(self, lat1, lon1, lat2, lon2, degrees=True):
+    @u.quantity_input
+    def inv(self, lat1: u.deg, lon1: u.deg, lat2: u.deg, lon2: u.deg):
         """Solve inverse geodetic problem.
 
         Returns forward and back azimuths, plus distances between initial
@@ -578,32 +557,35 @@ class Ellipsoid:
 
         Parameters
         ----------
-        lat1 : float or array_like of floats
+        lat1 : ~astropy.units.Quantity
             Geodetic latitude of the initial point.
-        lon1 : float or array_like of floats
+        lon1 : ~astropy.units.Quantity
             Longitude of the initial point.
-        lat2 : float or array_like of floats
+        lat2 : ~astropy.units.Quantity
             Geodetic latitude of the terminus point.
-        lon2 : float or array_like of floats
+        lon2 : ~astropy.units.Quantity
             Longitude of the terminus point.
-        degrees : bool, optional
-            If True, the input `lat1`, `lon1`, `lat2`, `lon2` are and
-            the output `azimuth` and `back_azimuth` will be
-            given in degrees, otherwise radians. Default is True.
 
         Returns
         -------
-        azimuth : float or array_like of floats
+        azimuth : ~astropy.units.Quantity
             Geodetic azimuth.
-        back_azimuth : float or array_like of floats
+        back_azimuth : ~astropy.units.Quantity
             Back geodetic azimuth.
-        distance : float or array_like of floats
+        distance : ~astropy.units.Quantity
             Distance, in metres.
         """
-        radians = not degrees
-        return self.geod.inv(lon1, lat1, lon2, lat2, radians=radians)
+        azimuth, back_azimuth, distance = self.geod.inv(
+            lon1.to('radian').value,
+            lat1.to('radian').value,
+            lon2.to('radian').value,
+            lat2.to('radian').value, radians=True)
 
-    def npts(self, lat1, lon1, lat2, lon2, npts, degrees=True):
+        return azimuth * u.rad, back_azimuth * u.rad, distance * u.m
+
+    @u.quantity_input
+    def npts(self, lat1: u.deg, lon1: u.deg,
+             lat2: u.deg, lon2: u.deg, npts: int) -> u.deg:
         """Return equaly spaced points along geodesic line.
 
         Given a single initial point and terminus point (specified by
@@ -616,42 +598,41 @@ class Ellipsoid:
 
         Parameters
         ----------
-        lat1 : float or array_like of floats
+        lat1 : ~astropy.units.Quantity
             Geodetic latitude of the initial point.
-        lon1 : float or array_like of floats
+        lon1 : ~astropy.units.Quantity
             Longitude of the initial point.
-        lat2 : float or array_like of floats
+        lat2 : ~astropy.units.Quantity
             Geodetic latitude of the terminus point.
-        lon2 : float or array_like of floats
+        lon2 : ~astropy.units.Quantity
             Longitude of the terminus point.
         npts : int
             Number of intermediate points.
-        degrees : bool, optional
-            If True, the input `lat1`, `lon1`, `lat2`, `lon2` are and
-            the output coordinates will be
-            given in degrees, otherwise radians. Default is True.
 
         Returns
         -------
-        points : list of tuples
+        points : ~astropy.units.Quantity list of tuples
             List of latitudes and longitudes of the intermediate points.
         """
-        radians = not degrees
-        return self.geod.npts(lon1, lat1, lon2, lat2, npts, radians=radians)
+        points = self.geod.npts(
+            lon1.to('radian').value,
+            lat1.to('radian').value,
+            lon2.to('radian').value,
+            lat2.to('radian').value, npts, radians=True)
+
+        return points * u.rad
 
     #########################################################################
     # Radii
     #########################################################################
-    def circle_radius(self, lat, degrees=True):
+    @u.quantity_input
+    def circle_radius(self, lat: u.deg) -> u.m:
         r"""Return the radius of the parallel, in metres.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians. Default is True.
 
         Notes
         -----
@@ -662,26 +643,23 @@ class Ellipsoid:
 
         where :math:`N` -- radius of curvature of prime vertical, :math:`\phi`
         -- geodetic latitude.
+
         """
-        if degrees:
-            lat = _np.radians(lat)
         return self.prime_vertical_curvature_radius(lat) * _np.cos(lat)
 
-    def polar_equation(self, lat, degrees=True):
+    @u.quantity_input
+    def polar_equation(self, lat: u.deg) -> u.m:
         r"""Return radius of the ellipsoid with respect to the origin.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             **Geocentric** latitude.
-        degrees : bool, optional
-            If True, the input `lat` is given in degrees,
-            otherwise radians. Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Geocentric radius of the parallel, in metres.
+        ~astropy.units.Quantity
+            Geocentric radius of the parallel.
 
         Notes
         -----
@@ -694,30 +672,25 @@ class Ellipsoid:
         where :math:`a` and :math:`b` -- equatorial and polar axis of the
         ellipsoid respectively, :math:`\vartheta` -- geocentric latitude.
         """
-        if degrees:
-            lat = _np.radians(lat)
-
         return (self.a * self.b) / (_np.sqrt(self.a**2 * _np.sin(lat)**2 +
                                              self.b**2 * _np.cos(lat)**2))
 
     #########################################################################
     # Latitudes
     #########################################################################
-    def geocentric_latitude(self, lat, degrees=True):
+    @u.quantity_input
+    def geocentric_latitude(self, lat: u.deg) -> u.deg:
         r"""Convert geodetic latitude to geocentric latitude.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input and output latitudes are given in degrees,
-            otherwise radians. Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Geocentric (spherical) latitude, in degrees or radians.
+        ~astropy.units.Quantity
+            Geocentric (spherical) latitude.
 
         Notes
         -----
@@ -730,31 +703,23 @@ class Ellipsoid:
 
         where :math:`f` -- flattening of the ellipsoid.
         """
-        if degrees:
-            lat = _np.radians(lat)
-
         geoc_lat = _np.arctan((1 - self.f)**2 * _np.tan(lat))
-
-        if degrees:
-            geoc_lat = _np.degrees(geoc_lat)
 
         return geoc_lat
 
-    def reduced_latitude(self, lat, degrees=True):
+    @u.quantity_input
+    def reduced_latitude(self, lat: u.deg) -> u.deg:
         r"""Convert geodetic latitude to reduced (parametric) latitude.
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input and output latitudes are given in degrees,
-            otherwise radians. Default is True.
 
         Returns
         -------
-        float or array_like of floats
-            Reduced latitude, in degrees or radians.
+        ~astropy.units.Quantity
+            Reduced latitude.
 
         Notes
         -----
@@ -766,17 +731,12 @@ class Ellipsoid:
 
         where :math:`f` -- flattening of the ellipsoid.
         """
-        if degrees:
-            lat = _np.radians(lat)
-
         red_lat = _np.arctan((1 - self.f) * _np.tan(lat))
-
-        if degrees:
-            red_lat = _np.degrees(red_lat)
 
         return red_lat
 
-    def authalic_latitude(self, lat, degrees=True):
+    @u.quantity_input
+    def authalic_latitude(self, lat: u.deg) -> u.deg:
         r"""Convert geodetic latitude to authalic latitude.
 
         Authalic latitude will return a geocentric latitude on a sphere having
@@ -786,19 +746,15 @@ class Ellipsoid:
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        degrees : bool, optional
-            If True, the input and output latitudes are given in degrees,
-            otherwise radians. Default is True.
 
         Returns
         -------
-        auth_lat : float or array_like of floats
-            Authalic latitude, in degrees or radians.
+        ~astropy.units.Quantity
+            Authalic latitude.
+
         """
-        if degrees:
-            lat = _np.radians(lat)
 
         def q(lat):
             slat = _np.sin(lat)
@@ -806,8 +762,5 @@ class Ellipsoid:
             return (1 - self.e2) * (slat / (1 - self.e2 * slat**2) - log)
 
         auth_lat = _np.arcsin(q(lat) / q(_np.pi / 2))
-
-        if degrees:
-            auth_lat = _np.degrees(auth_lat)
 
         return auth_lat

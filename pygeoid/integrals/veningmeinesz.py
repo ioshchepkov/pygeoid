@@ -4,6 +4,7 @@
 """
 
 import numpy as np
+import astropy.units as u
 
 from pygeoid.integrals.core import SphericalKernel
 
@@ -17,7 +18,8 @@ class VeningMeineszKernel(SphericalKernel):
 
     _name = 'Vening Meinesz'
 
-    def kernel(self, spherical_distance, degrees=True):
+    @u.quantity_input
+    def kernel(self, spherical_distance: u.deg):
         r"""Evaluate Vening Meinesz kernel.
 
         Parameters
@@ -51,8 +53,7 @@ class VeningMeineszKernel(SphericalKernel):
         """
 
         psi = self._check_spherical_distance(
-            spherical_distance=spherical_distance,
-            degrees=degrees)
+            spherical_distance=spherical_distance)
 
         cpsi2 = np.cos(psi / 2)
         spsi2 = np.sin(psi / 2)

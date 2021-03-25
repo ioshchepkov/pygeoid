@@ -2,6 +2,7 @@
 
 """
 
+import astropy.units as u
 from pygeoid.coordinates import transform
 
 
@@ -18,13 +19,15 @@ class Position3D:
         Cartesian coordinates, in metres.
     """
 
-    def __init__(self, x, y, z):
+    @u.quantity_input
+    def __init__(self, x: u.m, y: u.m, z: u.m):
         self._x = x
         self._y = y
         self._z = z
 
     @classmethod
-    def from_geodetic(cls, lat, lon, height, ell, degrees=True):
+    @u.quantity_input
+    def from_geodetic(cls, lat: u.deg, lon: u.deg, height: u.m, ell):
         """Position, initialized from geodetic coordinates.
 
         Parameters
@@ -37,16 +40,14 @@ class Position3D:
             Geodetic height, in metres.
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
             Reference ellipsoid to which geodetic coordinates are referenced to.
-        degrees : bool, optional
-            If True, the input `lat` and `lon` are given in degrees,
-            otherwise radians.
+
         """
-        x, y, z = transform.geodetic_to_cartesian(lat, lon, height, ell=ell,
-                                                  degrees=degrees)
+        x, y, z = transform.geodetic_to_cartesian(lat, lon, height, ell=ell)
         return cls(x, y, z)
 
     @classmethod
-    def from_spherical(cls, lat, lon, radius, degrees=True):
+    @u.quantity_input
+    def from_spherical(cls, lat: u.deg, lon: u.deg, radius: u.m):
         """Position, initialized from spherical coordinates.
 
         Parameters
@@ -55,16 +56,13 @@ class Position3D:
             Spherical latitude and longitude.
         radius : float or array_like of floats
             Radius, in metres.
-        degrees : bool, optional
-            If True, the input `lat` and `lon` are given in degrees,
-            otherwise radians.
         """
-        x, y, z = transform.spherical_to_cartesian(lat, lon, radius,
-                                                   degrees=degrees)
+        x, y, z = transform.spherical_to_cartesian(lat, lon, radius)
         return cls(x, y, z)
 
     @classmethod
-    def from_ellipsoidal(cls, rlat, lon, u, ell, degrees=True):
+    @u.quantity_input
+    def from_ellipsoidal(cls, rlat: u.deg, lon: u.deg, u: u.m, ell):
         """Position, initialized from ellipsoidal coordinates.
 
         Parameters
@@ -77,18 +75,14 @@ class Position3D:
             Polar axis of the ellipsoid passing through the point.
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
             Reference ellipsoid to which geodetic coordinates are referenced to.
-        degrees : bool, optional
-            If True, the input `rlat` and `lon` are given in degrees,
-            otherwise radians.
         """
-        x, y, z = transform.ellipsoidal_to_cartesian(rlat, lon, u, ell=ell,
-                                                     degrees=degrees)
+        x, y, z = transform.ellipsoidal_to_cartesian(rlat, lon, u, ell=ell)
         return cls(x, y, z)
 
     @property
     def cartesian(self):
         """Return 3D cartesian coordinates"""
-        return (self._x, self._y, self._z)
+        return self._x, self._y, self._z
 
     @property
     def x(self):
@@ -105,16 +99,13 @@ class Position3D:
         """Return z coordinate"""
         return self._z
 
-    def geodetic(self, ell, degrees=True):
+    def geodetic(self, ell):
         """Return geodetic coordinates.
 
         Parameters
         ----------
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
             Reference ellipsoid to which geodetic coordinates are referenced to.
-        degrees : bool, optional
-            If True, the output geodetic latitude and longitude will be in degrees,
-            otherwise radians.
 
         Returns
         -------
@@ -124,17 +115,11 @@ class Position3D:
             Geodetic height, in metres.
         """
         lat, lon, height = transform.cartesian_to_geodetic(
-            self._x, self._y, self._z, ell=ell, degrees=degrees)
+            self._x, self._y, self._z, ell=ell)
         return lat, lon, height
 
-    def spherical(self, degrees=True):
+    def spherical(self):
         """Return spherical (geocentric) coordinates.
-
-        Parameters
-        ----------
-        degrees : bool, optional
-            If True, the output spherical latitude and longitude will be in degrees,
-            otherwise radians.
 
         Returns
         -------
@@ -144,19 +129,16 @@ class Position3D:
             Radius, in metres.
         """
         lat, lon, radius = transform.cartesian_to_spherical(
-            self._x, self._y, self._z, degrees=degrees)
+            self._x, self._y, self._z)
         return lat, lon, radius
 
-    def ellipsoidal(self, ell, degrees=True):
+    def ellipsoidal(self, ell):
         """Return ellipsoidal-harmonic coordinates.
 
         Parameters
         ----------
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
             Reference ellipsoid to which ellipsoidal coordinates are referenced to.
-        degrees : bool, optional
-            If True, the output reduced latitude and longitude will
-            be in degrees, otherwise radians.
 
         Returns
         -------
@@ -168,10 +150,11 @@ class Position3D:
             Polar axis of the ellipsoid passing through the given point.
         """
         rlat, lon, u = transform.cartesian_to_ellipsoidal(
-            self._x, self._y, self._z, ell=ell, degrees=degrees)
+            self._x, self._y, self._z, ell=ell)
         return rlat, lon, u
 
-    def enu(self, origin, ell=None, degrees=True):
+    @u.quantity_input
+    def enu(self, origin: u.deg, ell=None):
         """Return local east-north-up cartesian coordinates.
 
         Parameters
@@ -183,9 +166,6 @@ class Position3D:
             Reference ellipsoid to which geodetic coordinates
             are referenced to. Default is None, meaning spherical
             coordinates instead of geodetic.
-        degrees : bool, optional
-            If True, the input `lat0` and `lon0` are given in degrees,
-            otherwise radians.
 
         Returns
         -------
@@ -193,6 +173,6 @@ class Position3D:
             Local east-north-up cartesian coordinates, in metres.
         """
         east, north, up = transform.ecef_to_enu(
-            self._x, self._y, self._z, origin, ell=ell, degrees=degrees)
+            self._x, self._y, self._z, origin, ell=ell)
 
         return east, north, up
