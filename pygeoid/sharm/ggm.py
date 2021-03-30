@@ -447,7 +447,7 @@ class SHGravPotential:
 
     @u.quantity_input
     def lat_derivative(self,
-                       lat: u.deg, lon: u.deg, r: u.m, lmax: int = None) -> u.m / u.s**2:
+                       lat: u.deg, lon: u.deg, r: u.m, lmax: int = None):
         """Return latitudinal derivative of the potential.
 
         Parameters
@@ -487,7 +487,7 @@ class SHGravPotential:
 
     @u.quantity_input
     def lon_derivative(self, lat: u.deg,
-                       lon: u.deg, r: u.m, lmax: int = None) -> u.m / u.s**2:
+                       lon: u.deg, r: u.m, lmax: int = None):
         """Return longitudinal derivative of the potential.
 
         Parameters
@@ -521,7 +521,7 @@ class SHGravPotential:
         ri = 1 / r
         out = -self.gm * ri * values
 
-        return _np.squeeze(out)
+        return out.squeeze()
 
     @u.quantity_input
     def gradient(self,

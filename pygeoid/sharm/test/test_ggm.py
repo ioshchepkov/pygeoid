@@ -79,3 +79,19 @@ def test_height_anomaly_ell():
     ha_model = model.height_anomaly_ell(lat, lon, r)
     ha_test = data.height_anomaly_ell.values
     np.testing.assert_almost_equal(ha_model.value, ha_test)
+
+def test_gradient():
+    lat, lon, r = geodetic_to_spherical(latitude, longitude, radius0, ell=ell)
+    # rad, lon, lat, total
+    gradient_model = model._gravitational.gradient(lat, lon, r)
+    r_derivative_model = model._gravitational.r_derivative(lat, lon, r)
+    lon_derivative_model = model._gravitational.lon_derivative(lat, lon, r)
+    lat_derivative_model = model._gravitational.lat_derivative(lat, lon, r)
+
+    np.testing.assert_almost_equal(gradient_model[0].value,
+            r_derivative_model.value)
+    np.testing.assert_almost_equal(gradient_model[1].value,
+            lon_derivative_model.value)
+    np.testing.assert_almost_equal(gradient_model[2].value,
+            lat_derivative_model.value)
+

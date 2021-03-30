@@ -12,6 +12,7 @@ pandas = "*"
 pyshtools = "*"
 joblib = "*"
 pytest-runner = "*"
+coveralls = "*"
 
 [dev-packages]
 coverage = "*"
