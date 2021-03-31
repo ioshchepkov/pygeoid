@@ -9,6 +9,7 @@ import astropy.units as u
 
 from pyshtools.shio import read_icgem_gfc
 from pygeoid.sharm.ggm import GlobalGravityFieldModel
+from pygeoid.sharm.utils import get_lmax
 from pygeoid.reduction.normal import LevelEllipsoid
 from pygeoid.coordinates.transform import geodetic_to_spherical
 
@@ -38,6 +39,18 @@ data = read_test_data()
 latitude = data['latitude'].values * u.deg
 longitude = data['longitude'].values * u.deg
 radius0 = 0.0 * u.m
+
+def test_get_lmax():
+    full_coeffs = model._coeffs.coeffs
+    full_coeffs_lmax = full_coeffs[0].shape[0] - 1
+
+    lmax = 180
+    truncated_coeffs, truncated_lmax = get_lmax(full_coeffs, lmax)
+
+    truncated_coeffs_lmax = full_coeffs[0].shape[0] - 1
+
+    assert (truncated_coeffs[0].shape[0] - 1) == truncated_lmax
+    assert truncated_lmax == lmax
 
 def test_gravitational_potential():
     lat, lon, r = geodetic_to_spherical(latitude, longitude,

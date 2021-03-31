@@ -206,7 +206,7 @@ l2 = _Constant(
 DEGREE2_LOVE_NUMBERS = {'k': k2, 'l': l2, 'h': h2}
 
 
-def l2_shida_number(lat: _u.deg = None) -> float:
+def l2_shida_number(lat: _u.deg = None) -> _u.dimensionless_unscaled:
     """Return degree 2 Shida number (l2,0).
 
     If `lat` is None, the nominal degree 2 Shida number l2=0.0847
@@ -228,13 +228,13 @@ def l2_shida_number(lat: _u.deg = None) -> float:
     .. [1] IERS Conventions(2010), section 7.1.1, page 105.
 
     """
-    l2_ = l2
     if lat is not None:
-        l2_ = l2_ + 0.0002 * (3 * _np.sin(lat)**2 - 1) / 2
-    return float(l2_)
+        return l2 + 0.0002 * (3 * _np.sin(lat)**2 - 1) / 2
+    else:
+        return l2
 
 
-def h2_love_number(lat: _u.deg = None) -> float:
+def h2_love_number(lat: _u.deg = None) -> _u.dimensionless_unscaled:
     """Return degree 2 Love number (h2,0).
 
     If `lat` is None, the nominal degree 2 Love number h2=0.6078
@@ -256,7 +256,7 @@ def h2_love_number(lat: _u.deg = None) -> float:
     .. [1] IERS Conventions(2010), section 7.1.1, page 105.
 
     """
-    h2_ = h2
     if lat is not None:
-        h2_ = h2_ - 0.0006 * (3 * _np.sin(lat)**2 - 1) / 2
-    return float(h2_)
+        return h2 - 0.0006 * (3 * _np.sin(lat)**2 - 1) / 2
+    else:
+        return h2
