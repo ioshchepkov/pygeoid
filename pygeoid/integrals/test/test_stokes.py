@@ -6,6 +6,22 @@ import astropy.units as u
 from pygeoid.integrals.stokes import StokesKernel
 
 
+def test_check_spherical_distance():
+    """Test spherical distance check.
+
+    """
+    psi = 500 * u.deg
+    with pytest.raises(ValueError):
+        StokesKernel().kernel(psi)
+
+def test_kernel_name():
+    """Test spherical distance check.
+
+    """
+    st = StokesKernel()
+    assert st.name == 'Stokes'
+
+
 def test_stokes_kernel():
     """Test Stokes function.
 

@@ -234,7 +234,7 @@ def cartesian_to_ellipsoidal(x: u.m, y: u.m, z: u.m, ell):
         Reduced latitude.
     lon : ~astropy.units.Quantity
         Longitude.
-    u : ~astropy.units.Quantity
+    u_ax : ~astropy.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
     """
 
@@ -247,19 +247,19 @@ def cartesian_to_ellipsoidal(x: u.m, y: u.m, z: u.m, ell):
             'x**2 + y**2 + z**2 must be grater or equal to ' +
             'the linear eccentricity of the reference ellipsoid.')
 
-    u = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * le2 * z**2) / k**2))
+    u_ax = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * le2 * z**2) / k**2))
 
-    u = _np.sqrt(u)
-    rlat = _np.arctan2(z * _np.sqrt(u ** 2 + le2),
-                       u * _np.sqrt(x**2 + y**2))
+    u_ax = _np.sqrt(u_ax)
+    rlat = _np.arctan2(z * _np.sqrt(u_ax ** 2 + le2),
+                       u_ax * _np.sqrt(x**2 + y**2))
 
     lon = _np.arctan2(y, x)
 
-    return rlat, lon, u
+    return rlat, lon, u_ax
 
 
 @u.quantity_input
-def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u: u.m, ell):
+def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
     """Convert ellipsoidal-harmonic coordinates to 3D cartesian coordinates.
 
     Parameters
@@ -268,7 +268,7 @@ def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u: u.m, ell):
         Reduced latitude.
     lon : ~astropy.units.Quantity
         Longitude.
-    u : ~astropy.units.Quantity
+    u_ax : ~astropy.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
@@ -279,7 +279,7 @@ def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u: u.m, ell):
         Cartesian coordinates.
     """
 
-    k = _np.sqrt(u**2 + ell.linear_eccentricity**2)
+    k = _np.sqrt(u_ax**2 + ell.linear_eccentricity**2)
 
     x = k * _np.cos(rlat) * _np.cos(lon)
     y = k * _np.cos(rlat) * _np.sin(lon)
@@ -361,7 +361,7 @@ def geodetic_to_ellipsoidal(lat: u.deg, lon: u.deg, height: u.m, ell):
         Reduced latitude.
     lon : ~astropy.units.Quantity
         Longitude.
-    u : ~astropy.units.Quantity
+    u_ax : ~astropy.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
 
     """
@@ -370,7 +370,7 @@ def geodetic_to_ellipsoidal(lat: u.deg, lon: u.deg, height: u.m, ell):
 
 
 @u.quantity_input
-def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u: u.m, ell):
+def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
     """Convert from ellipsoidal-harmonic to geodetic coordinates.
 
     Parameters
@@ -379,7 +379,7 @@ def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u: u.m, ell):
         Reduced latitude.
     lon : ~astropy.units.Quantity
         Longitude.
-    u : ~astropy.units.Quantity
+    u_ax : ~astropy.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
     ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
@@ -451,12 +451,18 @@ def ecef_to_enu(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=No
     else:
         x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell)
 
-    xyz_shifted = _np.array([
-        (x - x0).to('m').value,
-        (y - y0).to('m').value,
-        (z - z0).to('m').value])
+    out_shape = x.shape
 
-    return _np.dot(rotation_matrix, xyz_shifted) * u.m
+    xyz_shifted = _np.array([
+        _np.asarray((x - x0).to('m').value).flatten(),
+        _np.asarray((y - y0).to('m').value).flatten(),
+        _np.asarray((z - z0).to('m').value).flatten()])
+
+    out = _np.dot(rotation_matrix, xyz_shifted) * u.m
+
+    return (out[0].reshape(out_shape),
+            out[1].reshape(out_shape),
+            out[2].reshape(out_shape))
 
 
 @u.quantity_input
@@ -484,16 +490,22 @@ def enu_to_ecef(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=No
         Geocentric cartesian coordinates, in metres.
     """
     rotation_matrix = _ecef_to_enu_rotation_matrix(origin[0], origin[1]).T
+
+    out_shape = x.shape
+
     x, y, z = _np.dot(rotation_matrix, _np.array([
-        x.to('m').value,
-        y.to('m').value,
-        z.to('m').value])) * u.m
+        _np.asarray(x.to('m').value).flatten(),
+        _np.asarray(y.to('m').value).flatten(),
+        _np.asarray(z.to('m').value).flatten()])) * u.m
+
     if ell is None:
         x0, y0, z0 = spherical_to_cartesian(*origin)
     else:
         x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell)
 
-    return x + x0, y + y0, z + z0
+    return ((x + x0).reshape(out_shape),
+            (y + y0).reshape(out_shape),
+            (z + z0).reshape(out_shape))
 
 
 @u.quantity_input

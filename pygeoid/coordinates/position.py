@@ -32,12 +32,12 @@ class Position3D:
 
         Parameters
         ----------
-        lat : float or array_like of floats
+        lat : ~astropy.units.Quantity
             Geodetic latitude.
-        lon : float or array_like of floats
+        lon : ~astropy.units.Quantity
             Geodetic longitude.
-        height : float or array_like of floats
-            Geodetic height, in metres.
+        height : ~astropy.units.Quantity
+            Geodetic height.
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
             Reference ellipsoid to which geodetic coordinates are referenced to.
 
@@ -52,31 +52,33 @@ class Position3D:
 
         Parameters
         ----------
-        lat, lon : float or array_like of floats
-            Spherical latitude and longitude.
-        radius : float or array_like of floats
-            Radius, in metres.
+        lat : ~astropy.units.Quantity
+            Spherical latitude.
+        lon : ~astropy.units.Quantity
+            Spherical longitude.
+        r : ~astropy.units.Quantity
+            Radius.
         """
         x, y, z = transform.spherical_to_cartesian(lat, lon, radius)
         return cls(x, y, z)
 
     @classmethod
     @u.quantity_input
-    def from_ellipsoidal(cls, rlat: u.deg, lon: u.deg, u: u.m, ell):
+    def from_ellipsoidal(cls, rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
         """Position, initialized from ellipsoidal coordinates.
 
         Parameters
         ----------
-        rlat : float or array_like of floats
+        rlat : ~astropy.units.Quantity
             Reduced latitude.
-        lon : float or array_like of floats
+        lon : ~astropy.units.Quantity
             Longitude.
-        u : float or array_like of floats
-            Polar axis of the ellipsoid passing through the point.
+        u_ax : ~astropy.units.Quantity
+            Polar axis of the ellipsoid passing through the given point.
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
             Reference ellipsoid to which geodetic coordinates are referenced to.
         """
-        x, y, z = transform.ellipsoidal_to_cartesian(rlat, lon, u, ell=ell)
+        x, y, z = transform.ellipsoidal_to_cartesian(rlat, lon, u_ax, ell=ell)
         return cls(x, y, z)
 
     @property
@@ -109,10 +111,12 @@ class Position3D:
 
         Returns
         -------
-        lat, lon : float or array_like of floats
-            Geodetic latitude and longitude.
-        height : float or array_like of floats
-            Geodetic height, in metres.
+        lat : ~astropy.units.Quantity
+            Geodetic latitude.
+        lon : ~astropy.units.Quantity
+            Geodetic longitude.
+        height : ~astropy.units.Quantity
+            Geodetic height.
         """
         lat, lon, height = transform.cartesian_to_geodetic(
             self._x, self._y, self._z, ell=ell)
@@ -123,10 +127,12 @@ class Position3D:
 
         Returns
         -------
-        lat, lon : float or array_like of floats
-            Spherical latitude and longitude.
-        r : float or array_like of floats
-            Radius, in metres.
+        lat : ~astropy.units.Quantity
+            Spherical latitude.
+        lon : ~astropy.units.Quantity
+            Spherical longitude.
+        r : ~astropy.units.Quantity
+            Radius.
         """
         lat, lon, radius = transform.cartesian_to_spherical(
             self._x, self._y, self._z)
@@ -142,11 +148,11 @@ class Position3D:
 
         Returns
         -------
-        rlat : float or array_like of floats
+        rlat : ~astropy.units.Quantity
             Reduced latitude.
-        lon : float or array_like of floats
+        lon : ~astropy.units.Quantity
             Longitude.
-        u : float or array_like of floats
+        u_ax : ~astropy.units.Quantity
             Polar axis of the ellipsoid passing through the given point.
         """
         rlat, lon, u = transform.cartesian_to_ellipsoidal(
@@ -154,12 +160,12 @@ class Position3D:
         return rlat, lon, u
 
     @u.quantity_input
-    def enu(self, origin: u.deg, ell=None):
+    def enu(self, origin: tuple[u.deg, u.deg, u.m], ell=None):
         """Return local east-north-up cartesian coordinates.
 
         Parameters
         ----------
-        origin : array_like of floats
+        origin : tuple of ~astropy.units.Quantity
             Ggeocentric (spherical) or geodetic coordinates of the origin
             (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
         ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
@@ -169,8 +175,8 @@ class Position3D:
 
         Returns
         -------
-        x, y, z : float or array_like of floats
-            Local east-north-up cartesian coordinates, in metres.
+        east, north, up : ~astropy.units.Quantity
+            Local east-north-up cartesian coordinates.
         """
         east, north, up = transform.ecef_to_enu(
             self._x, self._y, self._z, origin, ell=ell)
