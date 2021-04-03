@@ -50,8 +50,8 @@ def test_cartesian_to_ellipsoidal_and_back():
     y_ = np.ma.masked_where(cond, y).compressed()
     z_ = np.ma.masked_where(cond, z).compressed()
 
-    rlat, lon, u = cartesian_to_ellipsoidal(x_, y_, z_, ell)
-    b_x, b_y, b_z = ellipsoidal_to_cartesian(rlat, lon, u, ell)
+    rlat, lon, u_ax = cartesian_to_ellipsoidal(x_, y_, z_, ell)
+    b_x, b_y, b_z = ellipsoidal_to_cartesian(rlat, lon, u_ax, ell)
 
     np.testing.assert_array_almost_equal(b_x.value, x_.value, decimal=5)
     np.testing.assert_array_almost_equal(b_y.value, y_.value, decimal=5)
@@ -82,12 +82,12 @@ def test_geodetic_to_elliposidal_and_back():
 
     lat, lon, height = cartesian_to_geodetic(x_, y_, z_, ell)
 
-    rlat, ell_lon, u = geodetic_to_ellipsoidal(lat, lon, height, ell)
+    rlat, ell_lon, u_ax = geodetic_to_ellipsoidal(lat, lon, height, ell)
     np.testing.assert_array_almost_equal(
             ell_lon.to('degree').value,
             lon.to('degree').value, decimal=9)
 
-    b_lat, b_lon, b_height = ellipsoidal_to_geodetic(rlat, ell_lon, u, ell)
+    b_lat, b_lon, b_height = ellipsoidal_to_geodetic(rlat, ell_lon, u_ax, ell)
 
     np.testing.assert_array_almost_equal(b_lat.to('degree').value, lat.to('degree').value, decimal=9)
     np.testing.assert_array_almost_equal(b_lon.to('degree').value, lon.to('degree').value, decimal=9)

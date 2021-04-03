@@ -49,8 +49,8 @@ def test_from_to_ellipsoidal():
     z_ = np.ma.masked_where(cond, z).compressed()
 
     p = Position3D(x_, y_, z_)
-    rlat, lon, u = p.ellipsoidal(ell=ell)
-    b_x, b_y, b_z = Position3D.from_ellipsoidal(rlat, lon, u,
+    rlat, lon, u_ax = p.ellipsoidal(ell=ell)
+    b_x, b_y, b_z = Position3D.from_ellipsoidal(rlat, lon, u_ax,
             ell=ell).cartesian
     np.testing.assert_array_almost_equal([b_x.value, b_y.value, b_z.value],
                                          [x_.value, y_.value, z_.value], decimal=5)

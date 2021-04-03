@@ -283,7 +283,7 @@ def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
 
     x = k * _np.cos(rlat) * _np.cos(lon)
     y = k * _np.cos(rlat) * _np.sin(lon)
-    z = u * _np.sin(rlat)
+    z = u_ax * _np.sin(rlat)
 
     return x, y, z
 
@@ -392,7 +392,7 @@ def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
         Geodetic height.
     """
     return cartesian_to_geodetic(
-        *ellipsoidal_to_cartesian(rlat, lon, u, ell=ell), ell=ell)
+        *ellipsoidal_to_cartesian(rlat, lon, u_ax, ell=ell), ell=ell)
 
 
 @u.quantity_input

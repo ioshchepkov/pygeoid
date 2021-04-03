@@ -155,9 +155,9 @@ class Position3D:
         u_ax : ~astropy.units.Quantity
             Polar axis of the ellipsoid passing through the given point.
         """
-        rlat, lon, u = transform.cartesian_to_ellipsoidal(
+        rlat, lon, u_ax = transform.cartesian_to_ellipsoidal(
             self._x, self._y, self._z, ell=ell)
-        return rlat, lon, u
+        return rlat, lon, u_ax
 
     @u.quantity_input
     def enu(self, origin: tuple[u.deg, u.deg, u.m], ell=None):
