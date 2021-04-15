@@ -223,6 +223,9 @@ def l2_shida_number(lat: _u.deg = None) -> _u.dimensionless_unscaled:
     l2 : ~astropy.units.Quantity
         Nominal degree 2 Shida number.
 
+    Notes
+    -----
+
     References
     ----------
     .. [1] IERS Conventions(2010), section 7.1.1, page 105.

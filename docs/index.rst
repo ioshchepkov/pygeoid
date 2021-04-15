@@ -5,22 +5,23 @@ Welcome to pygeoid's documentation!
 .. include:: ../README.rst
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
+  :hidden:
   :caption: Getting Started
 
+  install.rst
+
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
+  :hidden:
   :caption: User Guide
 
 .. toctree::
   :maxdepth: 2
+  :hidden:
   :caption: Reference Guide
 
-  Coordinate Systems and Transformations <coordinates/index>
-  Gravity Reduction <reduction/index>
-  Geodetic Integrals <integrals/index>
-  Spherical Harmonics <sharm/index>
-  Tides <tides/index>
+  api/index.rst
 
 .. toctree::
   :maxdepth: 1

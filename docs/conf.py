@@ -34,6 +34,7 @@ import pygeoid
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
@@ -58,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pygeoid'
-copyright = '2019, Ilya Oshchepkov'
+copyright = '2019-2021, Ilya Oshchepkov'
 author = 'Ilya Oshchepkov'
 
 # The version info for the project you're documenting, acts as replacement for
