@@ -34,6 +34,12 @@ To install ``pygeoid`` simply use ``pip`` as usual:
 
     pip install pygeoid
 
+Alternatively, you can use ``pip`` to install the latest version of the source code from GitHub:
+
+.. code:: bash
+
+    pip install --upgrade git+https://github.com/ioshchepkov/pygeoid
+
 Documentation
 -------------
 
