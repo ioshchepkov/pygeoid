@@ -40,7 +40,7 @@ class ECEF(BaseCoordinateFrame):
         super().__init__(*args, obstime=obstime, **kwargs)
 
         if ell is not None:
-            self._ellipsoid = ellipsoid
+            self._ellipsoid = ell
 
     @property
     def ellipsoid(self):
@@ -118,7 +118,7 @@ class ECEF(BaseCoordinateFrame):
             height = u.Quantity(height, u.m, copy=False)
 
         if ell is None:
-            ell = _ellipsoid
+            ell = cls._ellipsoid
 
         x, y, z = u.Quantity(
             transform.geodetic_to_cartesian(lat, lon, height, ell))
@@ -158,7 +158,7 @@ class ECEF(BaseCoordinateFrame):
         lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
 
         if not isinstance(u_ax, u.Quantity):
-            radius = u.Quantity(radius, u.m, copy=False)
+            u_ax = u.Quantity(u_ax, u.m, copy=False)
 
         if ell is not None:
             ell = cls._ellipsoid
