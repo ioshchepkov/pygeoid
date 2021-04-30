@@ -4,7 +4,7 @@ import numpy as np
 import astropy.units as u
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 from pygeoid.coordinates.transform import enu_to_ecef
-from pygeoid.coordinates.position import Position3D
+from pygeoid.coordinates.frame import ECEF
 
 
 ell = Ellipsoid('GRS80')
@@ -14,7 +14,7 @@ n_test = 10  # * 2
 r_ = np.geomspace(1, 1e8, num=n_test)
 r_ = np.append(-r_[::-1], r_)
 x, y, z = np.meshgrid(r_, r_, r_, indexing='ij') * u.m
-p = Position3D(x, y, z)
+p = ECEF(x, y, z)
 
 
 def test_cartesian():
@@ -27,15 +27,15 @@ def test_cartesian():
 
 
 def test_from_to_geodetic():
-    lat, lon, height = p.geodetic(ell)
-    b_p = Position3D.from_geodetic(lat, lon, height, ell=ell)
+    b_p = ECEF.from_geodetic(p.geodetic.lat,
+            p.geodetic.lon, p.geodetic.height, ell=ell)
     np.testing.assert_array_almost_equal(u.Quantity(b_p.cartesian).value,
                                          [x.value, y.value, z.value], decimal=5)
 
 
 def test_from_to_spherical():
-    lat, lon, radius = p.spherical()
-    b_p = Position3D.from_spherical(lat, lon, radius)
+    b_p = ECEF.from_spherical(p.spherical.lat, p.spherical.lon,
+            p.spherical.distance)
     np.testing.assert_array_almost_equal(u.Quantity(b_p.cartesian).value,
                                          [x.value, y.value, z.value],
                                          decimal=5)
@@ -48,9 +48,9 @@ def test_from_to_ellipsoidal():
     y_ = np.ma.masked_where(cond, y).compressed()
     z_ = np.ma.masked_where(cond, z).compressed()
 
-    p = Position3D(x_, y_, z_)
-    rlat, lon, u_ax = p.ellipsoidal(ell=ell)
-    b_x, b_y, b_z = Position3D.from_ellipsoidal(rlat, lon, u_ax,
+    p = ECEF(x_, y_, z_)
+    b_x, b_y, b_z = ECEF.from_ellipsoidal_harmonic(p.ellipsoidal_harmonic.rlat,
+            p.ellipsoidal_harmonic.lon, p.ellipsoidal_harmonic.u_ax,
             ell=ell).cartesian
     np.testing.assert_array_almost_equal([b_x.value, b_y.value, b_z.value],
                                          [x_.value, y_.value, z_.value], decimal=5)
