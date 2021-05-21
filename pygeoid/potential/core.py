@@ -31,11 +31,12 @@ class PotentialBase(metaclass=abc.ABCMeta):
 
     def gradient_vector(self, position, coordinates=None):
         return self._gradient_vector(position=position,
-                coordinates=coordinates)
+                                     coordinates=coordinates)
 
     def derivative(self, position, variable, coordinates=None):
         return self._derivative(position=position, variable=variable,
-                coordinates=coordinates)
+                                coordinates=coordinates)
+
 
 class Centrifugal(PotentialBase):
     """Centrifugal potential and its derivatives.
@@ -49,7 +50,7 @@ class Centrifugal(PotentialBase):
     """
 
     @u.quantity_input
-    def __init__(self, omega=7292115e-11  / u.s):
+    def __init__(self, omega=7292115e-11 / u.s):
 
         self.omega = omega
 
