@@ -10,8 +10,8 @@ import astropy.units as u
 from pyshtools.shio import read_icgem_gfc
 from pygeoid.sharm.ggm import GlobalGravityFieldModel
 from pygeoid.sharm.utils import get_lmax
-from pygeoid.reduction.normal import LevelEllipsoid
-from pygeoid.coordinates.transform import geodetic_to_spherical
+from pygeoid.potential.normal import LevelEllipsoid
+from pygeoid.coordinates.frame import ECEF
 
 ell = LevelEllipsoid('GRS80')
 
@@ -36,9 +36,11 @@ def read_test_data():
 
 model = read_test_model()
 data = read_test_data()
-latitude = data['latitude'].values * u.deg
-longitude = data['longitude'].values * u.deg
-radius0 = 0.0 * u.m
+
+position = ECEF.from_geodetic(
+        data['latitude'].values * u.deg,
+        data['longitude'].values * u.deg,
+        0.0 * u.m, ell=ell)
 
 def test_get_lmax():
     full_coeffs = model._coeffs.coeffs
@@ -53,53 +55,42 @@ def test_get_lmax():
     assert truncated_lmax == lmax
 
 def test_gravitational_potential():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude,
-            radius0, ell=ell)
-    pot_model = model.gravitational_potential.potential(lat, lon, r)
+    pot_model = model.gravitational_potential.potential(position)
     pot_test = data.potential_ell.values
     np.testing.assert_almost_equal(pot_model.value, pot_test, 6)
 
 def test_gravitation():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude,
-            radius0, ell=ell)
-    gravitation_model = model.gravitation(lat, lon, r).to('mGal')
+    gravitation_model = model.gravitation(position).to('mGal')
     gravitation_test = data.gravitation.values
     np.testing.assert_almost_equal(gravitation_model.value, gravitation_test)
 
 def test_gravity():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude,
-            radius0, ell=ell)
-    gravity_model = model.gravity(lat, lon, r).to('mGal')
+    gravity_model = model.gravity(position).to('mGal')
     gravity_test = data.gravity_ell.values
     np.testing.assert_almost_equal(gravity_model.value,
             gravity_test)
 
 def test_gravity_disturbance_sa():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude,
-            radius0, ell=ell)
-    gravity_dist_model = model.gravity_disturbance_sa(lat, lon, r).to('mGal')
+    gravity_dist_model = model.gravity_disturbance_sa(position).to('mGal')
     gravity_dist_test = data.gravity_disturbance_sa.values
     np.testing.assert_almost_equal(gravity_dist_model.value, gravity_dist_test)
 
 def test_gravity_anomaly_sa():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude, radius0, ell=ell)
-    gravity_anom_model = model.gravity_anomaly_sa(lat, lon, r).to('mGal')
+    gravity_anom_model = model.gravity_anomaly_sa(position).to('mGal')
     gravity_anom_test = data.gravity_anomaly_sa.values
     np.testing.assert_almost_equal(gravity_anom_model.value, gravity_anom_test)
 
 def test_height_anomaly_ell():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude, radius0, ell=ell)
-    ha_model = model.height_anomaly_ell(lat, lon, r)
+    ha_model = model.height_anomaly_ell(position)
     ha_test = data.height_anomaly_ell.values
     np.testing.assert_almost_equal(ha_model.value, ha_test)
 
 def test_gradient():
-    lat, lon, r = geodetic_to_spherical(latitude, longitude, radius0, ell=ell)
     # rad, lon, lat, total
-    gradient_model = model._gravitational.gradient(lat, lon, r)
-    r_derivative_model = model._gravitational.r_derivative(lat, lon, r)
-    lon_derivative_model = model._gravitational.lon_derivative(lat, lon, r)
-    lat_derivative_model = model._gravitational.lat_derivative(lat, lon, r)
+    gradient_model = model._gravitational.gradient(position)
+    r_derivative_model = model._gravitational.r_derivative(position)
+    lon_derivative_model = model._gravitational.lon_derivative(position)
+    lat_derivative_model = model._gravitational.lat_derivative(position)
 
     np.testing.assert_almost_equal(gradient_model[0].value,
             r_derivative_model.value)

@@ -1,4 +1,4 @@
-""" This module contains Position3D class.
+""" This module contains ECEF class.
 
 """
 

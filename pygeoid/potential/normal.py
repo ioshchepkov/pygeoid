@@ -5,6 +5,7 @@ Gravity field and geometry of the level ellipsoid.
 import numpy as np
 import astropy.units as u
 from scipy import (optimize, special)
+
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 
@@ -33,77 +34,6 @@ LEVEL_ELLIPSOIDS = {
 
 # default level ellipsoid for normal gravity field
 DEFAULT_LEVEL_ELLIPSOID = 'GRS80'
-
-
-class Centrifugal:
-    """Centrifugal potential and its derivatives.
-
-    Parameters
-    ----------
-    omega : float
-        Angular rotation rate of the body, in rad/s.
-        Default value is the angular speed of
-        Earth's rotation 7292115e-11 rad/s
-    """
-
-    @u.quantity_input
-    def __init__(self, omega=7292115e-11 * u.rad / u.s):
-        self.omega = omega
-
-    @u.quantity_input
-    def potential(self, lat: u.deg, radius: u.m) -> u.m**2 / u.s**2:
-        """Return centrifugal potential.
-
-        Parameters
-        ----------
-        lat : ~astropy.units.Quantity
-            Spherical (geocentric) latitude.
-        radius : ~astropy.units.Quantity
-            Radius.
-        """
-        return 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
-
-    @u.quantity_input
-    def r_derivative(self, lat: u.deg, radius: u.m):
-        """Return radial derivative.
-
-        Parameters
-        ----------
-        lat : ~astropy.units.Quantity
-            Spherical (geocentric) latitude.
-        radius : ~astropy.units.Quantity
-            Radius.
-        """
-        return self.omega**2 * radius * np.cos(lat) ** 2
-
-    @u.quantity_input
-    def lat_derivative(self, lat: u.deg, radius: u.m):
-        """Return latitude derivative.
-
-        Parameters
-        ----------
-        lat : ~astropy.units.Quantity
-            Spherical (geocentric) latitude.
-        radius : ~astropy.units.Quantity
-            Radius.
-        """
-        return -self.omega**2 * radius**2 * np.cos(lat) * np.sin(lat)
-
-    @u.quantity_input
-    def gradient(self, lat: u.deg, radius: u.deg) -> u.m / u.s**2:
-        """Return centrifugal force.
-
-        Parameters
-        ----------
-        lat : ~astropy.units.Quantity
-            Spherical (geocentric) latitude.
-        radius : ~astropy.units.Quantity
-            Radius.
-        """
-        cr = self.r_derivative(lat, radius)
-        clat = 1 / radius * self.lat_derivative(lat, radius)
-
-        return np.sqrt(cr**2 + clat**2)
 
 
 def _j2_to_flattening(j2, a, gm, omega):

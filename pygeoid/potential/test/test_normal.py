@@ -4,8 +4,8 @@ import pytest
 import numpy as np
 import astropy.units as u
 import pygeoid.coordinates.transform as transform
-from pygeoid.reduction.normal import LevelEllipsoid
-from pygeoid.reduction.normal import surface_normal_gravity_clairaut
+from pygeoid.potential.normal import LevelEllipsoid
+from pygeoid.potential.normal import surface_normal_gravity_clairaut
 
 
 def test_init():
