@@ -372,6 +372,40 @@ class SHGravPotential:
 
         return out
 
+    def _derivative(self, position, variable, coordinates, lmax: int = None):
+
+        if coordinates is None:
+            coordinates = position.representation_type.get_name()
+
+        if coordinates == 'spherical':
+            sph = position.represent_as('spherical')
+            cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
+            lat, _, degrees, cosin, x, q = _expand.common_precompute(
+                    sph.lat, sph.lon, sph.distance, self.r0, lmax_comp)
+            ri = 1 / sph.distance
+
+            if variable in ('lat', 'latitude'):
+                args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
+                        lmax_comp, degrees, cosin, cilm)
+                factor = self.gm * ri * _np.cos(lat)
+            elif variable in ('lon', 'longitude', 'long'):
+                m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
+                args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
+                        lmax_comp, degrees, m_coeff, cosin, cilm)
+                factor = -self.gm * ri
+            elif variable in ('distance', 'radius', 'r', 'radial'):
+                args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
+                        lmax_comp, degrees, cosin, cilm)
+                factor = -self.gm * ri**2
+
+            values = _expand.expand_parallel(x, q, *args)
+            out = _np.squeeze(factor * values)
+
+        if self.omega is not None:
+            out += self.centrifugal.derivative(position, variable, coordinates)
+
+        return out
+
     @u.quantity_input
     def r_derivative(self, position, lmax: int = None) -> u.m / u.s**2:
         """Return radial derivative of the potential.
@@ -389,24 +423,7 @@ class SHGravPotential:
         ~astropy.units.Quantity
             Radial derivative.
         """
-        sph = position.represent_as('spherical')
-
-        cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        _, _, degrees, cosin, x, q = _expand.common_precompute(
-                sph.lat, sph.lon, sph.distance, self.r0, lmax_comp)
-
-        args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
-                lmax_comp, degrees, cosin, cilm)
-
-        values = _expand.expand_parallel(x, q, *args)
-
-        ri = 1 / sph.distance
-        out = _np.squeeze(-self.gm * ri**2 * values)
-
-        if self.omega is not None:
-            out += self.centrifugal(position, 'radius', 'spherical')
-
-        return out
+        return self._derivative(position, 'radius', 'spherical', lmax=lmax)
 
     @u.quantity_input
     def lat_derivative(self, position, lmax: int = None):
@@ -425,24 +442,7 @@ class SHGravPotential:
         ~astropy.units.Quantity
             Latitudinal derivative.
         """
-        sph = position.represent_as('spherical')
-
-        cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        lat, _, degrees, cosin, x, q = _expand.common_precompute(
-                sph.lat, sph.lon, sph.distance, self.r0, lmax_comp)
-
-        args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
-                lmax_comp, degrees, cosin, cilm)
-
-        values = _expand.expand_parallel(x, q, *args)
-
-        ri = 1 / sph.distance
-        out = _np.squeeze(self.gm * ri * _np.cos(lat) * values)
-
-        if self.omega is not None:
-            out += self.centrifugal(position, 'lat', 'spherical')
-
-        return out
+        return self._derivative(position, 'lat', 'spherical', lmax=lmax)
 
     @u.quantity_input
     def lon_derivative(self, position, lmax: int = None):
@@ -461,22 +461,7 @@ class SHGravPotential:
         ~astropy.units.Quantity
             Longitudinal derivative.
         """
-        sph = position.represent_as('spherical')
-
-        cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        _, _, degrees, cosin, x, q = _expand.common_precompute(
-                sph.lat, sph.lon, sph.distance, self.r0, lmax_comp)
-        m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
-
-        args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
-                lmax_comp, degrees, m_coeff, cosin, cilm)
-
-        values = _expand.expand_parallel(x, q, *args)
-
-        ri = 1 / sph.distance
-        out = -self.gm * ri * values
-
-        return out.squeeze()
+        return self._derivative(position, 'lon', 'spherical', lmax=lmax)
 
     @u.quantity_input
     def gradient(self, position, lmax: int = None):
