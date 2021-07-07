@@ -31,7 +31,10 @@ class GlobalGravityFieldModel:
         potential coefficients.
     r0 : ~astropy.units.Quantity
         Reference radius of the gravitational potential coefficients.
-    coeffs : ~astropy.units.Quantity
+    lmax : int, optional
+        Maximum degree of the coefficients. Default is `None` (use all
+        the coefficients).
+    errors : ~astropy.units.Quantity
         Uncertainties of the spherical harmonic coefficients. It should have
         the same shape as `coeffs`.
     ell : instance of the `pygeoid.reduction.ellipsoid.LevelEllipsoid`
@@ -52,6 +55,7 @@ class GlobalGravityFieldModel:
                  coeffs: u.dimensionless_unscaled,
                  gm: u.m**3 / u.s**2,
                  r0 : u.m,
+                 lmax: int = None,
                  errors: bool = None,
                  ell=None,
                  omega: 1 / u.s = None):
@@ -65,7 +69,7 @@ class GlobalGravityFieldModel:
             omega = self._ell.omega
 
         self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
-                                                errors=errors, omega=omega, copy=True)
+                lmax=lmax, errors=errors, omega=omega, copy=True)
 
     @property
     def resolution(self):
@@ -140,7 +144,7 @@ class GlobalGravityFieldModel:
         return self._ell
 
     @u.quantity_input
-    def gravitation(self, position, lmax=None) -> u.m / u.s**2:
+    def gravitation(self, position) -> u.m / u.s**2:
         """Return gradient vector.
 
         The magnitude and the components of the gradient of the potential
@@ -151,9 +155,6 @@ class GlobalGravityFieldModel:
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
@@ -161,10 +162,10 @@ class GlobalGravityFieldModel:
             Gravitation.
         """
 
-        return self._gravitational.gradient(position, lmax=lmax)[-1]
+        return self._gravitational.gradient(position)[-1]
 
     @u.quantity_input
-    def gravity(self, position, lmax=None) -> u.m / u.s**2:
+    def gravity(self, position) -> u.m / u.s**2:
         """Return gravity value.
 
         The magnitude of the gradient of the potential calculated on or above
@@ -175,19 +176,16 @@ class GlobalGravityFieldModel:
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
         ~astropy.units.Quantity
             Gravity.
         """
-        return _np.squeeze(self._gravity.gradient(position, lmax=lmax)[-1])
+        return _np.squeeze(self._gravity.gradient(position)[-1])
 
     @u.quantity_input
-    def gravity_disturbance(self, position, lmax: int = None) -> u.mGal:
+    def gravity_disturbance(self, position) -> u.mGal:
         """Return gravity disturbance.
 
         The gravity disturbance is defined as the magnitude of the gradient of
@@ -198,16 +196,13 @@ class GlobalGravityFieldModel:
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
         ~astropy.units.Quantity
             Gravity disturbance.
         """
-        g = self._gravity.gradient(position, lmax)[-1]
+        g = self._gravity.gradient(position)[-1]
 
         ellharm = position.represent_as('ellipsoidalharmonic')
         gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
@@ -215,7 +210,7 @@ class GlobalGravityFieldModel:
         return g - gamma
 
     @u.quantity_input
-    def gravity_disturbance_sa(self, position, lmax: int = None) -> u.mGal:
+    def gravity_disturbance_sa(self, position) -> u.mGal:
         """Return gravity disturbance in spherical approximation.
 
         The gravity disturbance calculated by spherical approximation (eqs. 92
@@ -225,9 +220,6 @@ class GlobalGravityFieldModel:
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
@@ -235,10 +227,10 @@ class GlobalGravityFieldModel:
             Gravity disturbance.
         """
 
-        return -self.anomalous_potential.r_derivative(position, lmax=lmax)
+        return -self.anomalous_potential.r_derivative(position)
 
     @u.quantity_input
-    def gravity_anomaly_sa(self, position, lmax: int = None) -> u.mGal:
+    def gravity_anomaly_sa(self, position) -> u.mGal:
         """Return (Molodensky) gravity anomaly in spherical approximation.
 
         The gravity anomaly calculated by spherical approximation (eqs. 100 or
@@ -251,9 +243,6 @@ class GlobalGravityFieldModel:
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
@@ -263,12 +252,12 @@ class GlobalGravityFieldModel:
         sph = position.represent_as('spherical')
 
         coeffs = self._anomalous._coeffs.coeffs
-        cilm, lmax_comp = _get_lmax(coeffs, lmax=lmax)
+        lmax = self._anomalous._coeffs.lmax
         _, _, degrees, cosin, x, q = _expand.common_precompute(
-            sph.lat, sph.lon, sph.distance, self._coeffs.r0, lmax_comp)
+            sph.lat, sph.lon, sph.distance, self._coeffs.r0, lmax)
 
         args = (_expand.in_coeff_gravity_anomaly, _expand.sum_potential,
-                lmax_comp, degrees, cosin, cilm)
+                lmax, degrees, cosin, coeffs)
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -279,7 +268,7 @@ class GlobalGravityFieldModel:
 
     @u.quantity_input
     def height_anomaly_ell(self, position,
-            ref_pot: u.m**2 / u.s**2 = None, lmax=None) -> u.m:
+            ref_pot: u.m**2 / u.s**2 = None) -> u.m:
         """Return height anomaly above the ellispoid.
 
         The height anomaly can be generalised to a 3-d function, (sometimes
@@ -294,9 +283,6 @@ class GlobalGravityFieldModel:
         ref_pot : ~astropy.units.Quantity
             Reference potential value W0 for the zero degree term. Defaut is
             `None` (zero degree term is not considered).
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
@@ -304,7 +290,7 @@ class GlobalGravityFieldModel:
             Anomaly height.
         """
 
-        T = self.anomalous_potential.potential(position, lmax=lmax)
+        T = self.anomalous_potential.potential(position)
 
         ellharm = position.represent_as('ellipsoidalharmonic')
         gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
@@ -335,16 +321,13 @@ class SHGravPotential:
             self.centrifugal = _Centrifugal(omega=self.omega)
 
     @u.quantity_input
-    def potential(self, position, lmax=None) -> u.m**2 / u.s**2:
+    def potential(self, position) -> u.m**2 / u.s**2:
         """Return potential value.
 
         Parameters
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
@@ -354,12 +337,10 @@ class SHGravPotential:
 
         sph = position.represent_as('spherical')
 
-        cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-
-        _, _, degrees, cosin, x, q = _expand.common_precompute(sph.lat, sph.lon,
-                                                               sph.distance, self.r0, lmax_comp)
+        _, _, degrees, cosin, x, q = _expand.common_precompute(
+                sph.lat, sph.lon, sph.distance, self.r0, self._coeffs.lmax)
         args = (_expand.in_coeff_potential, _expand.sum_potential,
-                lmax_comp, degrees, cosin, cilm)
+                self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -372,30 +353,30 @@ class SHGravPotential:
 
         return out
 
-    def _derivative(self, position, variable, coordinates, lmax: int = None):
+    def _derivative(self, position, variable, coordinates):
 
         if coordinates is None:
             coordinates = position.representation_type.get_name()
 
         if coordinates == 'spherical':
             sph = position.represent_as('spherical')
-            cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
             lat, _, degrees, cosin, x, q = _expand.common_precompute(
-                    sph.lat, sph.lon, sph.distance, self.r0, lmax_comp)
+                    sph.lat, sph.lon, sph.distance, self.r0, self._coeffs.lmax)
             ri = 1 / sph.distance
 
             if variable in ('lat', 'latitude'):
                 args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
-                        lmax_comp, degrees, cosin, cilm)
+                        self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
                 factor = self.gm * ri * _np.cos(lat)
             elif variable in ('lon', 'longitude', 'long'):
-                m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
+                m_coeff = _np.tile(degrees, (self._coeffs.lmax + 1, 1))
                 args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
-                        lmax_comp, degrees, m_coeff, cosin, cilm)
+                        self._coeffs.lmax, degrees, m_coeff, cosin,
+                        self._coeffs.coeffs)
                 factor = -self.gm * ri
             elif variable in ('distance', 'radius', 'r', 'radial'):
                 args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
-                        lmax_comp, degrees, cosin, cilm)
+                        self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
                 factor = -self.gm * ri**2
 
             values = _expand.expand_parallel(x, q, *args)
@@ -407,64 +388,55 @@ class SHGravPotential:
         return out
 
     @u.quantity_input
-    def r_derivative(self, position, lmax: int = None) -> u.m / u.s**2:
+    def r_derivative(self, position) -> u.m / u.s**2:
         """Return radial derivative of the potential.
 
         Parameters
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
         ~astropy.units.Quantity
             Radial derivative.
         """
-        return self._derivative(position, 'radius', 'spherical', lmax=lmax)
+        return self._derivative(position, 'radius', 'spherical')
 
     @u.quantity_input
-    def lat_derivative(self, position, lmax: int = None):
+    def lat_derivative(self, position):
         """Return latitudinal derivative of the potential.
 
         Parameters
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
         ~astropy.units.Quantity
             Latitudinal derivative.
         """
-        return self._derivative(position, 'lat', 'spherical', lmax=lmax)
+        return self._derivative(position, 'lat', 'spherical')
 
     @u.quantity_input
-    def lon_derivative(self, position, lmax: int = None):
+    def lon_derivative(self, position):
         """Return longitudinal derivative of the potential.
 
         Parameters
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
 
         Returns
         -------
         ~astropy.units.Quantity
             Longitudinal derivative.
         """
-        return self._derivative(position, 'lon', 'spherical', lmax=lmax)
+        return self._derivative(position, 'lon', 'spherical')
 
     @u.quantity_input
-    def gradient(self, position, lmax: int = None):
+    def gradient(self, position):
         """Return gradient vector.
 
         The magnitude and the components of the gradient of the potential
@@ -475,19 +447,17 @@ class SHGravPotential:
         ----------
         position : ~pygeoid.coordinates.frame.ECEF
             Position in the Earth-Centered-Earth-Fixed frame.
-        lmax : int, optional
-            Maximum degree of the coefficients. Default is `None` (use all
-            the coefficients).
+
         """
         sph = position.represent_as('spherical')
 
-        cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
         lat, _, degrees, cosin, x, q = _expand.common_precompute(
-                sph.lat, sph.lon, sph.distance, self.r0, lmax_comp)
+                sph.lat, sph.lon, sph.distance, self.r0, self._coeffs.lmax)
 
-        m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
-        args = (_expand.in_coeff_gradient, _expand.sum_gradient, lmax_comp, degrees,
-                m_coeff, cosin, cilm)
+        m_coeff = _np.tile(degrees, (self._coeffs.lmax + 1, 1))
+        args = (_expand.in_coeff_gradient, _expand.sum_gradient,
+                self._coeffs.lmax, degrees, m_coeff, cosin,
+                self._coeffs.coeffs)
 
         values = _expand.expand_parallel(x, q, *args)
 
