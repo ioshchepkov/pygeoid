@@ -44,9 +44,15 @@ class PotentialBase(metaclass=abc.ABCMeta):
         return self._gradient(position=position, *args, **kwargs)
 
     def gradient_vector(self, position, coordinates=None, *args, **kwargs):
+        if coordinates is None:
+            coordinates = position.representation_type.get_name()
+
         return self._gradient_vector(position=position,
                                      coordinates=coordinates, *args, **kwargs)
 
     def derivative(self, position, variable, coordinates=None, *args, **kwargs):
+        if coordinates is None:
+            coordinates = position.representation_type.get_name()
+
         return self._derivative(position=position, variable=variable,
                                 coordinates=coordinates, *args, **kwargs)

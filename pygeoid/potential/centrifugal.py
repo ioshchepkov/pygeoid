@@ -62,10 +62,7 @@ class Centrifugal(PotentialBase):
 
         return (q1, q2, q3)
 
-    def _derivative(self, position, variable='lat', coordinates=None):
-
-        if coordinates is None:
-            coordinates = position.representation_type.get_name()
+    def _derivative(self, position, variable, coordinates):
 
         if coordinates == 'spherical':
             sph = position.represent_as('spherical')
