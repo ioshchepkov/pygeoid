@@ -55,7 +55,7 @@ def test_get_lmax():
     assert truncated_lmax == lmax
 
 def test_gravitational_potential():
-    pot_model = model.gravitational_potential.potential(position)
+    pot_model = model.gravitational_potential(position)
     pot_test = data.potential_ell.values
     np.testing.assert_almost_equal(pot_model.value, pot_test, 6)
 
@@ -85,18 +85,25 @@ def test_height_anomaly_ell():
     ha_test = data.height_anomaly_ell.values
     np.testing.assert_almost_equal(ha_model.value, ha_test)
 
-"""
-def test_gradient():
-    # rad, lon, lat, total
-    gradient_model = model._gravitational.gradient_vector(position)
-    r_derivative_model = model._gravitational.r_derivative(position)
-    lon_derivative_model = model._gravitational.lon_derivative(position)
-    lat_derivative_model = model._gravitational.lat_derivative(position)
+def test_dov():
 
-    np.testing.assert_almost_equal(gradient_model[2].value,
-            r_derivative_model.value)
-    np.testing.assert_almost_equal(gradient_model[1].value,
-            lon_derivative_model.value)
-    np.testing.assert_almost_equal(gradient_model[0].value,
-            lat_derivative_model.value)
-"""
+    position = ECEF.from_geodetic(
+            data['latitude'].values * u.deg,
+            data['longitude'].values * u.deg,
+            data['h_over_geoid'].values * u.m,
+            ell=ell)
+
+    dov_ew_model = model.vertical_deflection_ew(
+            position).to('arcsec').value
+    dov_ns_model = model.vertical_deflection_ns(
+            position).to('arcsec').value
+    dov_abs_model = model.vertical_deflection_abs(
+            position).to('arcsec').value
+
+    dov_ew_test = data.dov_ew.values
+    dov_ns_test = data.dov_ns.values
+    dov_abs_test = data.dov_abs.values
+
+    np.testing.assert_almost_equal(dov_ew_model, dov_ew_test, 3)
+    np.testing.assert_almost_equal(dov_ns_model, dov_ns_test, 3)
+    np.testing.assert_almost_equal(dov_abs_model, dov_abs_test, 3)

@@ -71,6 +71,7 @@ class GlobalGravityFieldModel:
         if omega is None:
             omega = self._ell.omega
 
+        coeffs = coeffs.astype(_np.float128)
         self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
                                                 lmax=lmax, errors=errors, omega=omega, copy=True)
 
@@ -90,12 +91,26 @@ class GlobalGravityFieldModel:
         return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
                                r0=self._coeffs.r0, omega=None, copy=False)
 
-    @property
-    def gravitational_potential(self):
-        """Return `SHGravPotential` class instance for the gravitational potential.
+    @u.quantity_input
+    def gravitational_potential(self, position) -> u.m**2 / u.s**2:
+        """Return gravitational potential.
+
+        This is the potential of the gravitational field (without the
+        centrifugal potential) at the given point (h,λ,φ).
+        (eqs. 1 and 108 of STR09/02)
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
+
+        Returns
+        -------
+        ~astropy.units.Quantity
+            Gravitational potential.
 
         """
-        return self._gravitational
+        return self._gravitational.potential(position)
 
     @property
     def _gravity(self):
@@ -105,12 +120,26 @@ class GlobalGravityFieldModel:
         return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
                                r0=self._coeffs.r0, omega=self._coeffs.omega)
 
-    @property
-    def gravity_potential(self):
-        """Return `SHGravPotential` class instance for the gravity potential.
+    @u.quantity_input
+    def gravity_potential(self, position) -> u.m**2 / u.s**2:
+        """Return gravity potential.
+
+        This is the potential of the gravity field of the Earth (including the
+        centrifugal potential) at the given point (h,λ,φ).
+        (eqs. 5 and 108 + 123 of STR09/02)
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
+
+        Returns
+        -------
+        ~astropy.units.Quantity
+            Gravity potential.
 
         """
-        return self._gravity
+        return self._gravity.potential(position)
 
     @property
     def _anomalous(self):
@@ -132,27 +161,30 @@ class GlobalGravityFieldModel:
                                gm=self._coeffs.gm, r0=self._coeffs.r0,
                                omega=None)
 
-    @property
-    def anomalous_potential(self):
-        """Return `SHGravPotential` class instance for anomalous potential.
+    @u.quantity_input
+    def anomalous_potential(self, position) -> u.m**2 / u.s**2:
+        """Return anomalous potential.
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
+
+        Returns
+        -------
+        ~astropy.units.Quantity
+            Anomalous potential.
 
         """
-        return self._anomalous
-
-    @property
-    def normal_potential(self):
-        """Return normal potential class instance.
-
-        """
-        return self._ell
+        return self._anomalous.potential(position)
 
     @u.quantity_input
     def gravitation(self, position) -> u.m / u.s**2:
         """Return gradient vector.
 
-        The magnitude and the components of the gradient of the potential
-        calculated on or above the ellipsoid without the centrifugal potential
-        (eqs. 7 and 122 of STR09/02).
+        Gravitation is the magnitude of the gravitational vector (gradient of
+        the attraction potential without centrifugal potential) at the given
+        point (h,λ,φ) (eq. 122 of STR09/02).
 
         Parameters
         ----------
@@ -170,9 +202,9 @@ class GlobalGravityFieldModel:
     def gravity(self, position) -> u.m / u.s**2:
         """Return gravity value.
 
-        The magnitude of the gradient of the potential calculated on or above
-        the ellipsoid including the centrifugal potential (eqs. 7 and 121 − 124
-        of STR09/02).
+        Gravity is the magnitude of the gravity vector (gradient of the gravity
+        potential which includes the centrifugal potential) at the given point
+        (h,λ,φ) (eqs. 7 and 121 − 124 of STR09/02).
 
         Parameters
         ----------
@@ -191,8 +223,13 @@ class GlobalGravityFieldModel:
         """Return gravity disturbance.
 
         The gravity disturbance is defined as the magnitude of the gradient of
-        the potential at a given point minus the magnitude of the gradient of
-        the normal potential at the same point (eqs. 87 and 121 − 124 of STR09/02).
+        the gravity potential at a given point minus the magnitude
+        of the gradient of the normal potential at the same point
+        (eqs. 29, 87 and 121 − 124 of STR09/02).
+
+        If you pass position based on the physical height instead of geodetic
+        height, then the gravity anomaly will be returned, not gravity
+        disturbance.
 
         Parameters
         ----------
@@ -215,8 +252,11 @@ class GlobalGravityFieldModel:
     def gravity_disturbance_sa(self, position) -> u.mGal:
         """Return gravity disturbance in spherical approximation.
 
-        The gravity disturbance calculated by spherical approximation (eqs. 92
-        and 125 of STR09/02) on (h=0) or above (h>0) the ellipsoid.
+        Spherical approximation of the gravity disturbance means that the real
+        gradient (direction of the plumbline) is replaced by it’s radial
+        component.
+
+        (eqs. 92 and 125 of STR09/02)
 
         Parameters
         ----------
@@ -226,20 +266,21 @@ class GlobalGravityFieldModel:
         Returns
         -------
         ~astropy.units.Quantity
-            Gravity disturbance.
+            Gravity disturbance in spherical approximation.
         """
 
-        return -self.anomalous_potential.r_derivative(position)
+        return -self._anomalous.r_derivative(position)
 
     @u.quantity_input
     def gravity_anomaly_sa(self, position) -> u.mGal:
         """Return (Molodensky) gravity anomaly in spherical approximation.
 
         The gravity anomaly calculated by spherical approximation (eqs. 100 or
-        104 and 126 of STR09/02). Unlike the classical gravity anomaly, the
-        Molodensky gravity anomaly and the spherical approximation can be
-        generalised to 3-d space, hence here it can be calculated on (h=0) or
-        above (h>0) the ellipsoid.
+        104 and 126 of STR09/02).
+
+        Spherical approximation of the gravity anomaly means that the real
+        gradient (direction of the plumbline) is replaced by it’s radial
+        component.
 
         Parameters
         ----------
@@ -271,12 +312,14 @@ class GlobalGravityFieldModel:
     @u.quantity_input
     def height_anomaly_ell(self, position,
                            ref_pot: u.m**2 / u.s**2 = None) -> u.m:
-        """Return height anomaly above the ellispoid.
+        """Return height anomaly above the ellipsoid.
 
-        The height anomaly can be generalised to a 3-d function, (sometimes
-        called "generalised pseudo-height-anomaly"). Here it can be calculated
-        on (h=0) or above (h>0) the ellipsoid, approximated by Bruns’ formula
-        (eqs. 78 and 118 of STR09/02)
+        The so called "height anomaly" is an approximation of the geoid
+        according to Molodensky's theory. It is equal to the geoid over sea.
+        Here the generalised height anomaly at the given point (h,λ,φ)
+        is approximated by Bruns’ formula:
+        disturbance_potential(h,λ,φ) / normal_gravity(h,φ)
+        (eq. 78 and 118 of STR09/02)
 
         Parameters
         ----------
@@ -289,20 +332,167 @@ class GlobalGravityFieldModel:
         Returns
         -------
         ~astropy.units.Quantity
-            Anomaly height.
+            Height anomaly.
         """
 
-        T = self.anomalous_potential.potential(position)
+        apot = self._anomalous.potential(position)
 
         ellharm = position.represent_as('ellipsoidalharmonic')
         gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
 
-        zeta = _np.squeeze(T / gamma)
+        zeta = _np.squeeze(apot / gamma)
 
         if ref_pot is not None:
             zeta -= (ref_pot - self._ell.surface_potential) / gamma
 
         return zeta
+
+    @u.quantity_input
+    def vertical_deflection_abs(self, position) -> u.arcsec:
+        """Return gravimetric deflection of the vertical (DoV).
+
+        This is the magnitude of the gravimetric deflection of the vertical.
+        It is the angle between the vector of gravity and the vector of normal gravity
+        both at the same point (h,λ,φ).
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
+
+        Returns
+        -------
+        ~astropy.units.Quantity
+            Deflection of the vertical.
+
+        Notes
+        -----
+        The gravimetric vertical deflection computed in ellipsoidal
+        approximation by using small correction to the
+        spherical approximation (see [1]_, eq. 26-28).
+
+        References
+        ----------
+        .. [1] Jekeli, C. An analysis of vertical deflections derived
+        from high-degree spherical harmonic models.
+        Journal of Geodesy 73, 10–22 (1999).
+
+        """
+
+        dapot_lat = self._anomalous.derivative(position, 'lat', 'spherical')
+        dapot_lon = self._anomalous.derivative(position, 'lon', 'spherical')
+        dapot_rad = self._anomalous.derivative(position, 'r', 'spherical')
+
+        ellharm = position.represent_as('ellipsoidalharmonic')
+        geod = position.represent_as('geodetic')
+        sph = position.represent_as('spherical')
+
+        gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
+
+        denom_eta = gamma * sph.distance * _np.cos(sph.lat)
+        eta = -(dapot_lon / denom_eta) * u.rad
+
+        nu = geod.lat - sph.lat
+        cnu = _np.cos(nu)
+        snu = _np.sin(nu)
+
+        xi = -(cnu * dapot_lat / sph.distance - snu * dapot_rad) / gamma * u.rad
+
+        return _np.sqrt(eta**2 + xi**2)
+
+    @u.quantity_input
+    def vertical_deflection_ew(self, position) -> u.arcsec:
+        """Return east-west component of the DoV.
+
+        This is the east-west component of the gravimetric deflection of the vertical.
+        It is the east-west component of the angle between the vector of gravity and
+        the vector of normal gravity both at the same point (h,λ,φ).
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
+
+        Returns
+        -------
+        ~astropy.units.Quantity
+            East-west component of the DoV.
+
+        Notes
+        -----
+        The gravimetric vertical deflection computed in ellipsoidal
+        approximation by using small correction to the
+        spherical approximation (see [1]_, eq. 26-28).
+
+        References
+        ----------
+        .. [1] Jekeli, C. An analysis of vertical deflections derived
+        from high-degree spherical harmonic models.
+        Journal of Geodesy 73, 10–22 (1999).
+
+        """
+
+        dapot_lon = self._anomalous.derivative(position, 'lon', 'spherical')
+
+        ellharm = position.represent_as('ellipsoidalharmonic')
+        geod = position.represent_as('geodetic')
+        sph = position.represent_as('spherical')
+
+        gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
+
+        denom = gamma * sph.distance * _np.cos(sph.lat)
+        eta = (-dapot_lon / denom) * u.rad
+
+        return eta
+
+    @u.quantity_input
+    def vertical_deflection_ns(self, position) -> u.arcsec:
+        """Return north-south component of the DoV.
+
+        This is the north-south component of the gravimetric deflection of the vertical.
+        It is the north-south component of the angle between the vector of gravity and
+        the vector of normal gravity both at the same point (h,λ,φ).
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
+
+        Returns
+        -------
+        ~astropy.units.Quantity
+            North-south component of the DoV.
+
+        Notes
+        -----
+        The gravimetric vertical deflection computed in ellipsoidal
+        approximation by using small correction to the
+        spherical approximation (see [1]_, eq. 26-28).
+
+        References
+        ----------
+        .. [1] Jekeli, C. An analysis of vertical deflections derived
+        from high-degree spherical harmonic models.
+        Journal of Geodesy 73, 10–22 (1999).
+
+        """
+
+        dapot_lat = self._anomalous.derivative(position, 'lat', 'spherical')
+        dapot_rad = self._anomalous.derivative(position, 'r', 'spherical')
+
+        ellharm = position.represent_as('ellipsoidalharmonic')
+        geod = position.represent_as('geodetic')
+        sph = position.represent_as('spherical')
+
+        gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
+
+        nu = geod.lat - sph.lat
+        cnu = _np.cos(nu)
+        snu = _np.sin(nu)
+
+        xi = -(cnu * dapot_lat / sph.distance - snu * dapot_rad) / gamma * u.rad
+
+        return xi
 
 
 class SHGravPotential(_PotentialBase):
@@ -486,4 +676,5 @@ class SHGravPotential(_PotentialBase):
 
     @u.quantity_input
     def _gradient(self, position) -> u.m / u.s**2:
-        return _np.linalg.norm(u.Quantity(self._gradient_vector(position, 'spherical')), axis=0)
+        return _np.linalg.norm(u.Quantity(
+            self._gradient_vector(position, 'spherical')), axis=0)
