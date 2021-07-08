@@ -11,6 +11,7 @@ from pygeoid.potential.core import PotentialBase as _PotentialBase
 from pygeoid.potential.centrifugal import Centrifugal as _Centrifugal
 from pygeoid.potential.normal import LevelEllipsoid as _LevelEllipsoid
 from pygeoid.coordinates import transform as _transform
+from pygeoid.constants.iers2010 import k20
 from pygeoid.sharm import expand as _expand
 from pygeoid.sharm.utils import get_lmax as _get_lmax
 
@@ -33,6 +34,10 @@ class GlobalGravityFieldModel:
         potential coefficients.
     r0 : ~astropy.units.Quantity
         Reference radius of the gravitational potential coefficients.
+    tide_system : {'zero-tide', 'non-tidal'},
+        Tide system of the model. Can be 'zero-tide', 'non-tidal' or None.
+        Default is None, i.e. model's system is used. If the tide system
+        is not defined, it will be impossible to convert between them.
     lmax : int, optional
         Maximum degree of the coefficients. Default is `None` (use all
         the coefficients).
@@ -48,8 +53,8 @@ class GlobalGravityFieldModel:
     References
     ----------
     .. [1] Barthelmes, Franz. ‘Definition of Functionals of the Geopotential
-    and Their Calculation from Spherical Harmonic Models’. Deutsches
-    GeoForschungsZentrum (GFZ), 2013. https://doi.org/10.2312/GFZ.b103-0902-26.
+        and Their Calculation from Spherical Harmonic Models’. Deutsches
+        GeoForschungsZentrum (GFZ), 2013. https://doi.org/10.2312/GFZ.b103-0902-26.
 
     """
 
@@ -58,10 +63,16 @@ class GlobalGravityFieldModel:
                  coeffs: u.dimensionless_unscaled,
                  gm: u.m**3 / u.s**2,
                  r0 : u.m,
+                 tide_system: str = None,
                  lmax: int = None,
                  errors: bool = None,
                  ell=None,
                  omega: 1 / u.s = None):
+
+        if tide_system in ('zero-tide', 'non-tidal', None):
+            self._tide_system = tide_system
+        else:
+            raise ValueError('Not a valid `tide_system`!')
 
         if ell is not None:
             self._ell = ell
@@ -74,6 +85,62 @@ class GlobalGravityFieldModel:
         coeffs = coeffs.astype(_np.float128)
         self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
                                                 lmax=lmax, errors=errors, omega=omega, copy=True)
+
+    def to_tide_system(self, tide_system: str):
+        r"""Convert model to another tide system.
+
+        Parameters
+        ----------
+        tide_system : {'zero-tide', 'non-tidal'}
+            Tide system to convert the model.
+            Can be 'zero-tide' or 'non-tidal'.
+
+        Notes
+        -----
+        Some GGMs provide the coefficient :math:`C_{20}` in the tide-free (non-tidal)
+        system (:math:`C_{20}^{NT}`); other GGMs provide it in the zero-tide
+        system (:math:`C_{20}^{ZT}`). Their relationship is given by (see [2]_)
+
+        .. math::
+            C_{20}^{ZT} = C_{20}^{NT} + k_{20} \frac{r_0}{GM} A' \left(\frac{r_0}{a}\right)^2
+
+        where :math:`k_{20}` is the conventional Love number (:math:`k_{20} = 0.30190`,
+        see Petit and Luzum 2010), :math:`GM` is the geocentric gravitational constant,
+        and :math:`r0` is the distance scaling factor used in
+        the generation of the tide-free GGM. The parameters :math:`A’` and
+        :math:`a` are given in [2]_.
+
+        References
+        ----------
+        .. [2] Sánchez, L. et al. Strategy for the realisation of the
+            International Height Reference System (IHRS). J Geod 95, 33 (2021).
+
+        """
+
+        if tide_system not in ('zero-tide', 'non-tidal'):
+            raise ValueError('Not a valid `tide_system`!')
+        elif self._tide_system == tide_system:
+            raise ValueError('Nothing to do, the model is already in the '
+                             'desired tide system!')
+        elif self._tide_system is None:
+            raise ValueError('Tide system of the model is None (not specified)!')
+
+        A = -1.9444 * u.m**2 / u.s**2
+        a = _LevelEllipsoid('GRS80').a
+
+        r0a = self._coeffs.r0 / a
+        r0gm = self._coeffs.r0 / self._coeffs.gm
+        corr = k20 * r0gm * A * r0a**2
+
+        if self._tide_system == 'zero-tide' and tide_system == 'non-tidal':
+            dc20 = -corr
+            self._tide_system = 'non-tidal'
+        elif self._tide_system == 'non-tidal' and tide_system == 'zero-tide':
+            dc20 = corr
+            self._tide_system = 'zero-tide'
+
+        c20 = self._coeffs.coeffs[0][2][0] + dc20
+        self._coeffs.set_coeffs(c20, 2, 0)
 
     @property
     def resolution(self):
@@ -369,13 +436,13 @@ class GlobalGravityFieldModel:
         -----
         The gravimetric vertical deflection computed in ellipsoidal
         approximation by using small correction to the
-        spherical approximation (see [1]_, eq. 26-28).
+        spherical approximation (see [3]_, eq. 26-28).
 
         References
         ----------
-        .. [1] Jekeli, C. An analysis of vertical deflections derived
-        from high-degree spherical harmonic models.
-        Journal of Geodesy 73, 10–22 (1999).
+        .. [3] Jekeli, C. An analysis of vertical deflections derived
+            from high-degree spherical harmonic models.
+            Journal of Geodesy 73, 10–22 (1999).
 
         """
 
@@ -422,13 +489,13 @@ class GlobalGravityFieldModel:
         -----
         The gravimetric vertical deflection computed in ellipsoidal
         approximation by using small correction to the
-        spherical approximation (see [1]_, eq. 26-28).
+        spherical approximation (see [3]_, eq. 26-28).
 
         References
         ----------
-        .. [1] Jekeli, C. An analysis of vertical deflections derived
-        from high-degree spherical harmonic models.
-        Journal of Geodesy 73, 10–22 (1999).
+        .. [3] Jekeli, C. An analysis of vertical deflections derived
+            from high-degree spherical harmonic models.
+            Journal of Geodesy 73, 10–22 (1999).
 
         """
 
@@ -467,13 +534,13 @@ class GlobalGravityFieldModel:
         -----
         The gravimetric vertical deflection computed in ellipsoidal
         approximation by using small correction to the
-        spherical approximation (see [1]_, eq. 26-28).
+        spherical approximation (see [3]_, eq. 26-28).
 
         References
         ----------
-        .. [1] Jekeli, C. An analysis of vertical deflections derived
-        from high-degree spherical harmonic models.
-        Journal of Geodesy 73, 10–22 (1999).
+        .. [3] Jekeli, C. An analysis of vertical deflections derived
+            from high-degree spherical harmonic models.
+            Journal of Geodesy 73, 10–22 (1999).
 
         """
 

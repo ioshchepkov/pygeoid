@@ -205,6 +205,17 @@ l2 = _Constant(
 
 DEGREE2_LOVE_NUMBERS = {'k': k2, 'l': l2, 'h': h2}
 
+k20 = _Constant(
+    abbrev='k20',
+    name='Nominal degree 2 Love number k20',
+    value=0.30190,
+    unit='',
+    uncertainty=0,
+    reference='IERS Conventions(2010), '
+    'IERS Technical Note 36, '
+    'Verlagdes Bundesamts für Kartographie und Geodäsie, '
+    'Frankfurt am Main, Germany.')
+
 
 def l2_shida_number(lat: _u.deg = None) -> _u.dimensionless_unscaled:
     """Return degree 2 Shida number (l2,0).
