@@ -16,7 +16,7 @@ from pygeoid.sharm import expand as _expand
 from pygeoid.sharm.utils import get_lmax as _get_lmax
 
 
-class GlobalGravityFieldModel:
+class GlobalGravityModel:
     """
     Class for working with the global gravity field models.
 
@@ -570,14 +570,12 @@ class SHGravPotential(_PotentialBase):
                  gm: u.m**3 / u.s**2, r0 : u.m, omega: 1 / u.s = None,
                  errors: bool = None, lmax: int = None, copy: bool = False):
 
-        self._coeffs = _SHCoeffs.from_array(coeffs, lmax=lmax, copy=copy)
-        self.gm = gm
-        self.r0 = r0
-        self.omega = omega
-        self.errors = errors
+        self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
+                                                lmax=lmax, errors=errors,
+                                                omega=omega, copy=True)
 
-        if self.omega is not None:
-            self.centrifugal = _Centrifugal(omega=self.omega)
+        if self._coeffs.omega is not None:
+            self.centrifugal = _Centrifugal(omega=self._coeffs.omega)
 
     @u.quantity_input
     def _potential(self, position) -> u.m**2 / u.s**2:
@@ -597,7 +595,7 @@ class SHGravPotential(_PotentialBase):
         sph = position.represent_as('spherical')
 
         _, _, degrees, cosin, x, q = _expand.common_precompute(
-            sph.lat, sph.lon, sph.distance, self.r0, self._coeffs.lmax)
+            sph.lat, sph.lon, sph.distance, self._coeffs.r0, self._coeffs.lmax)
         args = (_expand.in_coeff_potential, _expand.sum_potential,
                 self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
 
@@ -605,9 +603,9 @@ class SHGravPotential(_PotentialBase):
 
         ri = 1 / sph.distance
 
-        out = _np.squeeze(self.gm * ri * values)
+        out = _np.squeeze(self._coeffs.gm * ri * values)
 
-        if self.omega is not None:
+        if self._coeffs.omega is not None:
             out += self.centrifugal.potential(position)
 
         return out
@@ -620,28 +618,28 @@ class SHGravPotential(_PotentialBase):
         if coordinates == 'spherical':
             sph = position.represent_as('spherical')
             lat, _, degrees, cosin, x, q = _expand.common_precompute(
-                sph.lat, sph.lon, sph.distance, self.r0, self._coeffs.lmax)
+                sph.lat, sph.lon, sph.distance, self._coeffs.r0, self._coeffs.lmax)
             ri = 1 / sph.distance
 
             if variable in ('lat', 'latitude'):
                 args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
                         self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
-                factor = self.gm * ri * _np.cos(lat)
+                factor = self._coeffs.gm * ri * _np.cos(lat)
             elif variable in ('lon', 'longitude', 'long'):
                 m_coeff = _np.tile(degrees, (self._coeffs.lmax + 1, 1))
                 args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
                         self._coeffs.lmax, degrees, m_coeff, cosin,
                         self._coeffs.coeffs)
-                factor = -self.gm * ri
+                factor = -self._coeffs.gm * ri
             elif variable in ('distance', 'radius', 'r', 'radial'):
                 args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
                         self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
-                factor = -self.gm * ri**2
+                factor = -self._coeffs.gm * ri**2
 
             values = _expand.expand_parallel(x, q, *args)
             out = _np.squeeze(factor * values)
 
-        if self.omega is not None:
+        if self._coeffs.omega is not None:
             out += self.centrifugal.derivative(position, variable, coordinates)
 
         return out
@@ -711,7 +709,7 @@ class SHGravPotential(_PotentialBase):
         sph = position.represent_as('spherical')
 
         lat, _, degrees, cosin, x, q = _expand.common_precompute(
-            sph.lat, sph.lon, sph.distance, self.r0, self._coeffs.lmax)
+            sph.lat, sph.lon, sph.distance, self._coeffs.r0, self._coeffs.lmax)
 
         m_coeff = _np.tile(degrees, (self._coeffs.lmax + 1, 1))
         args = (_expand.in_coeff_gradient, _expand.sum_gradient,
@@ -721,14 +719,14 @@ class SHGravPotential(_PotentialBase):
         values = _expand.expand_parallel(x, q, *args)
 
         ri = 1 / sph.distance
-        gmri = self.gm * ri
+        gmri = self._coeffs.gm * ri
         clat = _np.cos(lat)
 
         lat_d = gmri * clat * values[:, :, 0]
         lon_d = -gmri * values[:, :, 1]
-        rad_d = -self.gm * ri**2 * values[:, :, 2]
+        rad_d = -self._coeffs.gm * ri**2 * values[:, :, 2]
 
-        if self.omega is not None:
+        if self._coeffs.omega is not None:
             lat_d += self.centrifugal.derivative(position, 'lat', 'spherical')
             rad_d += self.centrifugal.derivative(position, 'radius', 'spherical')
 
