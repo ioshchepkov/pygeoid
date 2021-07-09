@@ -16,9 +16,8 @@ from pygeoid.sharm import expand as _expand
 from pygeoid.sharm.utils import get_lmax as _get_lmax
 
 
-class GlobalGravityModel:
-    """
-    Class for working with the global gravity field models.
+class GlobalGravityFieldModel:
+    """Class for working with the global gravity field models.
 
     The theory and formulas used by this class as in the ICGEM calculation
     service and described in the Scientific Technical Report STR09/02 [1]_.
