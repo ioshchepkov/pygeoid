@@ -9,6 +9,7 @@ API Reference
    :hidden:
 
    coordinates/index
+   potential/index
    integrals/index
    reduction/index
    sharm/index

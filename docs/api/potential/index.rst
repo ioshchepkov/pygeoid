@@ -1,12 +1,10 @@
 
 **************************************************************
-Coordinate Systems and Transformations (`pygeoid.coordinates`)
+Potential (`pygeoid.potential`)
 **************************************************************
 
 .. toctree::
    :maxdepth: 1
 
-   ellipsoid.rst
-   frame.rst
-   representation.rst
-   transform.rst
+   normal.rst
+   centrifugal.rst

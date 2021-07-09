@@ -1,7 +1,7 @@
 
 ************************************************************
-Frame (`pygeoid.coordinates.frame`)
+Representation (`pygeoid.coordinates.representation`)
 ************************************************************
 
-.. automodule:: pygeoid.coordinates.frame
+.. automodule:: pygeoid.coordinates.representation
    :members:

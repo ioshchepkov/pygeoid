@@ -1,7 +1,7 @@
 
 *******************************************************************
-Normal Gravity Field (`pygeoid.potential.normal`)
+Centrifugal Potential (`pygeoid.potential.centrifugal`)
 *******************************************************************
 
-.. automodule:: pygeoid.potential.normal
+.. automodule:: pygeoid.potential.centrifugal
    :members:
