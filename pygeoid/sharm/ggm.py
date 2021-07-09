@@ -8,6 +8,7 @@ from pyshtools.shclasses import SHCoeffs as _SHCoeffs
 
 
 from pygeoid.potential.core import PotentialBase as _PotentialBase
+from pygeoid.potential.core import CompositePotential as _CompositePotential
 from pygeoid.potential.centrifugal import Centrifugal as _Centrifugal
 from pygeoid.potential.normal import LevelEllipsoid as _LevelEllipsoid
 from pygeoid.coordinates import transform as _transform
@@ -183,8 +184,13 @@ class GlobalGravityFieldModel:
         """Return `SHGravPotential` class instance for the gravity potential.
 
         """
-        return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
-                               r0=self._coeffs.r0, omega=self._coeffs.omega)
+        # return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
+        #                       r0=self._coeffs.r0, omega=self._coeffs.omega)
+        centrifugal = _Centrifugal(omega=self._coeffs.omega)
+
+        return _CompositePotential(
+            gravitational=self._gravitational,
+            centrifugal=centrifugal)
 
     @u.quantity_input
     def gravity_potential(self, position) -> u.m**2 / u.s**2:
@@ -282,7 +288,7 @@ class GlobalGravityFieldModel:
         ~astropy.units.Quantity
             Gravity.
         """
-        return _np.squeeze(self._gravity.gradient(position))
+        return _np.squeeze(self._gravity.gradient(position, 'spherical'))
 
     @u.quantity_input
     def gravity_disturbance(self, position) -> u.mGal:
@@ -573,9 +579,6 @@ class SHGravPotential(_PotentialBase):
                                                 lmax=lmax, errors=errors,
                                                 omega=omega, copy=True)
 
-        if self._coeffs.omega is not None:
-            self.centrifugal = _Centrifugal(omega=self._coeffs.omega)
-
     @u.quantity_input
     def _potential(self, position) -> u.m**2 / u.s**2:
         """Return potential value.
@@ -603,9 +606,6 @@ class SHGravPotential(_PotentialBase):
         ri = 1 / sph.distance
 
         out = _np.squeeze(self._coeffs.gm * ri * values)
-
-        if self._coeffs.omega is not None:
-            out += self.centrifugal.potential(position)
 
         return out
 
@@ -637,9 +637,6 @@ class SHGravPotential(_PotentialBase):
 
             values = _expand.expand_parallel(x, q, *args)
             out = _np.squeeze(factor * values)
-
-        if self._coeffs.omega is not None:
-            out += self.centrifugal.derivative(position, variable, coordinates)
 
         return out
 
@@ -725,10 +722,6 @@ class SHGravPotential(_PotentialBase):
         lon_d = -gmri * values[:, :, 1]
         rad_d = -self._coeffs.gm * ri**2 * values[:, :, 2]
 
-        if self._coeffs.omega is not None:
-            lat_d += self.centrifugal.derivative(position, 'lat', 'spherical')
-            rad_d += self.centrifugal.derivative(position, 'radius', 'spherical')
-
         clati = _np.atleast_2d(1 / _np.ma.masked_values(clat, 0.0))
         clati = clati.filled(0.0)
 
@@ -739,6 +732,6 @@ class SHGravPotential(_PotentialBase):
         return (q1, q2, q3)
 
     @u.quantity_input
-    def _gradient(self, position) -> u.m / u.s**2:
+    def _gradient(self, position, *args, **kwargs) -> u.m / u.s**2:
         return _np.linalg.norm(u.Quantity(
             self._gradient_vector(position, 'spherical')), axis=0)

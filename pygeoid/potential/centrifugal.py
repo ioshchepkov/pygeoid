@@ -51,10 +51,11 @@ class Centrifugal(PotentialBase):
         if coordinates is None:
             coordinates = position.representation_type.get_name()
 
+        coord = position.represent_as(coordinates)
         if coordinates == 'spherical':
-            q1 = self.derivative(position, 'lat', 'spherical')
-            q2 = self.derivative(position, 'lon', 'spherical')
-            q3 = self.derivative(position, 'radius', 'spherical')
+            q1 = self.derivative(position, 'lat', 'spherical') / coord.scale_factors()['lat'] / u.rad
+            q2 = self.derivative(position, 'lon', 'spherical') / coord.scale_factors()['lon'] / u.rad
+            q3 = self.derivative(position, 'radius', 'spherical') / coord.scale_factors()['distance']
         elif coordinates == 'cartesian':
             q1 = self.derivative(position, 'x', 'cartesian')
             q2 = self.derivative(position, 'y', 'cartesian')
