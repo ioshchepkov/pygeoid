@@ -2,6 +2,7 @@
 
 """
 
+import numpy as np
 import astropy.units as u
 from astropy.coordinates.angles import Longitude, Latitude
 
@@ -38,6 +39,38 @@ class GeodeticRepresentation(BaseRepresentation):
 
         """
         return self._ellipsoid
+
+    @property
+    def lon(self):
+        """
+        The geodetic longitude of the point(s).
+
+        """
+        return self._lon
+
+    @property
+    def lat(self):
+        """
+        The geodetic latitude of the point(s).
+        """
+        return self._lat
+
+    @property
+    def height(self):
+        """
+        The geodetic height of the point(s).
+        """
+        return self._height
+
+    def scale_factors(self):
+        pmer_rad = self._ellipsoid.meridian_curvature_radius(self.lat)
+        sf_lat = pmer_rad + self.height
+        pver_rad = self._ellipsoid.prime_vertical_curvature_radius(self.lat)
+        sf_lon = (pver_rad + self.height) * np.cos(self.lat)
+        sf_height = np.broadcast_to(1. * u.one, self.shape, subok=True)
+        return {'lon': sf_lon,
+                'lat': sf_lat,
+                'height': sf_height}
 
     def to_cartesian(self):
         x, y, z = u.Quantity(
