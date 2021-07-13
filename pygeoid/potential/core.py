@@ -17,7 +17,7 @@ class PotentialBase(metaclass=abc.ABCMeta):
     def _gradient(self, position, *args, **kwargs):
         pass
 
-    @abc.abstractmethod
+    #@abc.abstractmethod
     def _gradient_vector(self, position, *args, **kwargs):
         pass
 
@@ -49,15 +49,22 @@ class PotentialBase(metaclass=abc.ABCMeta):
         if coordinates is None:
             coordinates = position.representation_type.get_name()
 
-        return self._gradient_vector(position=position,
-                                     coordinates=coordinates, *args, **kwargs)
+        position = position.represent_as(coordinates)
+        deriv = {var:self._derivative(position, var,
+            coordintaes) for var in position.components}
+        scale_factors = position.scale_factors()
+
+        grad = {variable:deriv[var]/scale_factors[var] for
+                var in position.components}
+
+        return grad
 
     def derivative(self, position, variable, coordinates=None, *args, **kwargs):
         if coordinates is None:
             coordinates = position.representation_type.get_name()
 
-        return self._derivative(position=position, variable=variable,
-                                coordinates=coordinates, *args, **kwargs)
+        return self._derivative(position=position.represent_as(coordinates),
+                variable=variable, coordinates=coordinates, *args, **kwargs)
 
 
 class CompositePotential(PotentialBase, OrderedDict):

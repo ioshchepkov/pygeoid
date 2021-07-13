@@ -46,12 +46,9 @@ class Centrifugal(PotentialBase):
 
         return np.sqrt(qx**2 + qy**2)
 
+    """
     def _gradient_vector(self, position, coordinates=None):
 
-        if coordinates is None:
-            coordinates = position.representation_type.get_name()
-
-        coord = position.represent_as(coordinates)
         if coordinates == 'spherical':
             q1 = self.derivative(position, 'lat', 'spherical') / coord.scale_factors()['lat'] / u.rad
             q2 = self.derivative(position, 'lon', 'spherical') / coord.scale_factors()['lon'] / u.rad
@@ -62,6 +59,7 @@ class Centrifugal(PotentialBase):
             q3 = self.derivative(position, 'z', 'cartesian')
 
         return (q1, q2, q3)
+    """
 
     def _derivative(self, position, variable, coordinates):
 
