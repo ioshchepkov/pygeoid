@@ -2,11 +2,14 @@
 
 """
 
+from collections import OrderedDict
+
 import numpy as np
 import astropy.units as u
 from astropy.coordinates.angles import Longitude, Latitude
 
-from astropy.coordinates import BaseRepresentation, CartesianRepresentation
+from astropy.coordinates import (BaseRepresentation, CartesianRepresentation,
+        BaseDifferential)
 
 from pygeoid.coordinates import transform
 from pygeoid.coordinates.ellipsoid import Ellipsoid
@@ -14,9 +17,10 @@ from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 class GeodeticRepresentation(BaseRepresentation):
 
-    attr_classes = {'lat': Latitude,
-                    'lon': Longitude,
-                    'height': u.Quantity}
+    attr_classes = OrderedDict([
+        ('lat', Latitude),
+        ('lon', Longitude),
+        ('height', u.Quantity)])
 
     _ellipsoid = Ellipsoid()
 
@@ -62,11 +66,25 @@ class GeodeticRepresentation(BaseRepresentation):
         """
         return self._height
 
+    def unit_vectors(self):
+        sinlon, coslon = np.sin(self.lon), np.cos(self.lon)
+        sinlat, coslat = np.sin(self.lat), np.cos(self.lat)
+        pmer_rad = self._ellipsoid.meridian_curvature_radius(self.lat)
+        pver_rad = self._ellipsoid.prime_vertical_curvature_radius(self.lat)
+        return {
+            'lon': CartesianRepresentation(
+                -sinlon, coslon, 0. , copy=False),
+            'lat': CartesianRepresentation(-sinlat*coslon,
+                -sinlat*sinlon, coslat, copy=False),
+            'height': CartesianRepresentation(coslat*coslon,
+                coslat*sinlon, sinlat, copy=False)
+            }
+
     def scale_factors(self):
         pmer_rad = self._ellipsoid.meridian_curvature_radius(self.lat)
-        sf_lat = pmer_rad + self.height
+        sf_lat = (pmer_rad + self.height) / u.radian
         pver_rad = self._ellipsoid.prime_vertical_curvature_radius(self.lat)
-        sf_lon = (pver_rad + self.height) * np.cos(self.lat)
+        sf_lon = (pver_rad + self.height) * np.cos(self.lat) / u.radian
         sf_height = np.broadcast_to(1. * u.one, self.shape, subok=True)
         return {'lon': sf_lon,
                 'lat': sf_lat,
@@ -90,11 +108,16 @@ class GeodeticRepresentation(BaseRepresentation):
         return cls(lat, lon, height, copy=False)
 
 
+class GeodeticDifferential(BaseDifferential):
+    base_representation = GeodeticRepresentation
+
+
 class EllipsoidalHarmonicRepresentation(BaseRepresentation):
 
-    attr_classes = {'rlat': Latitude,
-                    'lon': Longitude,
-                    'u_ax': u.Quantity}
+    attr_classes = OrderedDict([
+        ('rlat', Latitude),
+        ('lon', Longitude),
+        ('u_ax', u.Quantity)])
 
     _ellipsoid = Ellipsoid()
 
@@ -116,6 +139,48 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
         """
         return self._ellipsoid
 
+    def unit_vectors(self):
+        sinlon, coslon = np.sin(self.lon), np.cos(self.lon)
+        sinrlat, cosrlat = np.sin(self.rlat), np.cos(self.rlat)
+        le2 = self._ellipsoid.linear_eccentricity**2
+        u_ax2 = self.u_ax**2
+        k = np.sqrt(u_ax2 + le2)
+
+        w = np.sqrt(u_ax2 + le2*sinrlat) / k
+        uwk = self.u_ax / (w * k)
+
+        uv_u_ax = (
+                uwk * cosrlat * coslon,
+                uwk * cosrlat * sinlon,
+                sinrlat / w)
+
+        uv_rlat = (
+                -sinrlat * coslon / w,
+                -sinrlat * sinlon / w,
+                uwk * cosrlat,
+                )
+
+        uv_lon = (-sinlon, coslon, 0)
+
+        return {
+            'lon': CartesianRepresentation(*uv_lon, copy=False),
+            'rlat': CartesianRepresentation(*uv_rlat, copy=False),
+            'u_ax': CartesianRepresentation(*uv_u_ax, copy=False)
+            }
+
+    def scale_factors(self):
+        le2 = self._ellipsoid.linear_eccentricity**2
+        u_ax2 = self.u_ax**2
+        k = np.sqrt(u_ax2 + le2)
+
+        sf_rlat = np.sqrt(u_ax2 + le2 * np.sin(self.rlat)**2) / u.radian
+        sf_u_ax = sf_rlat / k
+        sf_lon = k * np.cos(self.rlat) / u.radian
+
+        return {'lon': sf_lon,
+                'rlat': sf_rlat,
+                'u_ax': sf_u_ax}
+
     def to_cartesian(self):
         x, y, z = u.Quantity(
             transform.ellipsoidal_to_cartesian(self.rlat, self.lon,
@@ -132,3 +197,7 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
         rlat, lon, u_ax = transform.cartesian_to_ellipsoidal(
             x, y, z, ell=cls._ellipsoid)
         return cls(rlat, lon, u_ax, copy=False)
+
+
+class EllipsoidalHarmonicDifferential(BaseDifferential):
+    base_representation = EllipsoidalHarmonicRepresentation
