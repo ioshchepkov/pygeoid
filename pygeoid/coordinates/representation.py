@@ -9,7 +9,7 @@ import astropy.units as u
 from astropy.coordinates.angles import Longitude, Latitude
 
 from astropy.coordinates import (BaseRepresentation, CartesianRepresentation,
-        BaseDifferential)
+                                 BaseDifferential)
 
 from pygeoid.coordinates import transform
 from pygeoid.coordinates.ellipsoid import Ellipsoid
@@ -73,12 +73,12 @@ class GeodeticRepresentation(BaseRepresentation):
         pver_rad = self._ellipsoid.prime_vertical_curvature_radius(self.lat)
         return {
             'lon': CartesianRepresentation(
-                -sinlon, coslon, 0. , copy=False),
-            'lat': CartesianRepresentation(-sinlat*coslon,
-                -sinlat*sinlon, coslat, copy=False),
-            'height': CartesianRepresentation(coslat*coslon,
-                coslat*sinlon, sinlat, copy=False)
-            }
+                -sinlon, coslon, 0., copy=False),
+            'lat': CartesianRepresentation(-sinlat * coslon,
+                                           -sinlat * sinlon, coslat, copy=False),
+            'height': CartesianRepresentation(coslat * coslon,
+                                              coslat * sinlon, sinlat, copy=False)
+        }
 
     def scale_factors(self):
         pmer_rad = self._ellipsoid.meridian_curvature_radius(self.lat)
@@ -146,19 +146,19 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
         u_ax2 = self.u_ax**2
         k = np.sqrt(u_ax2 + le2)
 
-        w = np.sqrt(u_ax2 + le2*sinrlat) / k
+        w = np.sqrt(u_ax2 + le2 * sinrlat) / k
         uwk = self.u_ax / (w * k)
 
         uv_u_ax = (
-                uwk * cosrlat * coslon,
-                uwk * cosrlat * sinlon,
-                sinrlat / w)
+            uwk * cosrlat * coslon,
+            uwk * cosrlat * sinlon,
+            sinrlat / w)
 
         uv_rlat = (
-                -sinrlat * coslon / w,
-                -sinrlat * sinlon / w,
-                uwk * cosrlat,
-                )
+            -sinrlat * coslon / w,
+            -sinrlat * sinlon / w,
+            uwk * cosrlat,
+        )
 
         uv_lon = (-sinlon, coslon, 0)
 
@@ -166,7 +166,7 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
             'lon': CartesianRepresentation(*uv_lon, copy=False),
             'rlat': CartesianRepresentation(*uv_rlat, copy=False),
             'u_ax': CartesianRepresentation(*uv_u_ax, copy=False)
-            }
+        }
 
     def scale_factors(self):
         le2 = self._ellipsoid.linear_eccentricity**2

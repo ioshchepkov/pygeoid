@@ -184,8 +184,6 @@ class GlobalGravityFieldModel:
         """Return `SHGravPotential` class instance for the gravity potential.
 
         """
-        # return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
-        #                       r0=self._coeffs.r0, omega=self._coeffs.omega)
         centrifugal = _Centrifugal(omega=self._coeffs.omega)
 
         return _CompositePotential(
@@ -268,7 +266,7 @@ class GlobalGravityFieldModel:
         ~astropy.units.Quantity
             Gravitation.
         """
-        return self._gravitational.gradient(position)
+        return self._gravitational.gradient(position, 'spherical')
 
     @u.quantity_input
     def gravity(self, position) -> u.m / u.s**2:
@@ -288,7 +286,7 @@ class GlobalGravityFieldModel:
         ~astropy.units.Quantity
             Gravity.
         """
-        return _np.squeeze(self._gravity.gradient(position, 'spherical'))
+        return self._gravity.gradient(position, 'spherical')
 
     @u.quantity_input
     def gravity_disturbance(self, position) -> u.mGal:
@@ -609,34 +607,29 @@ class SHGravPotential(_PotentialBase):
 
         return out
 
-    def _derivative(self, position, variable, coordinates):
+    def _derivative_spherical(self, position, variable):
+        sph = position.represent_as('spherical')
+        lat, _, degrees, cosin, x, q = _expand.common_precompute(
+            sph.lat, sph.lon, sph.distance, self._coeffs.r0, self._coeffs.lmax)
+        ri = 1 / sph.distance
 
-        if coordinates is None:
-            coordinates = position.representation_type.get_name()
+        if variable in ('lat', 'latitude'):
+            args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
+                    self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
+            factor = self._coeffs.gm * ri * _np.cos(lat)
+        elif variable in ('lon', 'longitude', 'long'):
+            m_coeff = _np.tile(degrees, (self._coeffs.lmax + 1, 1))
+            args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
+                    self._coeffs.lmax, degrees, m_coeff, cosin,
+                    self._coeffs.coeffs)
+            factor = -self._coeffs.gm * ri
+        elif variable in ('distance', 'radius', 'r', 'radial'):
+            args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
+                    self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
+            factor = -self._coeffs.gm * ri**2
 
-        if coordinates == 'spherical':
-            sph = position.represent_as('spherical')
-            lat, _, degrees, cosin, x, q = _expand.common_precompute(
-                sph.lat, sph.lon, sph.distance, self._coeffs.r0, self._coeffs.lmax)
-            ri = 1 / sph.distance
-
-            if variable in ('lat', 'latitude'):
-                args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
-                        self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
-                factor = self._coeffs.gm * ri * _np.cos(lat)
-            elif variable in ('lon', 'longitude', 'long'):
-                m_coeff = _np.tile(degrees, (self._coeffs.lmax + 1, 1))
-                args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
-                        self._coeffs.lmax, degrees, m_coeff, cosin,
-                        self._coeffs.coeffs)
-                factor = -self._coeffs.gm * ri
-            elif variable in ('distance', 'radius', 'r', 'radial'):
-                args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
-                        self._coeffs.lmax, degrees, cosin, self._coeffs.coeffs)
-                factor = -self._coeffs.gm * ri**2
-
-            values = _expand.expand_parallel(x, q, *args)
-            out = _np.squeeze(factor * values)
+        values = _expand.expand_parallel(x, q, *args)
+        out = _np.squeeze(factor * values)
 
         return out
 
@@ -729,9 +722,4 @@ class SHGravPotential(_PotentialBase):
         q2 = (clati * ri * lon_d).squeeze()
         q3 = rad_d.squeeze()
 
-        return (q1, q2, q3)
-
-    @u.quantity_input
-    def _gradient(self, position, *args, **kwargs) -> u.m / u.s**2:
-        return _np.linalg.norm(u.Quantity(
-            self._gradient_vector(position, 'spherical')), axis=0)
+        return {'lat' : q1, 'lon' : q2, 'distance' : q3}
