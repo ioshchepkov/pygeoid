@@ -1,6 +1,6 @@
 
 import abc
-import operator
+import uuid
 
 from collections import OrderedDict
 from functools import reduce
@@ -9,8 +9,15 @@ import numpy as np
 import astropy.units as u
 
 
-class PotentialBase(metaclass=abc.ABCMeta):
+__all__ = ["PotentialBase", "CompositePotential"]
 
+
+class PotentialBase(metaclass=abc.ABCMeta):
+    """
+    A baseclass for defining pure-Python gravitational potentials.
+
+    The idea is heavily based on Gala: https://github.com/adrn/gala
+    """
     @abc.abstractmethod
     def _potential(self, position, *args, **kwargs):
         pass
@@ -38,6 +45,9 @@ class PotentialBase(metaclass=abc.ABCMeta):
                 var in representation.components}
 
         return grad
+
+    def _hessian(self, position, *args, **kwargs):
+        raise NotImplementedError
 
     @u.quantity_input
     def potential(self, position,
@@ -80,7 +90,42 @@ class PotentialBase(metaclass=abc.ABCMeta):
                                      coordinates=coordinates, *args, **kwargs)
 
     def hessian(self, position, *args, **kwargs):
-        raise NotImplementedError
+        return self._hessian(position, *args, **kwargs)
+
+    #########################################################################
+    # Python's special methods
+    #########################################################################
+    def __call__(self, position):
+        return self.potential(position)
+
+    def __add__(self, other):
+        if not isinstance(other, PotentialBase):
+            raise TypeError(f'Cannot add a {self.__class__.__name__} to a '
+                            f'{other.__class__.__name__}')
+
+        new_pot = CompositePotential()
+
+        if isinstance(self, CompositePotential):
+            for k, v in self.items():
+                new_pot[k] = v
+
+        else:
+            k = str(uuid.uuid4())
+            new_pot[k] = self
+
+        if isinstance(other, CompositePotential):
+            for k, v in self.items():
+                if k in new_pot:
+                    raise KeyError(f'Potential component "{k}" already exists '
+                                   '-- duplicate key provided in potential '
+                                   'addition')
+                new_pot[k] = v
+
+        else:
+            k = str(uuid.uuid4())
+            new_pot[k] = other
+
+        return new_pot
 
 
 class CompositePotential(PotentialBase, OrderedDict):
@@ -89,6 +134,7 @@ class CompositePotential(PotentialBase, OrderedDict):
     two point masses or gravity potential (gravitational + centrifugal),
     each with their own potential model.
 
+    The idea is heavily based on Gala: https://github.com/adrn/gala
     """
 
     def __init__(self, *args, **kwargs):
