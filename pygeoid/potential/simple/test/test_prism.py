@@ -1,7 +1,7 @@
 
 import pytest
 import numpy as np
-from pygeoid.simple import prism
+from pygeoid.potential.simple import prism
 
 
 def test_bounds():
