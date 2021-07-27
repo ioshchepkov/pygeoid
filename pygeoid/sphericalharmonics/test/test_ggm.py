@@ -8,8 +8,8 @@ import pandas as pd
 import astropy.units as u
 
 from pyshtools.shio import read_icgem_gfc
-from pygeoid.sharm.ggm import GlobalGravityFieldModel
-from pygeoid.sharm.utils import get_lmax
+from pygeoid.sphericalharmonics.ggm import GlobalGravityFieldModel
+from pygeoid.sphericalharmonics.utils import get_lmax
 from pygeoid.potential.normal import LevelEllipsoid
 from pygeoid.coordinates.frame import ECEF
 

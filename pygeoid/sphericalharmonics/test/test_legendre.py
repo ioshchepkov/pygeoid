@@ -1,6 +1,6 @@
 
 import numpy as np
-from pygeoid.sharm import legendre
+from pygeoid.sphericalharmonics import legendre
 
 
 def test_lplm_lplm_d_equality():
