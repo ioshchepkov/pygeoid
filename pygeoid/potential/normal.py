@@ -24,7 +24,7 @@ LEVEL_ELLIPSOIDS = {
              'a': 6378136.0 * u.m,
              'rf': 298.25784 * u.dimensionless_unscaled,
              'gm': 3986004.418e8 * u.m**3 / u.s**2,
-             'omega': 7292115e-11 * u.rad / u.s},
+             'omega': 7292115e-11 /  u.s},
     'GSK2011': {'description': 'GSK-2011',
                 'a': 6378136.5 * u.m,
                 'rf': 298.2564151 * u.dimensionless_unscaled,
