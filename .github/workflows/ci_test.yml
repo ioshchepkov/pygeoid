@@ -38,9 +38,9 @@ jobs:
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: | 
           pipenv install numpy
-          pipenv install
+          pipenv install --dev
 
-      - name: Run flake8, pytest and coverage
+      - name: flake8, pytest and coverage
         run: |
           pipenv run flake8 pygeoid
           pipenv run pytest tests
