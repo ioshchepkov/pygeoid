@@ -36,7 +36,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
-        run: pipenv install
+        run: | 
+          pipenv install numpy
+          pipenv install
 
       - name: Run flake8, pytest and coverage
         run: |
