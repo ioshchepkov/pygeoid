@@ -117,3 +117,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Pipfile
+Pipfile.lock
