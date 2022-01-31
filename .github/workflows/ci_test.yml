@@ -38,8 +38,12 @@ jobs:
         if: steps.cache-pipenv.outputs.cache-hit != 'true'
         run: pipenv install
 
-      - name: Run tests
-        run: pipenv run pytest tests
+      - name: Run flake8, pytest and coverage
+        run: |
+          pipenv run flake8 pygeoid
+          pipenv run pytest tests
+          pipenv run coverage run --source=pygeoid setup.py test
+          pipenv run coveralls
 
 
 
