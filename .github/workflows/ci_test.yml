@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10"]
+        python-version: ["3.9"]
 
     steps:
       - uses: actions/checkout@v2
@@ -43,9 +43,7 @@ jobs:
       - name: flake8, pytest and coverage
         run: |
           pipenv run flake8 pygeoid
-          pipenv run pytest tests
-          pipenv run coverage run --source=pygeoid setup.py test
-          pipenv run coveralls
+          pipenv run pytest 
 
 
 

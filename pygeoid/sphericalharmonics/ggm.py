@@ -505,7 +505,6 @@ class GlobalGravityFieldModel:
         dapot_lon = self._anomalous.derivative(position, 'lon', 'spherical')
 
         ellharm = position.represent_as('ellipsoidalharmonic')
-        geod = position.represent_as('geodetic')
         sph = position.represent_as('spherical')
 
         gamma = self._ell.normal_gravity(ellharm.rlat, ellharm.u_ax)
@@ -534,7 +533,7 @@ class GlobalGravityFieldModel:
             North-south component of the DoV.
 
         Notes
-        -----
+        ----
         The gravimetric vertical deflection computed in ellipsoidal
         approximation by using small correction to the
         spherical approximation (see [3]_, eq. 26-28).

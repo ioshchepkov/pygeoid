@@ -45,4 +45,4 @@ setup(name=name,
       tests_require=['pytest'],
       setup_requires=['pytest-runner'],
       install_requires=install_requires,
-      python_requires='>=3.9')
+      python_requires='==3.9')

@@ -69,8 +69,6 @@ class GeodeticRepresentation(BaseRepresentation):
     def unit_vectors(self):
         sinlon, coslon = np.sin(self.lon), np.cos(self.lon)
         sinlat, coslat = np.sin(self.lat), np.cos(self.lat)
-        pmer_rad = self._ellipsoid.meridian_curvature_radius(self.lat)
-        pver_rad = self._ellipsoid.prime_vertical_curvature_radius(self.lat)
         return {
             'lon': CartesianRepresentation(
                 -sinlon, coslon, 0., copy=False),

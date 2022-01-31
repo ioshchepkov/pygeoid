@@ -4,6 +4,7 @@ import itertools
 import numpy as np
 from pygeoid.constants import G
 
+
 class ForwardModel:
 
     @property
@@ -47,6 +48,7 @@ class ForwardModel:
         i_2 = 0.5 * (np.trace(tensor)**2 - np.trace(tensor**2))
         i_3 = np.linalg.det(tensor)
         return i_1, i_2, i_3
+
 
 def _limits_sum(function):
     """Sum function by rectangular limits"""
