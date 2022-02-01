@@ -44,11 +44,11 @@ jobs:
         run: |
           pipenv run flake8 pygeoid
 
-      - name: pytest and coverage
+      - name: pytest with coverage
         run: |
-          pipenv run coverage run --source=pygeoid -m pytest
+          pipenv run pytest --cov=pygeoid --cov-report=xml
 
-      - name: Coveralls
-        uses: coverallsapp/github-action@master
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fail_ci_if_error: true
