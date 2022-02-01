@@ -4,8 +4,8 @@ pygeoid
 .. image:: https://img.shields.io/pypi/v/pygeoid.svg
     :target: https://pypi.org/project/pygeoid/
 
-.. image:: https://travis-ci.org/ioshchepkov/pygeoid.svg
-    :target: https://travis-ci.org/ioshchepkov/pygeoid
+.. image:: https://github.com/ioshchepkov/pygeoid/actions/workflows/ci_test.yml/badge.svg
+    :target: https://github.com/ioshchepkov/pygeoid/actions/workflows/ci_test.yml
 
 .. image:: https://coveralls.io/repos/github/ioshchepkov/pygeoid/badge.svg
     :target: https://coveralls.io/github/ioshchepkov/pygeoid
