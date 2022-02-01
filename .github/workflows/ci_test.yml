@@ -46,7 +46,8 @@ jobs:
 
       - name: pytest with coverage
         run: |
-          pipenv run pytest --cov=pygeoid --cov-report=xml
+          pipenv run coverage --source=pygeoid -m pytest
+          pipenv run coverage xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
