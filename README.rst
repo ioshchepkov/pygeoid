@@ -4,11 +4,14 @@ pygeoid
 .. image:: https://img.shields.io/pypi/v/pygeoid.svg
     :target: https://pypi.org/project/pygeoid/
 
+.. image:: https://zenodo.org/badge/108261331.svg
+    :target: https://zenodo.org/badge/latestdoi/108261331
+
 .. image:: https://github.com/ioshchepkov/pygeoid/actions/workflows/ci_test.yml/badge.svg
     :target: https://github.com/ioshchepkov/pygeoid/actions/workflows/ci_test.yml
 
 .. image:: https://codecov.io/gh/ioshchepkov/pygeoid/branch/master/graph/badge.svg?token=wxKUPN0DQz
-   :target: https://codecov.io/gh/ioshchepkov/pygeoid
+    :target: https://codecov.io/gh/ioshchepkov/pygeoid
 
 .. image:: https://readthedocs.org/projects/pygeoid/badge/?version=latest
     :target: http://pygeoid.readthedocs.io/en/latest/?badge=latest
