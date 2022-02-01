@@ -7,8 +7,8 @@ pygeoid
 .. image:: https://github.com/ioshchepkov/pygeoid/actions/workflows/ci_test.yml/badge.svg
     :target: https://github.com/ioshchepkov/pygeoid/actions/workflows/ci_test.yml
 
-.. image:: https://coveralls.io/repos/github/ioshchepkov/pygeoid/badge.svg
-    :target: https://coveralls.io/github/ioshchepkov/pygeoid
+.. image:: https://codecov.io/gh/ioshchepkov/pygeoid/branch/master/graph/badge.svg?token=wxKUPN0DQz
+   :target: https://codecov.io/gh/ioshchepkov/pygeoid
 
 .. image:: https://readthedocs.org/projects/pygeoid/badge/?version=latest
     :target: http://pygeoid.readthedocs.io/en/latest/?badge=latest
