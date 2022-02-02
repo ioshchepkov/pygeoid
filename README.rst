@@ -1,5 +1,5 @@
-pygeoid
-=======
+.. image:: logo/pygeoid_logo_red_blue_with_text.png
+    :alt: PyGeoid
 
 .. image:: https://img.shields.io/pypi/v/pygeoid.svg
     :target: https://pypi.org/project/pygeoid/
