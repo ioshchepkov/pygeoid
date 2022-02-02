@@ -1,5 +1,5 @@
 .. image:: logo/pygeoid_logo_red_blue_with_text_200dpi.png
-    :width: 1024
+    :width: 800
     :alt: PyGeoid
 
 .. image:: https://img.shields.io/pypi/v/pygeoid.svg
