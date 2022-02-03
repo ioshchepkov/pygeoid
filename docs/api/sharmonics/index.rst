@@ -1,6 +1,6 @@
 
 **************************************************************
-Spherical Harmonics (`pygeoid.sharm`)
+Spherical Harmonics (`pygeoid.sharmonics`)
 **************************************************************
 
 .. toctree::

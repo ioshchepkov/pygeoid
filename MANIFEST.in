@@ -14,10 +14,13 @@ recursive-include docs *
 recursive-include pygeoid/reduction/data *
 
 # tests
+recursive-include pygeoid/constants/test *
 recursive-include pygeoid/coordinates/test *
+recursive-include pygeoid/integrals/test *
+recursive-include pygeoid/potential/test *
 recursive-include pygeoid/reduction/test *
-recursive-include pygeoid/sharm/test *
-recursive-include pygeoid/simple/test *
+recursive-include pygeoid/sphharmonics/test *
+recursive-include pygeoid/tides/test *
 
 global-exclude __pycache__ *.pyc
 

@@ -59,7 +59,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pygeoid'
-copyright = '2019-2021, Ilya Oshchepkov'
+copyright = '2019-2022, Ilya Oshchepkov'
 author = 'Ilya Oshchepkov'
 
 # The version info for the project you're documenting, acts as replacement for

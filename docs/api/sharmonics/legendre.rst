@@ -1,8 +1,8 @@
 
 ************************************************************************
-Global Gravity Field Model (`pygeoid.sharm.ggm.GlobalGravityFieldModel`)
+Legendre functions (`pygeoid.sharmonics.legendre`)
 ************************************************************************
 
-.. autoclass:: pygeoid.sharm.ggm.GlobalGravityFieldModel
+.. automodule:: pygeoid.sharmonics.legendre
    :members:
    :inherited-members:

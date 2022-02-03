@@ -12,6 +12,6 @@ API Reference
    potential/index
    integrals/index
    reduction/index
-   sharm/index
+   sharmonics/index
    simple/index
    tides/index
