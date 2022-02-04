@@ -1,12 +1,14 @@
-""" This module contains ECEF class.
+""" This module contains frame classes.
 
 """
 
+import numpy as _np
 import astropy.units as u
 
 from astropy.coordinates.angles import Longitude, Latitude
 from astropy.coordinates import BaseCoordinateFrame
-from astropy.coordinates import TimeAttribute
+from astropy.coordinates import TimeAttribute, Attribute
+from astropy.coordinates import FunctionTransform, frame_transform_graph
 
 from astropy.coordinates.representation import CartesianRepresentation
 from pygeoid.coordinates.representation import (GeodeticRepresentation,
@@ -14,6 +16,9 @@ from pygeoid.coordinates.representation import (GeodeticRepresentation,
 
 from pygeoid.coordinates import transform
 from pygeoid.coordinates.ellipsoid import Ellipsoid
+
+
+__all__ = ["ECEF", "LocalTangentPlane"]
 
 
 class ECEF(BaseCoordinateFrame):
@@ -31,7 +36,10 @@ class ECEF(BaseCoordinateFrame):
     """
 
     default_representation = CartesianRepresentation
+    """Default representation of local frames"""
+
     obstime = TimeAttribute(default=None)
+    """The observation time"""
 
     _ellipsoid = Ellipsoid()
 
@@ -201,3 +209,191 @@ class ECEF(BaseCoordinateFrame):
             self.x, self.y, self.z, origin, ell=ell)
 
         return east, north, up
+
+
+class LocalTangentPlane(BaseCoordinateFrame):
+    """Local tangent plane geodetic coordiante frame.
+
+    Parameters
+    ----------
+    *args
+        Any representation of the frame data, e.g. x, y, and z coordinates
+    origin : `pygeoid.coordinates.frame.ECEF`
+        The location on Earth of the local frame origin
+    orientation : sequence of str, optional
+        The cardinal directions of the x, y, and z axis (default: E, N, U)
+    obstime : `~astropy.time.Time` or datetime or str, optional
+        The observation time
+    **kwargs
+        Any extra BaseCoordinateFrame arguments
+
+    Raises
+    ------
+    ValueError
+        The local frame configuration is not valid
+
+    """
+
+    default_representation = CartesianRepresentation
+
+    origin = Attribute(default=None)
+    """The origin on Earth of the local frame"""
+
+    orientation = Attribute(default=("E", "N", "U"))
+    """The orientation of the local frame, as cardinal directions"""
+
+    obstime = TimeAttribute(default=None)
+    """The observation time"""
+
+    def __init__(self, *args, origin=None, orientation=None,
+                 obstime=None, **kwargs):
+
+        super().__init__(*args, origin=origin,
+                         orientation=orientation,
+                         obstime=obstime, **kwargs)
+
+        def vector(lat, lon, name):
+            _name = name[0].upper()
+
+            azalt = {
+                "E" : (90, 0),
+                "W" : (270, 0),
+                "N" : (0, 0),
+                "S" : (180, 0),
+                "U" : (0, 90),
+                "D" : (0, -90)
+            }
+
+            if _name not in azalt:
+                raise ValueError(f"Invalid frame orientation `{name}`")
+
+            az, alt = azalt[_name]
+            az *= u.deg
+            alt *= u.deg
+
+            calt = _np.cos(alt)
+            r = [calt * _np.sin(az), calt * _np.cos(az), _np.sin(alt)]
+            east, north, up = transform._ecef_to_enu_rotation_matrix(lat, lon)
+
+            d0 = r[0] * east[0] + r[1] * north[0] + r[2] * up[0]
+            d1 = r[0] * east[1] + r[1] * north[1] + r[2] * up[1]
+            d2 = r[0] * east[2] + r[1] * north[2] + r[2] * up[2]
+
+            return d0, d1, d2
+
+        geodetic = self._origin.geodetic
+
+        ux = vector(geodetic.lat, geodetic.lon, self._orientation[0])
+        uy = vector(geodetic.lat, geodetic.lon, self._orientation[1])
+        uz = vector(geodetic.lat, geodetic.lon, self._orientation[2])
+
+        self._basis = _np.column_stack((ux, uy, uz))
+
+
+@frame_transform_graph.transform(FunctionTransform,
+                                 ECEF, LocalTangentPlane)
+def ecef_to_local(ecef, local):
+    """Compute the transformation from ECEF to LocalTangentPlane coordinates.
+
+    Parameters
+    ----------
+    ecef : ECEF
+        The initial coordinates in ECEF
+    local : LocalTangentPlane
+        The LocalTangentPlane frame to transform to
+
+    Returns
+    -------
+    LocalTangentPlane
+        The LocalTangentPlane frame with transformed coordinates
+    """
+    c = ecef.represent_as('cartesian')
+    if c.x.unit.is_equivalent("m"):
+        c = c.copy()
+        c -= local._origin.represent_as('cartesian')
+
+    c = c.transform(local._basis.T)
+
+    if local._obstime is None:
+        local._obstime = ecef._obstime
+
+    return local.realize_frame(c)
+
+
+@frame_transform_graph.transform(FunctionTransform,
+                                 LocalTangentPlane, ECEF)
+def local_to_ecef(local, ecef):
+    """Compute the transformation from LocalTangentPlane to ECEF coordinates.
+
+    Parameters
+    ----------
+    local : LocalTangentPlane
+        The initial coordinates in LocalTangentPlane
+    ecef : ECEF
+        The ECEF frame to transform to
+
+    Returns
+    -------
+    ECEF
+        The ECEF frame with transformed coordinates
+    """
+    c = local.represent_as('cartesian').transform(local._basis)
+    if c.x.unit.is_equivalent("m"):
+        c += local._origin.represent_as('cartesian')
+
+    if ecef._obstime is None:
+        ecef._obstime = local._obstime
+
+    return ecef.realize_frame(c)
+
+
+@frame_transform_graph.transform(FunctionTransform,
+                                 LocalTangentPlane, LocalTangentPlane)
+def local_to_local(local0, local1):
+    """Compute the transformation between LocalTangentPlane coordinates.
+
+    Parameters
+    ----------
+    local0 : LocalTangentPlane
+        The initial coordinates in the 1st LocalTangentPlane frame.
+    local1 : LocalTangentPlane
+        The 2nd LocalTangentPlane frame to transform to.
+
+    Returns
+    -------
+    LocalTangentPlane
+        The LocalTangentPlane frame with transformed coordinates.
+
+    """
+    c = local0.represent_as('cartesian')
+    translate = c.x.unit.is_equivalent("m")
+
+    # Forward the observation time
+    if local1._obstime is None:
+        local1._obstime = local0._obstime
+
+    # Check if the two frames are identicals
+    if _np.array_equal(local0._basis, local1._basis):
+        local0_c = local0._origin.represent_as('cartesian')
+        local1_c = local1._origin.represent_as('cartesian')
+        if not translate or ((local0_c.x == local1_c.x) and
+                             (local0_c.y == local1_c.y) and
+                             (local0_c.z == local1_c.z)):
+            # CartesianRepresentations might not eveluate to equal though the
+            # coordinates are equal
+            return local1.realize_frame(c)
+
+    # Transform from Local0 to ECEF
+    c = c.transform(local0._basis)
+    if translate:
+        c = c.copy()
+        c += local0._origin.represent_as('cartesian')
+
+    # Transform back from ECEF to Local1
+    if translate:
+        c = c.copy()
+        c -= local1._origin.represent_as('cartesian')
+
+    c = c.transform(local1._basis.T)
+
+    return local1.realize_frame(c)
