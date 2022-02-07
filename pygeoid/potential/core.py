@@ -18,6 +18,13 @@ class PotentialBase(metaclass=abc.ABCMeta):
 
     The idea is heavily based on Gala: https://github.com/adrn/gala
     """
+
+    def __init__(self, *args, origin=None, rotation=None, **kwargs):
+        pass
+
+    def _setup_potential(self, parameters, origin=None, rotation=None):
+        pass
+
     @abc.abstractmethod
     def _potential(self, position, *args, **kwargs):
         pass
@@ -52,11 +59,12 @@ class PotentialBase(metaclass=abc.ABCMeta):
     @u.quantity_input
     def potential(self, position,
                   *args, **kwargs) -> u.m**2 / u.s**2:
-        """Return potential value.
+        """Return potential value at given position.
 
         Parameters
         ----------
-        position : ~pygeoid.coordinates.frame.ECEF
+        position : ~pygeoid.coordinates.frame
+            Position in ECEF or LocalTangentPlane frame.
 
         """
         return self._potential(position=position, *args, **kwargs)

@@ -26,8 +26,8 @@ class ECEF(BaseCoordinateFrame):
 
     Parameters
     ----------
-    obstime : `~astropy.time.Time` or datetime or str, optional
-        The observation time
+    ell : instance of the `pygeoid.coordinates.ellipsoid.Ellipsoid`
+        Reference ellipsoid to which geodetic coordinates are referenced to.
     *args
         Any representation of the frame data, e.g. x, y, and z coordinates.
     **kwargs
@@ -38,14 +38,11 @@ class ECEF(BaseCoordinateFrame):
     default_representation = CartesianRepresentation
     """Default representation of local frames"""
 
-    obstime = TimeAttribute(default=None)
-    """The observation time"""
-
     _ellipsoid = Ellipsoid()
 
-    def __init__(self, *args, obstime=None, ell=None, **kwargs):
+    def __init__(self, *args, ell=None, **kwargs):
 
-        super().__init__(*args, obstime=obstime, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if ell is not None:
             self._ellipsoid = ell
@@ -222,8 +219,6 @@ class LocalTangentPlane(BaseCoordinateFrame):
         The location on Earth of the local frame origin
     orientation : sequence of str, optional
         The cardinal directions of the x, y, and z axis (default: E, N, U)
-    obstime : `~astropy.time.Time` or datetime or str, optional
-        The observation time
     **kwargs
         Any extra BaseCoordinateFrame arguments
 
@@ -242,15 +237,10 @@ class LocalTangentPlane(BaseCoordinateFrame):
     orientation = Attribute(default=("E", "N", "U"))
     """The orientation of the local frame, as cardinal directions"""
 
-    obstime = TimeAttribute(default=None)
-    """The observation time"""
-
-    def __init__(self, *args, origin=None, orientation=None,
-                 obstime=None, **kwargs):
+    def __init__(self, *args, origin=None, orientation=None, **kwargs):
 
         super().__init__(*args, origin=origin,
-                         orientation=orientation,
-                         obstime=obstime, **kwargs)
+                         orientation=orientation, **kwargs)
 
         def vector(lat, lon, name):
             _name = name[0].upper()
@@ -314,9 +304,6 @@ def ecef_to_local(ecef, local):
 
     c = c.transform(local._basis.T)
 
-    if local._obstime is None:
-        local._obstime = ecef._obstime
-
     return local.realize_frame(c)
 
 
@@ -341,9 +328,6 @@ def local_to_ecef(local, ecef):
     if c.x.unit.is_equivalent("m"):
         c += local._origin.represent_as('cartesian')
 
-    if ecef._obstime is None:
-        ecef._obstime = local._obstime
-
     return ecef.realize_frame(c)
 
 
@@ -367,10 +351,6 @@ def local_to_local(local0, local1):
     """
     c = local0.represent_as('cartesian')
     translate = c.x.unit.is_equivalent("m")
-
-    # Forward the observation time
-    if local1._obstime is None:
-        local1._obstime = local0._obstime
 
     # Check if the two frames are identicals
     if _np.array_equal(local0._basis, local1._basis):
