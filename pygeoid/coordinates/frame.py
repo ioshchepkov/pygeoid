@@ -231,13 +231,13 @@ class LocalTangentPlane(BaseCoordinateFrame):
 
     default_representation = CartesianRepresentation
 
-    origin = Attribute(default=None)
+    origin = Attribute()
     """The origin on Earth of the local frame"""
 
     orientation = Attribute(default=("E", "N", "U"))
     """The orientation of the local frame, as cardinal directions"""
 
-    def __init__(self, *args, origin=None, orientation=None, **kwargs):
+    def __init__(self, *args, origin, orientation=None, **kwargs):
 
         super().__init__(*args, origin=origin,
                          orientation=orientation, **kwargs)
