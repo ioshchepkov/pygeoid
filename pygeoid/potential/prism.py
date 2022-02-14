@@ -4,8 +4,12 @@
 
 import itertools
 import numpy as np
-from pygeoid.constants import G
+from typing import Annotated, NamedTuple
 
+from pygeoid.constants import G
+from pygeoid.coordinates.frame import LocalTangentPlane
+from pygeoid.potential.core import PotentialBase as _PotentialBase
+import astropy.units as u
 
 class ForwardModel:
 
@@ -53,9 +57,13 @@ class ForwardModel:
 
 
 def _limits_sum(function):
-    """Sum function by rectangular limits"""
+    """Sum function by rectangular limits.
 
-    def wraper(self, x, y, z):
+    """
+
+    #def wraper(self, x, y, z):
+    def wraper(self, position):
+
         x1b, x2b, y1b, y2b, z1b, z2b = self._bounds
         cond = (x >= x1b) & (x <= x2b) & (y >= y1b) & (
             y <= y2b) & (z >= z1b) & (z <= z2b)
@@ -76,7 +84,7 @@ def _limits_sum(function):
             index = np.asarray(index)
             coords = np.asarray(bounds)[index - 1]
             total_sum += (-1)**(index.sum()) * function(self, *coords)
-        return total_sum * G.value * self.density
+        return total_sum * G * self.density
     return wraper
 
 
@@ -84,8 +92,19 @@ def _radius(x, y, z):
     return np.sqrt(x**2 + y**2 + z**2)
 
 
+class PrismBounds(NamedTuple):
+    west : u.Quantity[u.m]
+    east : u.Quantity[u.m]
+    south : u.Quantity[u.m]
+    north : u.Quantity[u.m]
+    top : u.Quantity[u.m]
+    bottom : u.Quantity[u.m]
+
+
 class Prism(ForwardModel):
     """External gravitational field of the right rectangular prism.
+
+    x -> East, y -> North, z -> Down
 
     Parameters
     ----------
@@ -104,12 +123,16 @@ class Prism(ForwardModel):
     and its derivatives for the prism. Journal of Geodesy, 74(7-8), pp.552-560.
     """
 
-    def __init__(self, bounds, density=1.0):
-        self._bounds = bounds
+    @u.quantity_input
+    def __init__(self, bounds: PrismBounds,
+            density:u.kg/u.m**3=1.0 * u.kg / u.m**3):
+
+        self._bounds = PrismBounds(*bounds)
         self._density = density
+        self._frame = LocalTangentPlane(orientation=('E', 'N', 'D'))
 
     @_limits_sum
-    def potential(self, x, y, z):
+    def potential(self, position):
         """Calculate the gravitational potential V of the prism.
 
         x -> East, y -> North, z -> Down
