@@ -10,16 +10,19 @@ class Centrifugal(PotentialBase):
 
     Parameters
     ----------
-    omega : float
-        Angular rotation rate of the body, in rad/s.
+    omega : ~astropy.units.Quantity
+        Angular rotation rate of the body, in 1 / s.
         Default value is the angular speed of
-        Earth's rotation 7292115e-11 rad/s
+        Earth's rotation 7292115e-11 1/s
     """
 
     @u.quantity_input
-    def __init__(self, omega=7292115e-11 / u.s):
+    def __init__(self, omega: u.s**-1 = 7292115e-11 / u.s):
+        self._omega = omega
 
-        self.omega = omega
+    @property
+    def omega(self):
+        return self._omega
 
     @u.quantity_input
     def _potential(self, position) -> u.m**2 / u.s**2:

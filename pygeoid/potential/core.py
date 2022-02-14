@@ -17,13 +17,8 @@ class PotentialBase(metaclass=abc.ABCMeta):
     A baseclass for defining pure-Python gravitational potentials.
 
     The idea is heavily based on Gala: https://github.com/adrn/gala
+
     """
-
-    def __init__(self, *args, origin=None, rotation=None, **kwargs):
-        pass
-
-    def _setup_potential(self, parameters, origin=None, rotation=None):
-        pass
 
     @abc.abstractmethod
     def _potential(self, position, *args, **kwargs):
@@ -134,6 +129,9 @@ class PotentialBase(metaclass=abc.ABCMeta):
             new_pot[k] = other
 
         return new_pot
+
+    def __str__(self):
+        return self.__class__.__name__
 
 
 class CompositePotential(PotentialBase, OrderedDict):
