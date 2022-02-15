@@ -2,12 +2,10 @@
 Gravity field and geometry of the level ellipsoid.
 """
 
-import numpy as np
 import astropy.units as u
-from scipy import (optimize, special)
-
+import numpy as np
 from pygeoid.coordinates.ellipsoid import Ellipsoid
-
+from scipy import optimize, special
 
 LEVEL_ELLIPSOIDS = {
     'GRS80': {'description': 'GRS 80',

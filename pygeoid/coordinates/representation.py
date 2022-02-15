@@ -4,13 +4,11 @@
 
 from collections import OrderedDict
 
-import numpy as np
 import astropy.units as u
-from astropy.coordinates.angles import Longitude, Latitude
-
-from astropy.coordinates import (BaseRepresentation, CartesianRepresentation,
-                                 BaseDifferential)
-
+import numpy as np
+from astropy.coordinates import (BaseDifferential, BaseRepresentation,
+                                 CartesianRepresentation)
+from astropy.coordinates.angles import Latitude, Longitude
 from pygeoid.coordinates import transform
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 

@@ -1,24 +1,23 @@
 
-import pytest
+import astropy.units as u
 import numpy as np
+import pytest
+from pygeoid.coordinates.frame import LocalFrame
 from pygeoid.potential import prism
 
+bounds = u.Quantity(np.float64([0, 100, 0, 100, 0, 100]), u.m)
+density = 2670 * u.kg / u.m**3
+p = prism.Prism(bounds, density=density)
 
 def test_bounds():
-    bounds = (0, 100, 0, 100, 0, 100)
-    density = 2670
-    p = prism.Prism(bounds, density=density)
+
     with pytest.raises(ValueError):
-        p.gxx(50, 50, 50)
+        p.gxx(LocalFrame(50 * u.m, 50 * u.m, 50 * u.m))
     with pytest.raises(ValueError):
-        p.gxx(100, 100, 0)
+        p.gxx(LocalFrame(100 * u.m, 100 * u.m, 0 * u.m))
 
 
 def test_gxx_gyy_gzz():
-
-    bounds = (0, 100, 0, 100, 0, 100)
-    density = 2670
-    p = prism.Prism(bounds, density=density)
 
     nx = ny = nz = 100
     x = np.linspace(-1000, 1000, nx, dtype=np.float64)
@@ -30,10 +29,18 @@ def test_gxx_gyy_gzz():
     y = np.ma.masked_where(cond, y).compressed()
     z = np.ma.masked_where(cond, z).compressed()
 
-    xx, yy, zz = np.meshgrid(x, y, z)
+    xx, yy, zz = np.meshgrid(x, y, z) * u.m
 
-    gxx = p.gxx(xx, yy, zz)
-    gyy = p.gyy(xx, yy, zz)
-    gzz = p.gzz(xx, yy, zz)
+    cart = LocalFrame(xx, yy, zz)
 
+    gxx = p.gxx(cart).value
+    gyy = p.gyy(cart).value
+    gzz = p.gzz(cart).value
+
+    # Laplace equation
     np.testing.assert_almost_equal(gxx + gyy, -gzz, decimal=10)
+    np.testing.assert_almost_equal(gxx + gyy + gzz, 0, decimal=10)
+
+    # Invariant 1 = Laplace equation
+    i_1 = p.invariants(cart)[0].value
+    np.testing.assert_almost_equal(gxx + gyy + gzz, i_1, decimal=10)

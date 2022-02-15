@@ -2,23 +2,26 @@
 
 """
 
-import numpy as _np
 import astropy.units as u
-
-from astropy.coordinates.angles import Longitude, Latitude
-from astropy.coordinates import BaseCoordinateFrame
-from astropy.coordinates import TimeAttribute, Attribute
-from astropy.coordinates import FunctionTransform, frame_transform_graph
-
+import numpy as _np
+from astropy.coordinates import (Attribute, BaseCoordinateFrame,
+                                 FunctionTransform, TimeAttribute,
+                                 frame_transform_graph)
+from astropy.coordinates.angles import Latitude, Longitude
 from astropy.coordinates.representation import CartesianRepresentation
-from pygeoid.coordinates.representation import (GeodeticRepresentation,
-                                                EllipsoidalHarmonicRepresentation)
-
 from pygeoid.coordinates import transform
 from pygeoid.coordinates.ellipsoid import Ellipsoid
+from pygeoid.coordinates.representation import (
+    EllipsoidalHarmonicRepresentation, GeodeticRepresentation)
+
+__all__ = ["LocalFrame", "ECEF", "LocalTangentPlane"]
 
 
-__all__ = ["ECEF", "LocalTangentPlane"]
+class LocalFrame(BaseCoordinateFrame):
+    """Arbitrary local cartesian frame.
+
+    """
+    default_representation = CartesianRepresentation
 
 
 class ECEF(BaseCoordinateFrame):

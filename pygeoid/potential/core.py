@@ -1,13 +1,11 @@
 
 import abc
 import uuid
-
 from collections import OrderedDict
 from functools import reduce
 
-import numpy as np
 import astropy.units as u
-
+import numpy as np
 
 __all__ = ["PotentialBase", "CompositePotential"]
 

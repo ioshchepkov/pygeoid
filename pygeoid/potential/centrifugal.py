@@ -1,7 +1,6 @@
 
-import numpy as np
 import astropy.units as u
-
+import numpy as np
 from pygeoid.potential.core import PotentialBase
 
 

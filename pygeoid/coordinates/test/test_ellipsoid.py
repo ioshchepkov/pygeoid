@@ -1,8 +1,9 @@
 
 import os
-import pytest
-import numpy as np
+
 import astropy.units as u
+import numpy as np
+import pytest
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 from pygeoid.coordinates.transform import (geodetic_to_cartesian,
                                            geodetic_to_spherical)

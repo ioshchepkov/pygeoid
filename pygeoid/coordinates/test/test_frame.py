@@ -1,11 +1,10 @@
 
-import pytest
-import numpy as np
 import astropy.units as u
+import numpy as np
+import pytest
 from pygeoid.coordinates.ellipsoid import Ellipsoid
-from pygeoid.coordinates.transform import enu_to_ecef
 from pygeoid.coordinates.frame import ECEF
-
+from pygeoid.coordinates.transform import enu_to_ecef
 
 ell = Ellipsoid('GRS80')
 

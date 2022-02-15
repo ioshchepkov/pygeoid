@@ -2,9 +2,9 @@
 
 """
 
+import astropy.units as u
 import numpy as _np
 import pyproj as _proj
-import astropy.units as u
 from pygeoid.constants import _2pi, _4pi
 
 # default ellipsoid for geometrical (geodetic) applications

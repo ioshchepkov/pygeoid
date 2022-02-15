@@ -3,57 +3,14 @@
 """
 
 import itertools
-import numpy as np
 from typing import Annotated, NamedTuple
 
-from pygeoid.constants import G
-from pygeoid.coordinates.frame import LocalTangentPlane
-from pygeoid.potential.core import PotentialBase as _PotentialBase
 import astropy.units as u
-
-class ForwardModel:
-
-    @property
-    def density(self):
-        """Return density value.
-
-        """
-        return self._density
-
-    def gravitation(self, x, y, z):
-        """Return gravitation value.
-
-        """
-        return np.sqrt(self.gx(x, y, z)**2 + self.gy(x, y, z)**2 +
-                       self.gz(x, y, z)**2)
-
-    def tensor(self, x, y, z):
-        """Return gradient tensor.
-
-        """
-        gxx = self.gxx(x, y, z)
-        gyy = self.gyy(x, y, z)
-        gzz = self.gzz(x, y, z)
-        gxy = self.gxy(x, y, z)
-        gxz = self.gxy(x, y, z)
-        gyz = self.gxy(x, y, z)
-
-        tensor = np.array([
-            [gxx, gxy, gxz],
-            [gxy, gyy, gyz],
-            [gxz, gyz, gzz]])
-
-        return tensor
-
-    def invariants(self, x, y, z):
-        """Return invariants of the gradient tensor.
-
-        """
-        tensor = self.tensor(x, y, z)
-        i_1 = np.trace(tensor)
-        i_2 = 0.5 * (np.trace(tensor)**2 - np.trace(tensor**2))
-        i_3 = np.linalg.det(tensor)
-        return i_1, i_2, i_3
+import numpy as np
+from astropy.coordinates import CartesianRepresentation
+from pygeoid.constants import G
+from pygeoid.coordinates.frame import LocalFrame
+from pygeoid.potential.core import PotentialBase as _PotentialBase
 
 
 def _limits_sum(function):
@@ -61,35 +18,33 @@ def _limits_sum(function):
 
     """
 
-    #def wraper(self, x, y, z):
     def wraper(self, position):
 
         x1b, x2b, y1b, y2b, z1b, z2b = self._bounds
+        x, y, z = position.cartesian.get_xyz()
+
         cond = (x >= x1b) & (x <= x2b) & (y >= y1b) & (
             y <= y2b) & (z >= z1b) & (z <= z2b)
 
         if np.any(cond):
             raise ValueError('Point within or on the prism!')
 
-        x1 = self._bounds[0] - x
-        x2 = self._bounds[1] - x
-        y1 = self._bounds[2] - y
-        y2 = self._bounds[3] - y
-        z1 = self._bounds[4] - z
-        z2 = self._bounds[5] - z
-        bounds = (x1, x2, y1, y2, z1, z2)
+        x1 = x1b - x
+        x2 = x2b - x
+        y1 = y1b - y
+        y2 = y2b - y
+        z1 = z1b - z
+        z2 = z2b - z
+
+        bounds = u.Quantity([x1, x2, y1, y2, z1, z2])
 
         total_sum = 0
         for index in itertools.product([1, 2], [3, 4], [5, 6], repeat=1):
             index = np.asarray(index)
-            coords = np.asarray(bounds)[index - 1]
-            total_sum += (-1)**(index.sum()) * function(self, *coords)
-        return total_sum * G * self.density
+            coords = LocalFrame(bounds[index - 1])
+            total_sum += (-1)**(index.sum()) * function(self, coords)
+        return total_sum * G * self._density
     return wraper
-
-
-def _radius(x, y, z):
-    return np.sqrt(x**2 + y**2 + z**2)
 
 
 class PrismBounds(NamedTuple):
@@ -101,17 +56,17 @@ class PrismBounds(NamedTuple):
     bottom : u.Quantity[u.m]
 
 
-class Prism(ForwardModel):
+class Prism(_PotentialBase):
     """External gravitational field of the right rectangular prism.
 
     x -> East, y -> North, z -> Down
 
     Parameters
     ----------
-    bounds : (x1, x2, y1, y2, z1, z2), floats
-        West, east, south, north, top and bottom of the prism, in metres.
-    density : float
-        Density of the prism, in kg/m**3.
+    bounds : (x1, x2, y1, y2, z1, z2), ~astropy.units.Quantity
+        West, east, south, north, top and bottom of the prism.
+    density : ~astropy.units.Quantity
+        Density of the prism.
 
     Notes
     -----
@@ -125,156 +80,213 @@ class Prism(ForwardModel):
 
     @u.quantity_input
     def __init__(self, bounds: PrismBounds,
-            density:u.kg/u.m**3=1.0 * u.kg / u.m**3):
+                 density: u.kg / u.m**3 = 1.0 * u.kg / u.m**3):
 
         self._bounds = PrismBounds(*bounds)
         self._density = density
-        self._frame = LocalTangentPlane(orientation=('E', 'N', 'D'))
+
+    @staticmethod
+    def _prepare_coords(position):
+        x, y, z = position.cartesian.get_xyz().value
+        r = position.cartesian.norm().value
+        return x, y, z, r
 
     @_limits_sum
-    def potential(self, position):
+    def _potential(self, position):
         """Calculate the gravitational potential V of the prism.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        r = _radius(x, y, z)
+        x, y, z, r = self._prepare_coords(position)
+
         out = x * y * np.log(z + r) + y * z * \
             np.log(x + r) + z * x * np.log(y + r)
         out -= 0.5 * x**2 * np.arctan2(y * z, x * r)
         out -= 0.5 * y**2 * np.arctan2(z * x, y * r)
         out -= 0.5 * z**2 * np.arctan2(x * y, z * r)
-        return out
+
+        return out * u.m**2
+
+    def _derivative_cartesian(self, position, variable):
+        if variable == 'x':
+            return self.gx(position)
+        elif variable == 'y':
+            return self.gy(position)
+        elif variable == 'z':
+            return self.gz(position)
+        else:
+            raise ValueError('No variable named {0}'.format(variable))
+
+    def _hessian(self, position):
+        """Return gradient tensor.
+
+        """
+
+        gxx = self.gxx(position).value
+        gyy = self.gyy(position).value
+        gzz = self.gzz(position).value
+        gxy = self.gxy(position).value
+        gxz = self.gxy(position).value
+        gyz = self.gxy(position).value
+
+        tensor = np.asarray([
+            [gxx, gxy, gxz],
+            [gxy, gyy, gyz],
+            [gxz, gyz, gzz]
+        ])
+
+        return u.Quantity(tensor.T, 1 / u.s**2)
+
+    def invariants(self, position):
+        """Return invariants of the gradient tensor.
+
+        """
+        tensor = self._hessian(position)
+        i_1 = np.trace(tensor, axis1=-1, axis2=-2)
+        i_2 = 0.5 * (np.trace(tensor, axis1=-1)**2 -
+                     np.trace(tensor**2, axis1=-1))
+        i_3 = np.linalg.det(tensor)
+        return i_1, i_2, i_3
 
     @_limits_sum
-    def gx(self, x, y, z):
+    def gx(self, position):
         """Calculate the first derivative of the potential Vx = gx.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        r = _radius(x, y, z)
+        x, y, z, r = self._prepare_coords(position)
+
         out = y * np.log(z + r)
         out += z * np.log(y + r)
         out -= x * np.arctan2(y * z, x * r)
-        return -out
+        return -out * u.m
 
     @_limits_sum
-    def gy(self, x, y, z):
+    def gy(self, position):
         """Calculate the first derivative of the potential Vy = gy.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        r = _radius(x, y, z)
+        x, y, z, r = self._prepare_coords(position)
+
         out = z * np.log(x + r)
         out += x * np.log(z + r)
         out -= y * np.arctan2(z * x, y * r)
-        return -out
+        return -out * u.m
 
     @_limits_sum
-    def gz(self, x, y, z):
+    def gz(self, position):
         """Calculate the first derivative of the potential Vz = gz.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        r = _radius(x, y, z)
+        x, y, z, r = self._prepare_coords(position)
+
         out = x * np.log(y + r)
         out += y * np.log(x + r)
         out -= z * np.arctan2(x * y, z * r)
-        return -out
+        return -out * u.m
 
     @_limits_sum
-    def gxx(self, x, y, z):
+    def gxx(self, position):
         """Calculate the second derivative of the potential Vxx = gxx.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        return np.arctan2(y * z, x * _radius(x, y, z))
+        x, y, z, r = self._prepare_coords(position)
+        return np.arctan2(y * z, x * r)
 
     @_limits_sum
-    def gyy(self, x, y, z):
+    def gyy(self, position):
         """Calculate the second derivative of the potential Vyy = gyy.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        return np.arctan2(z * x, y * _radius(x, y, z))
+        x, y, z, r = self._prepare_coords(position)
+        return np.arctan2(z * x, y * r)
 
     @_limits_sum
-    def gzz(self, x, y, z):
+    def gzz(self, position):
         """Calculate the second derivative of the potential Vzz = gzz.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        return np.arctan2(x * y, z * _radius(x, y, z))
+        x, y, z, r = self._prepare_coords(position)
+        return np.arctan2(x * y, z * r)
 
     @_limits_sum
-    def gxz(self, x, y, z):
+    def gxz(self, position):
         """Calculate the second derivative of the potential Vxz = gxz.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        return -np.log(y + _radius(x, y, z))
+        x, y, z, r = self._prepare_coords(position)
+        return -np.log(y + r)
 
     @_limits_sum
-    def gyz(self, x, y, z):
+    def gyz(self, position):
         """Calculate the second derivative of the potential Vyz = gyz.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        return -np.log(x + _radius(x, y, z))
+        x, y, z, r = self._prepare_coords(position)
+        return -np.log(x + r)
 
     @_limits_sum
-    def gxy(self, x, y, z):
+    def gxy(self, position):
         """Calculate the second derivative of the potential Vxy = gxy.
 
         x -> East, y -> North, z -> Down
 
         Parameters
         ----------
-        x, y, z : float or array_like of floats
-            Cartesian coordinates of the attracted point, in metres.
+        position : ~pygeoid.coordinates.LocalFrame
+            Cartesian coordinates of the attracted point.
         """
-        return -np.log(z + _radius(x, y, z))
+        x, y, z, r = self._prepare_coords(position)
+        return -np.log(z + r)

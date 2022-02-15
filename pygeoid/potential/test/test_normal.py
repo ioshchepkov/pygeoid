@@ -1,11 +1,11 @@
 
 #import os
-import pytest
-import numpy as np
 import astropy.units as u
+import numpy as np
 import pygeoid.coordinates.transform as transform
-from pygeoid.potential.normal import LevelEllipsoid
-from pygeoid.potential.normal import surface_normal_gravity_clairaut
+import pytest
+from pygeoid.potential.normal import (LevelEllipsoid,
+                                      surface_normal_gravity_clairaut)
 
 
 def test_init():
