@@ -3,11 +3,10 @@
 """
 
 import itertools
-from typing import Annotated, NamedTuple
+from typing import NamedTuple
 
 import astropy.units as u
 import numpy as np
-from astropy.coordinates import CartesianRepresentation
 from pygeoid.constants import G
 from pygeoid.coordinates.frame import LocalFrame
 from pygeoid.potential.core import PotentialBase as _PotentialBase
