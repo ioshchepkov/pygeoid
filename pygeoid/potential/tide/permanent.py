@@ -7,9 +7,12 @@ import astropy.units as u
 
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 from pygeoid.coordinates.transform import geodetic_to_cartesian
+from pygeoid.potential.core import PotentialBase as _PotentialBase
 
 from pygeoid.constants import (solar_system_gm, g0)
 from pygeoid.constants import iers2010
+
+__all__ = ['PermanentTide']
 
 DEFAULT_COEFF_A = -2.9166 * u.m**2 / u.s**2
 
@@ -17,7 +20,7 @@ DEFAULT_FROM_SYSTEM = 'non-tidal'
 DEFAULT_TO_SYSTEM = 'mean-tide'
 
 
-class PermanentTide:
+class PermanentTide(_PotentialBase):
     """Class for permanent part of the tide-generating potential M0S0.
 
     The permanent part of the tide-generating potential can be written as
@@ -82,15 +85,13 @@ class PermanentTide:
             self.diminishing_factor = diminishing_factor
 
     @u.quantity_input
-    def potential(self, lat: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def _potential(self, position) -> u.m**2 / u.s**2:
         """Return permanent tidal potential.
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
         -------
@@ -98,18 +99,26 @@ class PermanentTide:
             Permanent tidal potential.
 
         """
-        return self.coeff * (r / self.r0)**2 * (np.sin(lat)**2 - 1 / 3)
+        sph = position.represent_as('spherical')
+        return self.coeff * (sph.distance / self.r0)**2 * (
+            np.sin(sph.lat)**2 - 1 / 3)
+
+    def _derivative_spherical(self, position, variable):
+        if variable in ('lat', 'latitude'):
+            return self.potential_lat_derivative(position)
+        elif variable in ('lon', 'longitude', 'long'):
+            return 0.0 * u.m**2 / u.s**2 / u.rad
+        elif variable in ('distance', 'radius', 'r', 'radial'):
+            return self.potential_r_derivative(position)
 
     @u.quantity_input
-    def potential_lat_derivative(self, lat: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def potential_lat_derivative(self, position) -> u.m**2 / u.s**2 / u.rad:
         """Return permanent tidal potential latitude derivative.
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
         -------
@@ -117,18 +126,18 @@ class PermanentTide:
             Permanent Tidal potential latitude derivative.
 
         """
-        return self.coeff * (r / self.r0)**2 * np.sin(2 * lat)
+        sph = position.represent_as('spherical')
+        return self.coeff * (
+            sph.distance / self.r0)**2 * np.sin(2 * sph.lat) / u.rad
 
     @u.quantity_input
-    def potential_r_derivative(self, lat: u.deg, r: u.m) -> u.m / u.s**2:
+    def potential_r_derivative(self, position) -> u.m / u.s**2:
         """Return permanent tidal potential radial derivative.
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
         -------
@@ -136,32 +145,12 @@ class PermanentTide:
             Permanent tidal potential radial derivative.
 
         """
-        return self.coeff * 2 * r / self.r0**2 * (np.sin(lat)**2 - 1 / 3)
+        sph = position.represent_as('spherical')
+        return (self.coeff * 2 * sph.distance / self.r0**2 * (
+            np.sin(sph.lat)**2 - 1 / 3))
 
     @u.quantity_input
-    def gradient(self, lat: u.deg, r: u.m) -> u.m / u.s**2:
-        """Return permanent tidal potential gradient (tidal acceleration).
-
-        Parameters
-        ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
-
-        Returns
-        -------
-        grad : ~astropy.units.Quantity
-            Permanent tidal potential radial derivative.
-
-        """
-        r_part = self.potential_r_derivative(lat=lat, r=r)
-        lat_part = 1 / r * self.potential_lat_derivative(lat=lat, r=r)
-
-        return np.sqrt(r_part**2 + lat_part**2)
-
-    @u.quantity_input
-    def displacement(self, lat: u.deg, r: u.m,
+    def displacement(self, position,
                      gravity: u.m / u.s**2 = g0, elastic: bool = True) -> u.m:
         """Return direct tidal deformation for elastic or equilibrium Earth.
 
@@ -172,10 +161,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~astropy.units.Quantity
             Mean global gravity of the Earth.
         elastic : bool, optional
@@ -197,14 +184,14 @@ class PermanentTide:
             love = {'l' : 1.0, 'h' : 1.0}
 
         u_lat = self.potential_lat_derivative(
-            lat, r) * love['l'] / gravity
+            position) * love['l'] / gravity * u.rad
         u_r = self.potential(
-            lat, r) * love['h'] / gravity
+            position) * love['h'] / gravity
 
         return u.Quantity([u_lat, u_r])
 
     @u.quantity_input
-    def geodetic_height(self, lat: u.deg, r: u.m,
+    def geodetic_height(self, position,
                         gravity: u.m / u.s**2 = g0, elastic: bool = True) -> u.m:
         """Return tidal change in the geodetic height.
 
@@ -217,10 +204,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~astropy.units.Quantity
             Mean global gravity of the Earth.
         elastic : bool, optional
@@ -239,10 +224,10 @@ class PermanentTide:
         else:
             love = {'l' : 1.0, 'h' : 1.0}
 
-        return self.potential(lat, r) * love['h'] / gravity
+        return self.potential(position) * love['h'] / gravity
 
     @u.quantity_input
-    def deformation_potential(self, lat: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def deformation_potential(self, position) -> u.m**2 / u.s**2:
         """Return deformation permanent tidal potential.
 
         An incremental (deforamtion) potential is produced by
@@ -253,10 +238,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
         -------
@@ -264,10 +247,11 @@ class PermanentTide:
             Deformation potentia.
 
         """
-        return self.love['k'] * self.potential_lat_derivative(lat, r)
+        return self.love['k'] * self.potential_lat_derivative(
+            position) * u.rad
 
     @u.quantity_input
-    def gravity(self, lat: u.deg, r: u.m,
+    def gravity(self, position,
                 elastic: bool = True) -> u.m / u.s**2:
         """Return permanent tidal gravity variation.
 
@@ -276,10 +260,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         elastic : bool, optional
             If True then the Earth is elastic (deformable)
             and gravity change is multiplied by the gravimetric factor
@@ -292,7 +274,7 @@ class PermanentTide:
 
         """
         radial_derivative = self.potential_r_derivative(
-            lat=lat, r=r)
+            position)
 
         if elastic:
             radial_derivative *= self.gravimetric_factor
@@ -300,19 +282,14 @@ class PermanentTide:
         return -radial_derivative
 
     @u.quantity_input
-    def gravity_ell(self, lat: u.deg,
-                    height: u.m, ell: Ellipsoid,
+    def gravity_ell(self, position,
                     elastic: bool = True) -> u.m / u.s**2:
         """Return permanent tidal gravity variation along the ellipsoidal normal.
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geodetic latitude.
-        height : ~astropy.units.Quantity
-            Geodetic height.
-        ell : ~pygeoid.coordinates.ellipsoid.Ellipsoid
-            Reference ellipsoid to which geodetic coordinates are referenced to.
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         elastic : bool, optional
             If True then the Earth is elastic (deformable)
             and gravity change is multiplied by the gravimetric factor
@@ -324,11 +301,13 @@ class PermanentTide:
             Permanent tidal potential gravity variation.
 
         """
-        pvcr = ell.prime_vertical_curvature_radius(lat.radian) * u.m
+        ell = position._ellipsoid
+        geod = position.geodetic
+        pvcr = ell.prime_vertical_curvature_radius(geod.lat)
 
         delta_g = 2 / 3 * self.coeff / self.r0**2 * (
-            (pvcr * (3 - 2 * ell.e2) + 3 * height) * np.sin(lat)**2 -
-            (pvcr + height))
+            (pvcr * (3 - 2 * ell.e2) + 3 * geod.height) * np.sin(geod.lat)**2 -
+            (pvcr + geod.height))
 
         if elastic:
             delta_g *= self.gravimetric_factor
@@ -336,7 +315,7 @@ class PermanentTide:
         return -delta_g
 
     @u.quantity_input
-    def convert_gravity_correction(self, lat: u.deg, r: u.m,
+    def convert_gravity_correction(self, position,
                                    from_system: str = DEFAULT_FROM_SYSTEM,
                                    to_system: str = DEFAULT_TO_SYSTEM) -> u.m**2 / u.s**2:
         """Return correction to convert gravity between tide systems.
@@ -347,10 +326,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         from_system : {'zero-tide', 'mean-tide', 'non-tidal'}, optional
             In which tide system the gravity is given. Default value is set to
             `pygeoid.tides.permanent.DEFAULT_FROM_SYSTEM`.
@@ -365,7 +342,7 @@ class PermanentTide:
 
         """
 
-        pot_dr = self.potential_r_derivative(lat, r)
+        pot_dr = self.potential_r_derivative(position)
 
         if from_system == 'zero-tide' and to_system == 'mean-tide':
             factor = 1
@@ -383,17 +360,15 @@ class PermanentTide:
         return factor * pot_dr
 
     @u.quantity_input
-    def tilt(self, lat: u.deg, r: u.m,
+    def tilt(self, position,
              azimuth: u.deg = None, gravity: u.m / u.s**2 = g0,
              elastic: bool = True) -> u.dimensionless_unscaled:
         """Return permanent tidal tilt.
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         azimuth : ~astropy.units.Quantity, optional
             If given then tilt will be returned in that direction.
             If None then full tilt angle will be returned.
@@ -411,14 +386,14 @@ class PermanentTide:
             Permanent tidal tilt.
 
         """
-        xi = -self.potential_lat_derivative(lat=lat, r=r)
+        xi = -self.potential_lat_derivative(position) * u.rad
 
         if azimuth is not None:
             g_hor = np.cos(azimuth) * xi
         else:
             g_hor = xi
 
-        tilt = g_hor / (r * gravity)
+        tilt = g_hor / (position.spherical.distance * gravity)
 
         if elastic:
             tilt *= -self.diminishing_factor
@@ -426,7 +401,7 @@ class PermanentTide:
         return tilt
 
     @u.quantity_input
-    def geoidal_height(self, lat: u.deg, r: u.m,
+    def geoidal_height(self, position,
                        gravity: u.m / u.s**2 = g0) -> u.m:
         """Return permanent tidal variation of the geoidal height.
 
@@ -434,10 +409,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~astropy.units.Quantity, optional
             Mean global gravity of the Earth.
 
@@ -447,12 +420,12 @@ class PermanentTide:
             Permanent geoidal height tidal variation.
 
         """
-        potential = self.potential(lat, r)
+        potential = self.potential(position)
 
         return (1 + self.love['k']) / gravity * potential
 
     @u.quantity_input
-    def convert_geoidal_height_correction(self, lat: u.deg, r: u.m,
+    def convert_geoidal_height_correction(self, position,
                                           from_system: str = DEFAULT_FROM_SYSTEM,
                                           to_system: str = DEFAULT_TO_SYSTEM,
                                           gravity: u.m / u.s**2 = g0) -> u.m:
@@ -466,10 +439,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         from_system : {'zero-tide', 'mean-tide', 'non-tidal'}, optional
             In which tide system the geoidal height is given.
             Default value is set to `pygeoid.tides.permanent.DEFAULT_FROM_SYSTEM`.
@@ -486,7 +457,7 @@ class PermanentTide:
 
         """
 
-        pot = self.potential(lat, r) / gravity
+        pot = self.potential(position) / gravity
 
         if from_system == 'zero-tide' and to_system == 'mean-tide':
             factor = 1
@@ -504,7 +475,7 @@ class PermanentTide:
         return factor * pot
 
     @u.quantity_input
-    def physical_height(self, lat: u.deg, r: u.m,
+    def physical_height(self, position,
                         gravity: u.m / u.s**2 = g0) -> u.m:
         """Return permanent tidal variation of the (absolute) physical heights.
 
@@ -514,10 +485,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~astropy.units.Quantity, optional
             Mean global gravity of the Earth.
 
@@ -527,12 +496,12 @@ class PermanentTide:
             Physical heights permanent tidal variation.
 
         """
-        potential = self.potential(lat, r)
+        potential = self.potential(position)
 
         return -self.diminishing_factor / gravity * potential
 
     @u.quantity_input
-    def convert_physical_height_correction(self, lat: u.deg, r: u.m,
+    def convert_physical_height_correction(self, position,
                                            from_system: str = DEFAULT_FROM_SYSTEM,
                                            to_system: str = DEFAULT_TO_SYSTEM,
                                            gravity: u.m / u.s**2 = g0) -> u.m:
@@ -544,10 +513,8 @@ class PermanentTide:
 
         Parameters
         ----------
-        lat : ~astropy.units.Quantity
-            Geocentric (spherical) latitude.
-        r   : ~astropy.units.Quantity
-            Geocentric radius (radial distance).
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in the Earth-Centered-Earth-Fixed frame.
         from_system : {'zero-tide', 'mean-tide', 'non-tidal'}, optional
             In which tide system the pgysical height is given.
             Default value is set to `pygeoid.tides.permanent.DEFAULT_FROM_SYSTEM`.
@@ -565,7 +532,7 @@ class PermanentTide:
 
         """
 
-        pot = self.potential(lat, r) / gravity
+        pot = self.potential(position) / gravity
 
         if from_system == 'zero-tide' and to_system == 'mean-tide':
             factor = 1

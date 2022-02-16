@@ -59,10 +59,32 @@ class PotentialBase(metaclass=abc.ABCMeta):
         position : ~pygeoid.coordinates.frame
             Position in ECEF or LocalTangentPlane frame.
 
+        Returns
+        -------
+        potential : ~astropy.units.Quantity
+            Potential value.
+
         """
         return self._potential(position=position, *args, **kwargs)
 
     def derivative(self, position, variable, coordinates=None, *args, **kwargs):
+        """Return potential derivative.
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame
+            Position in ECEF or LocalTangentPlane frame.
+        variable : str
+            Name of the coordinate variable.
+        corrdinates : str
+            Name of the coordinate representation.
+
+        Returns
+        -------
+        derivative : ~astropy.units.Quantity
+            Potential derivative.
+
+        """
         if coordinates is None:
             coordinates = position.representation_type.get_name()
 

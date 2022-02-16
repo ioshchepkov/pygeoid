@@ -680,8 +680,14 @@ class SHGravPotential(_PotentialBase):
         """
         return self._derivative(position, 'lon', 'spherical')
 
+    def _gradient_vector(self, position, coordinates, *args, **kwargs):
+        if coordinates == 'spherical':
+            return self._gradient_vector_spherical(position)
+        else:
+            super()._gradient_vector(position, coordinates, *args, **kwargs)
+
     @u.quantity_input
-    def _gradient_vector(self, position, coordinates):
+    def _gradient_vector_spherical(self, position):
         """Return gradient vector.
 
         The magnitude and the components of the gradient of the potential
