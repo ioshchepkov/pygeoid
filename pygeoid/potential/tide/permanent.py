@@ -63,6 +63,9 @@ class PermanentTide(_PotentialBase):
 
     """
 
+    _default_derivative_coordinates = "spherical"
+    _default_gradient_coordinates = "spherical"
+
     def __init__(self, coeff: u.m**2 / u.s**2 = DEFAULT_COEFF_A,
                  r0: u.m = 6378137 * u.m,
                  love: dict = iers2010.DEGREE2_LOVE_NUMBERS,

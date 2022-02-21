@@ -18,6 +18,16 @@ class PotentialBase(metaclass=abc.ABCMeta):
 
     """
 
+    _default_derivative_coordinates: str = "cartesian"
+    """Default coordinate systen for calculating derivetives of the potential.
+
+    """
+
+    _default_gradient_coordinates: str = "cartesian"
+    """Default coordinate system for calculating gradient vector components.
+
+    """
+
     @abc.abstractmethod
     def _potential(self, position, *args, **kwargs):
         pass
@@ -36,14 +46,18 @@ class PotentialBase(metaclass=abc.ABCMeta):
         return np.linalg.norm(u.Quantity(list(vector.values())), axis=0)
 
     def _gradient_vector(self, position, coordinates, *args, **kwargs):
-        representation = position.represent_as(coordinates)
-        deriv = {var: self.derivative(position, var,
-                                      coordinates) for var in representation.components}
-        scale_factors = representation.scale_factors()
+        gradient_vector_method = '_gradient_vector_' + coordinates
+        if gradient_vector_method in dir(self):
+            grad = getattr(self, gradient_vector_method)(position=position,
+                                                         *args, **kwargs)
+        else:
+            representation = position.represent_as(coordinates)
+            deriv = {var: self.derivative(position, var,
+                                          coordinates) for var in representation.components}
+            scale_factors = representation.scale_factors()
 
-        grad = {var: deriv[var] / scale_factors[var] for
-                var in representation.components}
-
+            grad = {var: deriv[var] / scale_factors[var] for
+                    var in representation.components}
         return grad
 
     def _hessian(self, position, *args, **kwargs):
@@ -86,7 +100,7 @@ class PotentialBase(metaclass=abc.ABCMeta):
 
         """
         if coordinates is None:
-            coordinates = position.representation_type.get_name()
+            coordinates = self._default_derivative_coordinates
 
         return self._derivative(position=position, variable=variable,
                                 coordinates=coordinates, *args, **kwargs)
@@ -102,13 +116,23 @@ class PotentialBase(metaclass=abc.ABCMeta):
 
         """
         if coordinates is None:
-            coordinates = position.representation_type.get_name()
+            coordinates = self._default_gradient_coordinates
         return self._gradient(position,
                               coordinates=coordinates, *args, **kwargs)
 
     def gradient_vector(self, position, coordinates=None, *args, **kwargs):
+        """Return gradient vector in given coordinates.
+
+        Parameters
+        ----------
+        position : ~pygeoid.coordinates.frame.ECEF
+            Position in ECEF or LocalTangentPlane frame.
+        corrdinates : str
+            Name of the coordinate representation.
+
+        """
         if coordinates is None:
-            coordinates = position.representation_type.get_name()
+            coordinates = self._default_gradient_coordinates
         return self._gradient_vector(position=position,
                                      coordinates=coordinates, *args, **kwargs)
 

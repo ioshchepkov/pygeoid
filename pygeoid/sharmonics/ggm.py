@@ -566,6 +566,10 @@ class GlobalGravityFieldModel:
 
 class SHGravPotential(_PotentialBase):
 
+    _default_derivative_coordinates = "spherical"
+
+    _default_gradient_coordinates = "spherical"
+
     @u.quantity_input
     def __init__(self,
                  coeffs: u.dimensionless_unscaled,
@@ -680,14 +684,7 @@ class SHGravPotential(_PotentialBase):
         """
         return self._derivative(position, 'lon', 'spherical')
 
-    def _gradient_vector(self, position, coordinates, *args, **kwargs):
-        if coordinates == 'spherical':
-            return self._gradient_vector_spherical(position)
-        else:
-            super()._gradient_vector(position, coordinates, *args, **kwargs)
-
-    @u.quantity_input
-    def _gradient_vector_spherical(self, position):
+    def _gradient_vector_spherical(self, position, *args, **kwargs):
         """Return gradient vector.
 
         The magnitude and the components of the gradient of the potential
