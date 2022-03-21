@@ -22,20 +22,20 @@ def test_cartesian():
     np.testing.assert_equal(z.value, p.z.value)
 
     np.testing.assert_equal([x.value, y.value, z.value],
-            u.Quantity(p.cartesian).value)
+            p.cartesian.xyz.value)
 
 
 def test_from_to_geodetic():
     b_p = ECEF.from_geodetic(p.geodetic.lat,
             p.geodetic.lon, p.geodetic.height, ell=ell)
-    np.testing.assert_array_almost_equal(u.Quantity(b_p.cartesian).value,
+    np.testing.assert_array_almost_equal(b_p.cartesian.xyz.value,
                                          [x.value, y.value, z.value], decimal=5)
 
 
 def test_from_to_spherical():
     b_p = ECEF.from_spherical(p.spherical.lat, p.spherical.lon,
             p.spherical.distance)
-    np.testing.assert_array_almost_equal(u.Quantity(b_p.cartesian).value,
+    np.testing.assert_array_almost_equal(b_p.cartesian.xyz.value,
                                          [x.value, y.value, z.value],
                                          decimal=5)
 
@@ -50,8 +50,8 @@ def test_from_to_ellipsoidal():
     p = ECEF(x_, y_, z_)
     b_x, b_y, b_z = ECEF.from_ellipsoidal_harmonic(p.ellipsoidal_harmonic.rlat,
             p.ellipsoidal_harmonic.lon, p.ellipsoidal_harmonic.u_ax,
-            ell=ell).cartesian
-    np.testing.assert_array_almost_equal([b_x.value, b_y.value, b_z.value],
+            ell=ell).cartesian.xyz.value
+    np.testing.assert_array_almost_equal([b_x, b_y, b_z],
                                          [x_.value, y_.value, z_.value], decimal=5)
 
 def test_to_enu_ell():
@@ -61,7 +61,7 @@ def test_to_enu_ell():
 
     b_x, b_y, b_z = enu_to_ecef(*enu, origin=origin, ell=ell)
 
-    x_, y_, z_ = p.cartesian
+    x_, y_, z_ = p.cartesian.xyz
 
     np.testing.assert_array_almost_equal(b_x.value, x_.value, decimal=5)
     np.testing.assert_array_almost_equal(b_y.value, y_.value, decimal=5)

@@ -66,10 +66,6 @@ class ECEF(BaseCoordinateFrame):
         else:
             self._ellipsoid = ellipsoid
 
-    @property
-    def cartesian(self):
-        return (self.x, self.y, self.z)
-
     @classmethod
     def from_spherical(cls, lat, lon, radius):
         """Position, initialized from spherical coordinates.
