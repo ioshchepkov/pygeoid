@@ -3,6 +3,9 @@ import astropy.units as u
 import numpy as np
 from pygeoid.potential.core import PotentialBase
 
+from astropy.coordinates import CartesianRepresentation
+from astropy.coordinates import CartesianDifferential
+
 
 class Centrifugal(PotentialBase):
     """Centrifugal potential and its derivatives.
@@ -13,6 +16,7 @@ class Centrifugal(PotentialBase):
         Angular rotation rate of the body, in 1 / s.
         Default value is the angular speed of
         Earth's rotation 7292115e-11 1/s
+
     """
 
     @u.quantity_input
@@ -23,35 +27,13 @@ class Centrifugal(PotentialBase):
     def omega(self):
         return self._omega
 
-    @u.quantity_input
-    def _potential(self, position) -> u.m**2 / u.s**2:
-        """Return centrifugal potential.
+    def _potential(self, position):
+        rep = position.represent_as(CartesianRepresentation)
+        return 0.5 * self.omega**2 * (rep.x**2 + rep.y**2)
 
-        Parameters
-        ----------
-        position : ~pygeoid.coordinates.frame.ECEF
-
-        """
-        return 0.5 * self.omega**2 * (position.x**2 + position.y**2)
-
-    def _derivative_spherical(self, position, variable):
-        sph = position.represent_as('spherical')
-        if variable in ('lat', 'latitude'):
-            cslat = np.cos(sph.lat) * np.sin(sph.lat)
-            return -self.omega**2 * sph.distance**2 * cslat / u.radian
-        elif variable in ('lon', 'longitude', 'long'):
-            return np.zeros(position.shape) * u.m**2 / u.s**2 / u.radian
-        elif variable in ('distance', 'radius', 'r', 'radial'):
-            return self.omega**2 * sph.distance * np.cos(sph.lat)**2
-        else:
-            raise ValueError('No variable named {0}'.format(variable))
-
-    def _derivative_cartesian(self, position, variable):
-        if variable == 'x':
-            return self.omega**2 * position.x
-        elif variable == 'y':
-            return self.omega**2 * position.y
-        elif variable == 'z':
-            return np.zeros(position.shape) * u.m / u.s**2
-        else:
-            raise ValueError('No variable named {0}'.format(variable))
+    def _differential(self, position):
+        rep = position.represent_as(CartesianRepresentation)
+        return CartesianDifferential(
+            self.omega**2 * rep.x,
+            self.omega**2 * rep.y,
+            np.zeros(position.shape) * u.m / u.s**2)

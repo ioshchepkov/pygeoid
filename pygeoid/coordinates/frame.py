@@ -2,6 +2,7 @@
 
 """
 
+import inspect
 import astropy.units as u
 import numpy as _np
 from astropy.coordinates import (Attribute, BaseCoordinateFrame,
@@ -134,7 +135,8 @@ class ECEF(BaseCoordinateFrame):
 
     @property
     def geodetic(self):
-        return self.represent_as('geodetic', in_frame_units=True)
+        return GeodeticRepresentation.from_cartesian(self.cartesian,
+                ell=self._ellipsoid)
 
     @classmethod
     def from_ellipsoidal_harmonic(cls, rlat, lon, u_ax, ell=None):
@@ -177,7 +179,8 @@ class ECEF(BaseCoordinateFrame):
 
     @property
     def ellipsoidal_harmonic(self):
-        return self.represent_as('ellipsoidalharmonic', in_frame_units=True)
+        return EllipsoidalHarmonicRepresentation.from_cartesian(
+                self.cartesian, ell=self._ellipsoid)
 
     @u.quantity_input
     def enu(self, origin: tuple[u.deg, u.deg, u.m], ell=None):
@@ -205,6 +208,16 @@ class ECEF(BaseCoordinateFrame):
             self.x, self.y, self.z, origin, ell=ell)
 
         return east, north, up
+
+    def represent_as(self, base, s='base', in_frame_units='False'):
+        if ((inspect.isclass(base) and issubclass(base,
+            GeodeticRepresentation)) or base == 'geodetic'):
+            return self.geodetic
+        elif ((inspect.isclass(base) and issubclass(base,
+            EllipsoidalHarmonicRepresentation)) or base == 'elliposidalharmonic'):
+            return self.ellipsoidal_harmonic
+        else:
+            return super().represent_as(base, s='base', in_frame_units='False')
 
 
 class LocalTangentPlane(BaseCoordinateFrame):

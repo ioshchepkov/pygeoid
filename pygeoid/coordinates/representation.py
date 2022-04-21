@@ -16,17 +16,17 @@ from pygeoid.coordinates.ellipsoid import Ellipsoid
 class GeodeticRepresentation(BaseRepresentation):
 
     attr_classes = OrderedDict([
-        ('lat', Latitude),
         ('lon', Longitude),
+        ('lat', Latitude),
         ('height', u.Quantity)])
 
     _ellipsoid = Ellipsoid()
 
-    def __init__(self, lat, lon=None, height=None, ell=None, copy=True):
+    def __init__(self, lon, lat=None, height=None, ell=None, copy=True):
         if height is None and not isinstance(lat, self.__class__):
             height = 0 << u.m
 
-        super().__init__(lat, lon, height, copy=copy)
+        super().__init__(lon, lat, height, copy=copy)
 
         if ell is not None:
             self._ellipsoid = ell
@@ -101,7 +101,8 @@ class GeodeticRepresentation(BaseRepresentation):
 
         lat, lon, height = transform.cartesian_to_geodetic(
             x, y, z, ell=cls._ellipsoid)
-        return cls(lat, lon, height, copy=False)
+        return GeodeticRepresentation(lon=lon, lat=lat, height=height,
+                ell=cls._ellipsoid, copy=True)
 
 
 class GeodeticDifferential(BaseDifferential):

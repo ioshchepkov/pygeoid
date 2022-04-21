@@ -7,6 +7,7 @@ from typing import NamedTuple
 
 import astropy.units as u
 import numpy as np
+from astropy.coordinates import CartesianDifferential
 from pygeoid.constants import G
 from pygeoid.coordinates.frame import LocalFrame
 from pygeoid.potential.core import PotentialBase as _PotentialBase
@@ -111,15 +112,11 @@ class Prism(_PotentialBase):
 
         return out * u.m**2
 
-    def _derivative_cartesian(self, position, variable):
-        if variable == 'x':
-            return self.gx(position)
-        elif variable == 'y':
-            return self.gy(position)
-        elif variable == 'z':
-            return self.gz(position)
-        else:
-            raise ValueError('No variable named {0}'.format(variable))
+    def _differential(position):
+        return CartesianDifferential(
+            self.gx(position),
+            self.gy(position),
+            self.gz(position))
 
     def _hessian(self, position):
         """Return gradient tensor.

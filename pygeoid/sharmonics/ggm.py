@@ -7,8 +7,8 @@ from pyshtools.shclasses import SHGravCoeffs as _SHGravCoeffs
 from pyshtools.shclasses import SHCoeffs as _SHCoeffs
 
 
+from astropy.coordinates import SphericalDifferential
 from pygeoid.potential.core import PotentialBase as _PotentialBase
-from pygeoid.potential.core import CompositePotential as _CompositePotential
 from pygeoid.potential.centrifugal import Centrifugal as _Centrifugal
 from pygeoid.potential.normal import LevelEllipsoid as _LevelEllipsoid
 from pygeoid.coordinates import transform as _transform
@@ -184,11 +184,9 @@ class GlobalGravityFieldModel:
         """Return `SHGravPotential` class instance for the gravity potential.
 
         """
-        centrifugal = _Centrifugal(omega=self._coeffs.omega)
-
-        return _CompositePotential(
-            gravitational=self._gravitational,
-            centrifugal=centrifugal)
+        return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
+                               r0=self._coeffs.r0, omega=self._coeffs.omega,
+                               copy=False)
 
     @u.quantity_input
     def gravity_potential(self, position) -> u.m**2 / u.s**2:
@@ -266,7 +264,7 @@ class GlobalGravityFieldModel:
         ~astropy.units.Quantity
             Gravitation.
         """
-        return self._gravitational.gradient(position, 'spherical')
+        return self._gravitational.gradient(position)
 
     @u.quantity_input
     def gravity(self, position) -> u.m / u.s**2:
@@ -286,7 +284,7 @@ class GlobalGravityFieldModel:
         ~astropy.units.Quantity
             Gravity.
         """
-        return self._gravity.gradient(position, 'spherical')
+        return self._gravity.gradient(position)
 
     @u.quantity_input
     def gravity_disturbance(self, position) -> u.mGal:
@@ -449,9 +447,9 @@ class GlobalGravityFieldModel:
 
         """
 
-        dapot_lat = self._anomalous.derivative(position, 'lat', 'spherical')
-        dapot_lon = self._anomalous.derivative(position, 'lon', 'spherical')
-        dapot_rad = self._anomalous.derivative(position, 'r', 'spherical')
+        dapot_lat = self._anomalous._derivative(position, 'lat')
+        dapot_lon = self._anomalous._derivative(position, 'lon')
+        dapot_rad = self._anomalous._derivative(position, 'r')
 
         ellharm = position.represent_as('ellipsoidalharmonic')
         geod = position.represent_as('geodetic')
@@ -502,7 +500,7 @@ class GlobalGravityFieldModel:
 
         """
 
-        dapot_lon = self._anomalous.derivative(position, 'lon', 'spherical')
+        dapot_lon = self._anomalous._derivative(position, 'lon')
 
         ellharm = position.represent_as('ellipsoidalharmonic')
         sph = position.represent_as('spherical')
@@ -546,8 +544,8 @@ class GlobalGravityFieldModel:
 
         """
 
-        dapot_lat = self._anomalous.derivative(position, 'lat', 'spherical')
-        dapot_rad = self._anomalous.derivative(position, 'r', 'spherical')
+        dapot_lat = self._anomalous._derivative(position, 'lat')
+        dapot_rad = self._anomalous._derivative(position, 'r')
 
         ellharm = position.represent_as('ellipsoidalharmonic')
         geod = position.represent_as('geodetic')
@@ -566,10 +564,6 @@ class GlobalGravityFieldModel:
 
 class SHGravPotential(_PotentialBase):
 
-    _default_derivative_coordinates = "spherical"
-
-    _default_gradient_coordinates = "spherical"
-
     @u.quantity_input
     def __init__(self,
                  coeffs: u.dimensionless_unscaled,
@@ -579,6 +573,9 @@ class SHGravPotential(_PotentialBase):
         self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
                                                 lmax=lmax, errors=errors,
                                                 omega=omega, copy=True)
+
+        if self._coeffs.omega is not None:
+            self.centrifugal = _Centrifugal(omega=self._coeffs.omega)
 
     @u.quantity_input
     def _potential(self, position) -> u.m**2 / u.s**2:
@@ -608,9 +605,12 @@ class SHGravPotential(_PotentialBase):
 
         out = _np.squeeze(self._coeffs.gm * ri * values)
 
+        if self._coeffs.omega is not None:
+            out += self.centrifugal.potential(position)
+
         return out
 
-    def _derivative_spherical(self, position, variable):
+    def _derivative(self, position, variable):
         sph = position.represent_as('spherical')
         lat, _, degrees, cosin, x, q = _expand.common_precompute(
             sph.lat, sph.lon, sph.distance, self._coeffs.r0, self._coeffs.lmax)
@@ -650,7 +650,11 @@ class SHGravPotential(_PotentialBase):
         ~astropy.units.Quantity
             Radial derivative.
         """
-        return self._derivative(position, 'radius', 'spherical')
+        out = self._derivative(position, 'radius')
+        if self._coeffs.omega is not None:
+            out += self.centrifugal.differential(position,
+                                                 SphericalDifferential).d_distance
+        return out
 
     @u.quantity_input
     def lat_derivative(self, position):
@@ -666,7 +670,11 @@ class SHGravPotential(_PotentialBase):
         ~astropy.units.Quantity
             Latitudinal derivative.
         """
-        return self._derivative(position, 'lat', 'spherical')
+        out = self._derivative(position, 'lat')
+        if self._coeffs.omega is not None:
+            out += self.centrifugal.differential(position,
+                                                 SphericalDifferential).d_lat
+        return out
 
     @u.quantity_input
     def lon_derivative(self, position):
@@ -682,21 +690,13 @@ class SHGravPotential(_PotentialBase):
         ~astropy.units.Quantity
             Longitudinal derivative.
         """
-        return self._derivative(position, 'lon', 'spherical')
+        out = self._derivative(position, 'lon')
+        if self._coeffs.omega is not None:
+            out += self.centrifugal.differential(position,
+                                                 SphericalDifferential).d_lon
+        return out
 
-    def _gradient_vector_spherical(self, position, *args, **kwargs):
-        """Return gradient vector.
-
-        The magnitude and the components of the gradient of the potential
-        calculated on or above the ellipsoid without the centrifugal potential
-        (eqs. 7 and 122 of STR09/02).
-
-        Parameters
-        ----------
-        position : ~pygeoid.coordinates.frame.ECEF
-            Position in the Earth-Centered-Earth-Fixed frame.
-
-        """
+    def _differential(self, position, *args, **kwargs):
         sph = position.represent_as('spherical')
 
         lat, _, degrees, cosin, x, q = _expand.common_precompute(
@@ -717,11 +717,35 @@ class SHGravPotential(_PotentialBase):
         lon_d = -gmri * values[:, :, 1]
         rad_d = -self._coeffs.gm * ri**2 * values[:, :, 2]
 
+        # out = SphericalDifferential(
+        #        d_lon = lon_d / sph.distance**2 * u.rad,
+        #        d_lat = lat_d / sph.distance**2 * u.rad,
+        #        d_distance = rad_d)
+
+        out = SphericalDifferential(
+            d_lon=lon_d / u.rad,
+            d_lat=lat_d / u.rad,
+            d_distance=rad_d)
+
+        if self._coeffs.omega is not None:
+            out += self.centrifugal.differential(position,
+                                                 SphericalDifferential)
+
+        return out.squeeze()
+
+    def gradient(self, position):
+        diff = self.differential(position)
+        sph = position.represent_as('spherical')
+        ri = 1 / sph.distance
+        gmri = self._coeffs.gm * ri
+
+        clat = _np.cos(sph.lat)
         clati = _np.atleast_2d(1 / _np.ma.masked_values(clat, 0.0))
         clati = clati.filled(0.0)
 
-        q1 = (ri * lat_d).squeeze()
-        q2 = (clati * ri * lon_d).squeeze()
-        q3 = rad_d.squeeze()
+        lat_d = diff.d_lat / u.rad * sph.distance**2
+        lon_d = diff.d_lon / u.rad * sph.distance**2
+        rad_d = diff.d_distance
 
-        return {'lat' : q1, 'lon' : q2, 'distance' : q3}
+        total = _np.sqrt((ri * lat_d)**2 + (clati * ri * lon_d)**2 + rad_d**2)
+        return total.squeeze()
