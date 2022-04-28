@@ -112,11 +112,11 @@ class Prism(_PotentialBase):
 
         return out * u.m**2
 
-    def _differential(position):
-        return CartesianDifferential(
-            self.gx(position),
-            self.gy(position),
-            self.gz(position))
+    def _differential(self, position):
+        gx = self.gx(position)
+        gy = self.gy(position)
+        gz = self.gz(position)
+        return CartesianDifferential(gx, gy, gz)
 
     def _hessian(self, position):
         """Return gradient tensor.

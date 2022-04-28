@@ -110,26 +110,28 @@ def test_dov():
     np.testing.assert_almost_equal(dov_abs_model, dov_abs_test, 3)
 
 def test_r_derivatives():
-    r_derivative_model = model._gravitational.r_derivative(position)
-    r_derivative_differential_model = model._gravitational.differential(
+    r_derivative_model = model._gravity.r_derivative(position)
+    r_derivative_differential_model = model._gravity.differential(
             position).d_distance
 
     np.testing.assert_almost_equal(r_derivative_model.value,
             r_derivative_differential_model.value)
 
 def test_lat_derivatives():
-    lat_derivative_model = model._gravitational.lat_derivative(
+    lat_derivative_model = model._gravity.lat_derivative(
             position) / position.spherical.distance**2 * u.rad
-    lat_derivative_differential_model = model._gravitational.differential(
+    lat_derivative_differential_model = model._gravity.differential(
             position).d_lat
 
     np.testing.assert_almost_equal(lat_derivative_model.value,
             lat_derivative_differential_model.value)
 
 def test_lon_derivatives():
-    lon_derivative_model = model._gravitational.lon_derivative(
-            position) / position.spherical.distance**2 * u.rad
-    lon_derivative_differential_model = model._gravitational.differential(
+    scale = u.rad / (position.spherical.distance *
+            np.cos(position.spherical.lat))**2
+    lon_derivative_model = model._gravity.lon_derivative(
+            position) * scale
+    lon_derivative_differential_model = model._gravity.differential(
             position).d_lon
 
     np.testing.assert_almost_equal(lon_derivative_model.value,

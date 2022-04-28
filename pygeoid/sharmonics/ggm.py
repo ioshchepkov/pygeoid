@@ -672,8 +672,9 @@ class SHGravPotential(_PotentialBase):
         """
         out = self._derivative(position, 'lat')
         if self._coeffs.omega is not None:
-            out += self.centrifugal.differential(position,
-                                                 SphericalDifferential).d_lat
+            centr_d_lat = self.centrifugal.differential(position,
+                                                        SphericalDifferential).d_lat
+            out += centr_d_lat * position.spherical.distance**2 / u.rad
         return out
 
     @u.quantity_input
@@ -692,8 +693,12 @@ class SHGravPotential(_PotentialBase):
         """
         out = self._derivative(position, 'lon')
         if self._coeffs.omega is not None:
-            out += self.centrifugal.differential(position,
-                                                 SphericalDifferential).d_lon
+            centr_d_lon = self.centrifugal.differential(position,
+                                                        SphericalDifferential).d_lon
+            scale = u.rad / (position.spherical.distance *
+                             _np.cos(position.spherical.lat))**2
+            out += centr_d_lon / scale
+
         return out
 
     def _differential(self, position, *args, **kwargs):
@@ -717,14 +722,9 @@ class SHGravPotential(_PotentialBase):
         lon_d = -gmri * values[:, :, 1]
         rad_d = -self._coeffs.gm * ri**2 * values[:, :, 2]
 
-        # out = SphericalDifferential(
-        #        d_lon = lon_d / sph.distance**2 * u.rad,
-        #        d_lat = lat_d / sph.distance**2 * u.rad,
-        #        d_distance = rad_d)
-
         out = SphericalDifferential(
-            d_lon=lon_d / u.rad,
-            d_lat=lat_d / u.rad,
+            d_lon=lon_d / (sph.distance * _np.cos(sph.lat))**2 * u.rad,
+            d_lat=lat_d / sph.distance**2 * u.rad,
             d_distance=rad_d)
 
         if self._coeffs.omega is not None:
@@ -732,20 +732,3 @@ class SHGravPotential(_PotentialBase):
                                                  SphericalDifferential)
 
         return out.squeeze()
-
-    def gradient(self, position):
-        diff = self.differential(position)
-        sph = position.represent_as('spherical')
-        ri = 1 / sph.distance
-        gmri = self._coeffs.gm * ri
-
-        clat = _np.cos(sph.lat)
-        clati = _np.atleast_2d(1 / _np.ma.masked_values(clat, 0.0))
-        clati = clati.filled(0.0)
-
-        lat_d = diff.d_lat / u.rad * sph.distance**2
-        lon_d = diff.d_lon / u.rad * sph.distance**2
-        rad_d = diff.d_distance
-
-        total = _np.sqrt((ri * lat_d)**2 + (clati * ri * lon_d)**2 + rad_d**2)
-        return total.squeeze()

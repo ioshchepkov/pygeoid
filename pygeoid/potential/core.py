@@ -82,14 +82,9 @@ class PotentialBase(metaclass=abc.ABCMeta):
         differential = self.differential(position, *args, **kwargs)
 
         cart_diff = differential.represent_as(CartesianDifferential,
-                                              base=position.represent_as(differential.base_representation))
+                                              base=position.represent_as(
+                                                  differential.base_representation))
         return cart_diff.norm()
-        # return differential.represent_as(
-        #        CartesianDifferential,
-        #        base=position.represent_as(differential.base_representation)).norm()
-        # base=position.represent_as(
-        #            differential.base_representation))
-        # return differential.norm(position)
 
     def hessian(self, position, *args, **kwargs):
         """Return Hessian.

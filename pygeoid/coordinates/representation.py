@@ -102,7 +102,7 @@ class GeodeticRepresentation(BaseRepresentation):
         lat, lon, height = transform.cartesian_to_geodetic(
             x, y, z, ell=cls._ellipsoid)
         return GeodeticRepresentation(lon=lon, lat=lat, height=height,
-                ell=cls._ellipsoid, copy=True)
+                                      ell=cls._ellipsoid, copy=True)
 
 
 class GeodeticDifferential(BaseDifferential):
