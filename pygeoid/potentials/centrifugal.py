@@ -1,7 +1,7 @@
 
 import astropy.units as u
 import numpy as np
-from pygeoid.potential.core import PotentialBase
+from pygeoid.reductions.core import PotentialBase
 
 from astropy.coordinates import CartesianRepresentation
 from astropy.coordinates import CartesianDifferential

@@ -2,7 +2,7 @@
 import os
 import numpy as np
 import astropy.units as u
-import pygeoid.reduction.topography as topo
+import pygeoid.reductions.topography as topo
 
 
 def test_bouguer_plate():

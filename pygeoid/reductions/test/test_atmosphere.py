@@ -1,7 +1,7 @@
 
 import os
 import numpy as np
-import pygeoid.reduction.atmosphere as atm
+import pygeoid.reductions.atmosphere as atm
 import astropy.units as u
 
 

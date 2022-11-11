@@ -10,7 +10,7 @@ import astropy.units as u
 from pyshtools.shio import read_icgem_gfc
 from pygeoid.sharmonics.ggm import GlobalGravityFieldModel
 from pygeoid.sharmonics.utils import get_lmax
-from pygeoid.potential.normal import LevelEllipsoid
+from pygeoid.reductions.normal import LevelEllipsoid
 from pygeoid.coordinates.frame import ECEF
 
 

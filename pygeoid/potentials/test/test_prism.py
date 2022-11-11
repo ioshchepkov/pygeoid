@@ -3,7 +3,7 @@ import astropy.units as u
 import numpy as np
 import pytest
 from pygeoid.coordinates.frame import LocalFrame
-from pygeoid.potential import prism
+from pygeoid.reductions import prism
 
 bounds = u.Quantity(np.float64([0, 100, 0, 100, 0, 100]), u.m)
 density = 2670 * u.kg / u.m**3

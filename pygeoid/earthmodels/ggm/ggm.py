@@ -8,9 +8,9 @@ from pyshtools.shclasses import SHCoeffs as _SHCoeffs
 
 
 from astropy.coordinates import SphericalDifferential
-from pygeoid.potential.core import PotentialBase as _PotentialBase
-from pygeoid.potential.centrifugal import Centrifugal as _Centrifugal
-from pygeoid.potential.normal import LevelEllipsoid as _LevelEllipsoid
+from pygeoid.reductions.core import PotentialBase as _PotentialBase
+from pygeoid.reductions.centrifugal import Centrifugal as _Centrifugal
+from pygeoid.reductions.normal import LevelEllipsoid as _LevelEllipsoid
 from pygeoid.coordinates import transform as _transform
 from pygeoid.constants.iers2010 import k20
 from pygeoid.sharmonics import expand as _expand

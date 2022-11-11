@@ -4,7 +4,7 @@ import astropy.units as u
 import numpy as np
 import pygeoid.coordinates.transform as transform
 import pytest
-from pygeoid.potential.normal import (LevelEllipsoid,
+from pygeoid.reductions.normal import (LevelEllipsoid,
                                       surface_normal_gravity_clairaut)
 
 

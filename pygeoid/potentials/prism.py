@@ -10,7 +10,7 @@ import numpy as np
 from astropy.coordinates import CartesianDifferential
 from pygeoid.constants import G
 from pygeoid.coordinates.frame import LocalFrame
-from pygeoid.potential.core import PotentialBase as _PotentialBase
+from pygeoid.reductions.core import PotentialBase as _PotentialBase
 
 
 def _limits_sum(function):
