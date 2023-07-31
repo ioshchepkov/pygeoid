@@ -1,10 +1,15 @@
+"""Spherical geometry and trigonometry.
+
+"""
 
 import astropy.units as u
 import numpy as np
 
 
-def spherical_distance(lat1: u.deg, lon1: u.deg, lat2: u.deg, lon2: u.deg):
-    """Return distance on the sphere.
+@u.quantity_input
+def spherical_distance(
+        lat1: u.deg, lon1: u.deg, lat2: u.deg, lon2: u.deg):
+    """Return distance on the unit sphere.
 
     Returns distances between initial
     points (specified by `lat1`, `lon1`) and terminus points (specified by

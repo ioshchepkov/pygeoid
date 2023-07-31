@@ -1,4 +1,4 @@
-"""Laplace's tidal representation.
+"""Second-degree tidal potential representation.
 
 """
 
@@ -88,8 +88,8 @@ _func_parts = {
 }
 
 
-class LaplaceTidalEquation:
-    """Class for Laplace's tidal representation.
+class SecondDegreeTidalPotential:
+    """Class for second-degree tidal potential representation.
 
     This class is a realision of the Laplace's tidal representaion for the
     second-degree tidal potential:
@@ -116,8 +116,9 @@ class LaplaceTidalEquation:
         into account. By default, only the tides from the Moon and the Sun
         is accounted since they are the largest.
     parts : list, optional
-        Which parts of Laplace's tidal eqution are involved. There are 'zonal',
-        'tesseral' and 'sectorial' parts. By default, all parts are included.
+        Which parts of the second-degree tidal potential are involved. There 
+        are 'zonal', 'tesseral' and 'sectorial' parts. By default,
+        all parts are included.
     love : dict, optional
         Approximate Love numbers for elastic deformation calculations. This
         dictionary should contain 'k', 'l' and 'h' numbers of the second degree.

@@ -1,4 +1,6 @@
-"""Legender polynomials and functions"""
+"""Legender polynomials and functions.
+
+"""
 
 import numpy as np
 from pyshtools.legendre import PlmBar, PlmBar_d1, PlmIndex
