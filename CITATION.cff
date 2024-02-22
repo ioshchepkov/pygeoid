@@ -1,0 +1,33 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: PyGeoid
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Ilya
+    family-names: Oshchepkov
+    email: ilya.oshchepkov@gmail.com
+    orcid: 'https://orcid.org/0000-0002-1883-7242'
+    affiliation: PLC "Roskadastr"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.4692430
+repository-code: 'https://github.com/ioshchepkov/pygeoid'
+abstract: >-
+  Local gravity field modelling with Python.
+
+
+  The main purpose of the package is to realise common
+  algorithms and methods in physical geodesy for the local
+  gravity field modelling.
+keywords:
+  - geodesy
+  - geoid
+  - ' gravity field'
+  - physical geodesy
+  - gravimetry
+license: MIT
