@@ -13,21 +13,20 @@ authors:
     email: ilya.oshchepkov@gmail.com
     orcid: 'https://orcid.org/0000-0002-1883-7242'
     affiliation: PLC "Roskadastr"
+    name-particle: A
 identifiers:
   - type: doi
     value: 10.5281/zenodo.4692430
 repository-code: 'https://github.com/ioshchepkov/pygeoid'
 abstract: >-
-  Local gravity field modelling with Python.
-
-
-  The main purpose of the package is to realise common
-  algorithms and methods in physical geodesy for the local
-  gravity field modelling.
+  Local gravity field modelling with Python. The main
+  purpose of the package is to realise common algorithms and
+  methods in physical geodesy for the local gravity field
+  modelling.
 keywords:
   - geodesy
   - geoid
-  - ' gravity field'
+  - gravity field
   - physical geodesy
   - gravimetry
 license: MIT
