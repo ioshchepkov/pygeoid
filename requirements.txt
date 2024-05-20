@@ -27,7 +27,7 @@ pyshtools==4.8
 pytest-runner==5.3.0
 python-dateutil==2.8.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'
 pytz==2021.1
-requests==2.25.1; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'
+requests==2.32.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'
 scipy==1.6.2
 six==1.15.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'
 tqdm==4.59.0; python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'
