@@ -2,22 +2,19 @@
 
 """
 
-from numpy import pi
-import astropy.units as u
 from astropy.constants import Constant as _Constant
-
-from .solar_system_gm import get_body_gm
 
 ####################################################
 # Import constants
 ####################################################
+from astropy.constants import G  #, R_earth, g0
+from numpy import pi
 
-from astropy.constants import G
-from astropy.constants import g0
-from astropy.constants import R_earth
-from .iers2010 import GM_earth_tt as gm_earth
+from .iers2010 import DEGREE2_LOVE_NUMBERS as DEGREE2_LOVE_NUMBERS
+from .iers2010 import GM_earth_tt as GM_earth_tt
+from .solar_system_gm import get_body_gm as get_body_gm
 
-from .iers2010 import DEGREE2_LOVE_NUMBERS
+gm_earth = GM_earth_tt
 
 ####################################################
 # Define constants

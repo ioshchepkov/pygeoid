@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=80", "wheel", "setuptools-scm[toml]>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygeoid"
+dynamic = ["version"]
+description = "Python toolkit for physical geodesy"
+readme = "README.rst"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [
+    { name = "Ilya Oshchepkov" }
+]
+keywords = ["geodesy", "gravimetry", "gravity", "geoid"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+  "numpy",
+  "scipy",
+  "pyproj",
+  "astropy",
+  "pandas",
+  "joblib",
+  "pyshtools",
+]
+
+[project.optional-dependencies]
+tests = ["pytest"]
+dev = ["pytest", "ruff"]
+docs = ["sphinx", "sphinx-rtd-theme"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["pygeoid*"]
+
+[tool.setuptools_scm]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+python_files = "test_*.py"
+
+[tool.ruff]
+line-length = 88
+extend-exclude = ["*test*"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle
+  "F",   # pyflakes
+  "I",   # isort
+  "UP",  # pyupgrade
+]
+ignore = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

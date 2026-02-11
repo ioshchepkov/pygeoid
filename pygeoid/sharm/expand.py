@@ -3,8 +3,10 @@ Auxiliarry functions for the pointwise gravity spherical harmonics expansion.
 """
 
 import warnings
+
 import numpy as np
 from joblib import Parallel, delayed
+
 from .legendre import lplm, lplm_d1
 
 np.seterr(over='raise')

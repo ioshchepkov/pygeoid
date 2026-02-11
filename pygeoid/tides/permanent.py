@@ -2,14 +2,11 @@
 
 """
 
-import numpy as np
 import astropy.units as u
+import numpy as np
 
+from pygeoid.constants import g0, iers2010
 from pygeoid.coordinates.ellipsoid import Ellipsoid
-from pygeoid.coordinates.transform import geodetic_to_cartesian
-
-from pygeoid.constants import (solar_system_gm, g0)
-from pygeoid.constants import iers2010
 
 DEFAULT_COEFF_A = -2.9166 * u.m**2 / u.s**2
 
@@ -336,9 +333,10 @@ class PermanentTide:
         return -delta_g
 
     @u.quantity_input
-    def convert_gravity_correction(self, lat: u.deg, r: u.m,
-                                   from_system: str = DEFAULT_FROM_SYSTEM,
-                                   to_system: str = DEFAULT_TO_SYSTEM) -> u.m**2 / u.s**2:
+    def convert_gravity_correction(
+        self, lat: u.deg, r: u.m,
+        from_system: str = DEFAULT_FROM_SYSTEM,
+        to_system: str = DEFAULT_TO_SYSTEM) -> u.m**2 / u.s**2:
         """Return correction to convert gravity between tide systems.
 
         Add this value to the gravity in the tide system specified by `from_system`

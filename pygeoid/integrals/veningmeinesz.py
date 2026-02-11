@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Vening Meinesz kernel.
 
 """
 
-import numpy as np
 import astropy.units as u
+import numpy as np
 
 from pygeoid.integrals.core import SphericalKernel
 

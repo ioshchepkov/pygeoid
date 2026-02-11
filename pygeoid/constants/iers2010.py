@@ -2,8 +2,8 @@
 
 """
 
-import numpy as _np
 import astropy.units as _u
+import numpy as _np
 from astropy.constants import Constant as _Constant
 
 ####################################################

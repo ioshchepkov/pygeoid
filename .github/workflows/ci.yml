@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  modern-vanilla:
+    # Mode A: pip-only
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: python -m pip install -U pip setuptools wheel build
+      - run: python -m pip install -e ".[dev]"
+      - run: ruff check .
+      - run: python -m pytest -q
+      - run: python -m build
+  modern-conda:
+    # Mode B: conda
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          micromamba-version: "latest"
+          environment-name: pygeoid
+          post-cleanup: "none"
+          create-args: >-
+            python=${{ matrix.python-version }}
+            numpy
+            scipy
+            astropy
+            pyshtools
+            pyproj
+            pandas
+            pytest
+            python-build
+            pip
+            -c conda-forge
+
+      - name: Install pygeoid (editable) and run tests 
+        shell: bash -l {0}
+        run: |
+          python -m pip install -U pip 
+          python -m pip install -e .
+          python -m pytest -q
+          python -m build

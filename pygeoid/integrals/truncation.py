@@ -4,7 +4,6 @@
 
 import numpy as np
 import scipy.integrate as spi
-
 from pyshtools.legendre import PLegendre
 
 from pygeoid.integrals.stokes import StokesKernel

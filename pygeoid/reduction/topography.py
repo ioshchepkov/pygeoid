@@ -1,7 +1,7 @@
 """Topographic reduction in gravity and geoid modelling"""
 
-import numpy as np
 import astropy.units as u
+import numpy as np
 
 from pygeoid.constants import _2piG
 

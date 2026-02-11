@@ -1,7 +1,9 @@
 """Gravitational field of a prism."""
 
 import itertools
+
 import numpy as np
+
 from pygeoid.constants import G
 from pygeoid.simple.core import ForwardModel
 

@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Stokes integral and kernel.
 
 """
 
-import numpy as np
 import astropy.units as u
+import numpy as np
 
 from pygeoid.integrals.core import SphericalKernel
 from pygeoid.integrals.veningmeinesz import VeningMeineszKernel

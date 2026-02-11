@@ -1,14 +1,11 @@
-
-import numpy as _np
 import astropy.units as u
-
-
-from pyshtools.shclasses import SHGravCoeffs as _SHGravCoeffs
+import numpy as _np
 from pyshtools.shclasses import SHCoeffs as _SHCoeffs
+from pyshtools.shclasses import SHGravCoeffs as _SHGravCoeffs
 
+from pygeoid.coordinates import transform as _transform
 from pygeoid.reduction.normal import Centrifugal as _Centrifugal
 from pygeoid.reduction.normal import LevelEllipsoid as _LevelEllipsoid
-from pygeoid.coordinates import transform as _transform
 from pygeoid.sharm import expand as _expand
 from pygeoid.sharm.utils import get_lmax as _get_lmax
 
@@ -232,7 +229,8 @@ class GlobalGravityFieldModel:
 
     @u.quantity_input
     def gravity_disturbance_sa(self,
-                               lat: u.deg, lon: u.deg, r: u.m, lmax: int = None) -> u.mGal:
+                               lat: u.deg, lon: u.deg, r: u.m,
+                               lmax: int = None) -> u.mGal:
         """Return gravity disturbance in spherical approximation.
 
         The gravity disturbance calculated by spherical approximation (eqs. 92

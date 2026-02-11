@@ -3,11 +3,17 @@
 """
 
 import os
+from collections.abc import Callable
+
 import numpy as np
-from typing import Callable
 from scipy.interpolate import interp1d
-from scipy.integrate import trapz
+
+try:
+    from scipy.integrate import trapezoid as trapz
+except Exception:
+    from numpy import trapz
 import astropy.units as u
+
 from pygeoid.constants import G
 
 
@@ -50,8 +56,7 @@ def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
     for idx in range(alt_arr.size):
         alt = alt_arr[idx]
         if alt > altitude_max:
-            msg = 'Altitude exceeds the model: h > hmax = {} m'.format(
-                altitude_max)
+            msg = f'Altitude exceeds the model: h > hmax = {altitude_max} m'
             raise ValueError(msg)
 
         # Figure out base height

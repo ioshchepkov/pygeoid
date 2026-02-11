@@ -2,9 +2,10 @@
 
 """
 
+import astropy.units as u
 import numpy as _np
 import pyproj as _proj
-import astropy.units as u
+
 from pygeoid.constants import _2pi, _4pi
 
 # default ellipsoid for geometrical (geodetic) applications
@@ -34,8 +35,8 @@ class Ellipsoid:
                 kwargs['ellps'] = DEFAULT_ELLIPSOID
             else:
                 raise ValueError(
-                    'No ellipsoid with name {0}, possible values \
-                        are:\n{1}'.format(ellps, _proj.pj_ellps.keys()))
+                    f'No ellipsoid with name {ellps}, possible values \
+                        are:\n{_proj.pj_ellps.keys()}')
         # else:
             # TODO: Check if all parameters are in SI units
         #    pass
@@ -44,11 +45,16 @@ class Ellipsoid:
         self.geod = _proj.Geod(**kwargs)
         self.a = self.geod.a * u.m
         self.b = self.geod.b * u.m
-        self.f = self.geod.f * u.dimensionless_unscaled  # flattening
-        self.e2 = _np.float64(self.geod.es) * u.dimensionless_unscaled  # eccentricity squared
-        self.e = _np.sqrt(self.e2) * u.dimensionless_unscaled  # eccentricity
-        self.e12 = self.e2 / (1 - self.e2) * u.dimensionless_unscaled  # 2nd eccentricity squared
-        self.e1 = _np.sqrt(self.e12) * u.dimensionless_unscaled  # 2nd eccentricity
+        # flattening
+        self.f = self.geod.f * u.dimensionless_unscaled  
+        # eccentricity squared
+        self.e2 = _np.float64(self.geod.es) * u.dimensionless_unscaled  
+        # eccentricity
+        self.e = _np.sqrt(self.e2) * u.dimensionless_unscaled  
+        # 2nd eccentricity squared
+        self.e12 = self.e2 / (1 - self.e2) * u.dimensionless_unscaled
+        # 2nd eccentricity
+        self.e1 = _np.sqrt(self.e12) * u.dimensionless_unscaled  
 
     @property
     def equatorial_radius(self):

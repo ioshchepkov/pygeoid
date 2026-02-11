@@ -1,6 +1,6 @@
 
-import numpy as np
 import astropy.units as u
+import numpy as np
 
 
 def spherical_distance(lat1: u.deg, lon1: u.deg, lat2: u.deg, lon2: u.deg):

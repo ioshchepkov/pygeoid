@@ -8,13 +8,13 @@ __all__ = ['gm_moon', 'gm_sun', 'gm_mars', 'gm_venus', 'gm_mercury',
            'gm_jupiter', 'gm_saturn', 'gm_uranus', 'gm_neptune']
 
 # Import Moon and Sun
-from pyshtools.constants.Moon import gm as gm_moon
-from .iers2010 import GM_sun as gm_sun
-
 # Import planets
 from pyshtools.constants.Mars import gm as gm_mars
-from pyshtools.constants.Venus import gm as gm_venus
 from pyshtools.constants.Mercury import gm as gm_mercury
+from pyshtools.constants.Moon import gm as gm_moon
+from pyshtools.constants.Venus import gm as gm_venus
+
+from .iers2010 import GM_sun as gm_sun
 
 # Define planets
 gm_jupiter = _Constant(

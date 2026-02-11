@@ -2,11 +2,11 @@
 Gravity field and geometry of the level ellipsoid.
 """
 
-import numpy as np
 import astropy.units as u
-from scipy import (optimize, special)
-from pygeoid.coordinates.ellipsoid import Ellipsoid
+import numpy as np
+from scipy import optimize, special
 
+from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 LEVEL_ELLIPSOIDS = {
     'GRS80': {'description': 'GRS 80',
@@ -147,9 +147,8 @@ class LevelEllipsoid(Ellipsoid):
                 kwargs = LEVEL_ELLIPSOIDS[DEFAULT_LEVEL_ELLIPSOID]
             else:
                 raise ValueError(
-                    'No ellipsoid with name {:%s}, possible values \
-                        are:\n{:%s}'.format(ellps,
-                                            LEVEL_ELLIPSOIDS.keys()))
+                    f'No ellipsoid with name {ellps:%s}, possible values \
+                        are:\n{LEVEL_ELLIPSOIDS.keys():%s}')
 
         if 'j2' in kwargs:
             kwargs['f'] = _j2_to_flattening(
@@ -163,28 +162,31 @@ class LevelEllipsoid(Ellipsoid):
         self._gm = kwargs['gm']
         self._omega = kwargs['omega']
 
-        kwargs_nounits = {key: x.si.value for key, x in kwargs.items() if hasattr(x, 'unit')}
+        kwargs_nounits = {
+            key: x.si.value for key, x in kwargs.items() if hasattr(x, 'unit')
+        }
 
         super().__init__(self, **kwargs_nounits)
 
         # define useful short-named attributes
         self._m = self.omega**2 * self.a**2 * self.b / self.gm
         self._q0 = 0.5 * ((1 + 3 / self.e1**2) *
-                          np.arctan(self.e1).value * u.dimensionless_unscaled - 3 / self.e1)
+                          np.arctan(self.e1).value *\
+            u.dimensionless_unscaled - 3 / self.e1)
 
         if not hasattr(self, '_j2'):
             self._j2 = self.e2 / 3 * (1 - 2 / 15 * self.m * self.e1 / self._q0)
 
-        self._q01 = 3 * (1 +
-                         1 / self.e12) * (1 - np.arctan(self.e1).value * u.dimensionless_unscaled / self.e1) - 1
+        self._q01 = 3 * (1 + 1 / self.e12) *\
+            (1 - np.arctan(self.e1).value * u.dimensionless_unscaled / self.e1) - 1
 
         self._surface_potential = self.gm / self.linear_eccentricity *\
             np.arctan(self.second_eccentricity).value * u.dimensionless_unscaled +\
             1 / 3 * self.omega ** 2 * self.a ** 2
 
-        self._gamma_e = self.gm / (self.a *
-                                   self.b) * (1 - self.m -
-                                              self.m / 6 * self.e1 * self._q01 / self._q0)
+        self._gamma_e = self.gm / (
+            self.a * self.b) * (
+                1 - self.m - self.m / 6 * self.e1 * self._q01 / self._q0)
 
         self._gamma_p = self.gm / self.a**2 *\
             (1 + self.m / 3 * self.e1 * self._q01 / self._q0)
@@ -294,8 +296,8 @@ class LevelEllipsoid(Ellipsoid):
             Normal gravity potential.
         """
         gravitational = self.gravitational_potential(rlat, u_ax)
-        centrifugal = 0.5 * self.omega**2 * (u_ax**2 +
-                                             self.linear_eccentricity**2) * np.cos(rlat)**2
+        centrifugal = 0.5 * self.omega**2 * (
+            u_ax**2 + self.linear_eccentricity**2) * np.cos(rlat)**2
         return gravitational + centrifugal
 
     #########################################################################
@@ -320,8 +322,8 @@ class LevelEllipsoid(Ellipsoid):
         """Return mean normal gravity over ellipsoid.
 
         """
-        return 4 * np.pi / self.surface_area * (self._gm -
-                                                2 / 3 * self._omega**2 * self.a**2 * self.b)
+        return 4 * np.pi / self.surface_area * (
+            self._gm - 2 / 3 * self._omega**2 * self.a**2 * self.b)
 
     @property
     def gravity_flattening(self):
@@ -386,9 +388,9 @@ class LevelEllipsoid(Ellipsoid):
             Geodetic height.
         """
         gammae = self.equatorial_normal_gravity
-        out = -2 * gammae / self.a * (1 +
-                                      self.f + self.m + (-3 * self.f +
-                                                         2.5 * self.m) * np.sin(lat)**2) * height +\
+        out = -2 * gammae / self.a * (
+            1 + self.f + self.m + (-3 * self.f +\
+                2.5 * self.m) * np.sin(lat)**2) * height +\
             3 * gammae * height**2 / self.a**2
 
         return out
@@ -479,7 +481,8 @@ class LevelEllipsoid(Ellipsoid):
 
     @u.quantity_input
     def gravity_potential_sph(self,
-                              lat: u.deg, radius: u.m, n_max: int = 4) -> u.m**2 / u.s**2:
+                              lat: u.deg, radius: u.m,
+                              n_max: int = 4) -> u.m**2 / u.s**2:
         """Return normal gravitational potential V.
 
         Calculate normal gravitational potential from spherical approximation.

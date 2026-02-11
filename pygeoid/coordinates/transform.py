@@ -3,9 +3,9 @@
 """
 
 import functools as _functools
-import numpy as _np
-import astropy.units as u
 
+import astropy.units as u
+import numpy as _np
 
 ##############################################################################
 # 3D coordinates

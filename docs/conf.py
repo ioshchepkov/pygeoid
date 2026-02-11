@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # pygeoid documentation build configuration file, created by
 # sphinx-quickstart on Sat Nov  4 16:13:24 2017.
@@ -19,10 +18,10 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import pygeoid
-
 
 # -- General configuration ------------------------------------------------
 
