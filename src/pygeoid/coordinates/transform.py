@@ -1,6 +1,4 @@
-""" This module contains functions for coordinate transformations
-
-"""
+"""This module contains functions for coordinate transformations"""
 
 import functools as _functools
 
@@ -11,9 +9,9 @@ import numpy as _np
 # 3D coordinates
 ##############################################################################
 
+
 @u.quantity_input
-def geodetic_to_cartesian(
-        lat: u.deg, lon: u.deg, height: u.m, ell):
+def geodetic_to_cartesian(lat: u.deg, lon: u.deg, height: u.m, ell):
     """Convert geodetic to 3D cartesian coordinates.
 
     Convert geodetic coordinates (`lat`, `lon`, `height`) given w.r.t.
@@ -44,8 +42,9 @@ def geodetic_to_cartesian(
     return x, y, z
 
 
-@_functools.partial(_np.vectorize,
-                    otypes=(_np.float64, _np.float64, _np.float64), excluded=[3, 4])
+@_functools.partial(
+    _np.vectorize, otypes=(_np.float64, _np.float64, _np.float64), excluded=[3, 4]
+)
 def _cartesian_to_geodetic(x, y, z, ell, degrees=True):
     """Convert 3D cartesian to geodetic coordinates.
 
@@ -78,11 +77,11 @@ def _cartesian_to_geodetic(x, y, z, ell, degrees=True):
     e2 = ell.e2.value
     a = ell.a.value
 
-    e4 = e2 ** 2
+    e4 = e2**2
 
     # Step 1
-    p = (x**2 + y**2) / a ** 2
-    q = (1 - e2) * z ** 2 / a ** 2
+    p = (x**2 + y**2) / a**2
+    q = (1 - e2) * z**2 / a**2
     r = (p + q - e4) / 6
 
     # Step 2 - 3
@@ -92,10 +91,11 @@ def _cartesian_to_geodetic(x, y, z, ell, degrees=True):
     if (t > 0) or (t <= 0 and q != 0):
         if t > 0:
             li = _np.power(_np.sqrt(t) + _np.sqrt(e4pq), 1 / 3)
-            u = 3 / 2 * r**2 / li**2 + 0.5 * (li + r / li)**2
+            u = 3 / 2 * r**2 / li**2 + 0.5 * (li + r / li) ** 2
         elif t <= 0 and q != 0:
-            u_aux = 2 / 3 * _np.arctan2(_np.sqrt(e4pq), _np.sqrt(-t) +
-                                        _np.sqrt(-8 * r**3))
+            u_aux = (
+                2 / 3 * _np.arctan2(_np.sqrt(e4pq), _np.sqrt(-t) + _np.sqrt(-8 * r**3))
+            )
 
             u = -4 * r * _np.sin(u_aux) * _np.cos(_np.pi / 6 + u_aux)
 
@@ -111,9 +111,8 @@ def _cartesian_to_geodetic(x, y, z, ell, degrees=True):
         e2p = _np.sqrt(e2 - p)
         me2 = _np.sqrt(1 - e2)
 
-        height = - (a * me2 * e2p) / _np.sqrt(e2)
-        lat = 2 * _np.arctan2(_np.sqrt(e4 - p), _np.sqrt(e2) * e2p +
-                              me2 * _np.sqrt(p))
+        height = -(a * me2 * e2p) / _np.sqrt(e2)
+        lat = 2 * _np.arctan2(_np.sqrt(e4 - p), _np.sqrt(e2) * e2p + me2 * _np.sqrt(p))
 
     lon = _np.arctan2(y, x)
 
@@ -155,8 +154,8 @@ def cartesian_to_geodetic(x: u.m, y: u.m, z: u.m, ell):
     """
 
     lat, lon, height = _cartesian_to_geodetic(
-        x.to('m').value, y.to('m').value, z.to('m').value, ell=ell,
-        degrees=True)
+        x.to("m").value, y.to("m").value, z.to("m").value, ell=ell, degrees=True
+    )
 
     return lat * u.deg, lon * u.deg, height * u.m
 
@@ -180,8 +179,8 @@ def cartesian_to_spherical(x: u.m, y: u.m, z: u.m):
         Radius.
     """
 
-    radius = _np.sqrt(x ** 2 + y ** 2 + z ** 2)
-    lat = _np.arctan2(z, _np.sqrt(x ** 2 + y ** 2))
+    radius = _np.sqrt(x**2 + y**2 + z**2)
+    lat = _np.arctan2(z, _np.sqrt(x**2 + y**2))
     lon = _np.arctan2(y, x)
 
     return lat, lon, radius
@@ -244,14 +243,14 @@ def cartesian_to_ellipsoidal(x: u.m, y: u.m, z: u.m, ell):
 
     if _np.any(k < 0):
         raise ValueError(
-            'x**2 + y**2 + z**2 must be grater or equal to ' +
-            'the linear eccentricity of the reference ellipsoid.')
+            "x**2 + y**2 + z**2 must be grater or equal to "
+            + "the linear eccentricity of the reference ellipsoid."
+        )
 
     u_ax = k * (0.5 + 0.5 * _np.sqrt(1 + (4 * le2 * z**2) / k**2))
 
     u_ax = _np.sqrt(u_ax)
-    rlat = _np.arctan2(z * _np.sqrt(u_ax ** 2 + le2),
-                       u_ax * _np.sqrt(x**2 + y**2))
+    rlat = _np.arctan2(z * _np.sqrt(u_ax**2 + le2), u_ax * _np.sqrt(x**2 + y**2))
 
     lon = _np.arctan2(y, x)
 
@@ -310,8 +309,7 @@ def geodetic_to_spherical(lat: u.deg, lon: u.deg, height: u.m, ell):
     r : ~astropy.units.Quantity
         Radius.
     """
-    return cartesian_to_spherical(
-        *geodetic_to_cartesian(lat, lon, height, ell=ell))
+    return cartesian_to_spherical(*geodetic_to_cartesian(lat, lon, height, ell=ell))
 
 
 @u.quantity_input
@@ -336,8 +334,7 @@ def spherical_to_geodetic(lat: u.deg, lon: u.deg, radius: u.m, ell):
     height : ~astropy.units.Quantity
         Geodetic height.
     """
-    return cartesian_to_geodetic(
-        *spherical_to_cartesian(lat, lon, radius), ell=ell)
+    return cartesian_to_geodetic(*spherical_to_cartesian(lat, lon, radius), ell=ell)
 
 
 @u.quantity_input
@@ -366,7 +363,8 @@ def geodetic_to_ellipsoidal(lat: u.deg, lon: u.deg, height: u.m, ell):
 
     """
     return cartesian_to_ellipsoidal(
-        *geodetic_to_cartesian(lat, lon, height, ell=ell), ell=ell)
+        *geodetic_to_cartesian(lat, lon, height, ell=ell), ell=ell
+    )
 
 
 @u.quantity_input
@@ -392,7 +390,8 @@ def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
         Geodetic height.
     """
     return cartesian_to_geodetic(
-        *ellipsoidal_to_cartesian(rlat, lon, u_ax, ell=ell), ell=ell)
+        *ellipsoidal_to_cartesian(rlat, lon, u_ax, ell=ell), ell=ell
+    )
 
 
 @u.quantity_input
@@ -412,10 +411,13 @@ def _ecef_to_enu_rotation_matrix(lat: u.deg, lon: u.deg):
     clon = _np.cos(lon)
     slon = _np.sin(lon)
 
-    rotation_matrix = _np.array([
-        [-slon, clon, 0],
-        [-slat * clon, -slat * slon, clat],
-        [clat * clon, clat * slon, slat]])
+    rotation_matrix = _np.array(
+        [
+            [-slon, clon, 0],
+            [-slat * clon, -slat * slon, clat],
+            [clat * clon, clat * slon, slat],
+        ]
+    )
 
     return rotation_matrix
 
@@ -453,16 +455,21 @@ def ecef_to_enu(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=No
 
     out_shape = x.shape
 
-    xyz_shifted = _np.array([
-        _np.asarray((x - x0).to('m').value).flatten(),
-        _np.asarray((y - y0).to('m').value).flatten(),
-        _np.asarray((z - z0).to('m').value).flatten()])
+    xyz_shifted = _np.array(
+        [
+            _np.asarray((x - x0).to("m").value).flatten(),
+            _np.asarray((y - y0).to("m").value).flatten(),
+            _np.asarray((z - z0).to("m").value).flatten(),
+        ]
+    )
 
     out = _np.dot(rotation_matrix, xyz_shifted) * u.m
 
-    return (out[0].reshape(out_shape),
-            out[1].reshape(out_shape),
-            out[2].reshape(out_shape))
+    return (
+        out[0].reshape(out_shape),
+        out[1].reshape(out_shape),
+        out[2].reshape(out_shape),
+    )
 
 
 @u.quantity_input
@@ -493,24 +500,36 @@ def enu_to_ecef(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=No
 
     out_shape = x.shape
 
-    x, y, z = _np.dot(rotation_matrix, _np.array([
-        _np.asarray(x.to('m').value).flatten(),
-        _np.asarray(y.to('m').value).flatten(),
-        _np.asarray(z.to('m').value).flatten()])) * u.m
+    x, y, z = (
+        _np.dot(
+            rotation_matrix,
+            _np.array(
+                [
+                    _np.asarray(x.to("m").value).flatten(),
+                    _np.asarray(y.to("m").value).flatten(),
+                    _np.asarray(z.to("m").value).flatten(),
+                ]
+            ),
+        )
+        * u.m
+    )
 
     if ell is None:
         x0, y0, z0 = spherical_to_cartesian(*origin)
     else:
         x0, y0, z0 = geodetic_to_cartesian(*origin, ell=ell)
 
-    return ((x + x0).reshape(out_shape),
-            (y + y0).reshape(out_shape),
-            (z + z0).reshape(out_shape))
+    return (
+        (x + x0).reshape(out_shape),
+        (y + y0).reshape(out_shape),
+        (z + z0).reshape(out_shape),
+    )
 
 
 @u.quantity_input
-def geodetic_to_enu(lat: u.deg, lon: u.deg, height: u.m,
-                    origin: tuple[u.deg, u.deg, u.m], ell):
+def geodetic_to_enu(
+    lat: u.deg, lon: u.deg, height: u.m, origin: tuple[u.deg, u.deg, u.m], ell
+):
     """Convert geodetic coordinates to local cartesian coordinates.
 
     Convert geodetic coordinates
@@ -536,7 +555,8 @@ def geodetic_to_enu(lat: u.deg, lon: u.deg, height: u.m,
         Local east-north-up cartesian coordinates.
     """
     return ecef_to_enu(
-        *geodetic_to_cartesian(lat, lon, height, ell=ell), origin=origin, ell=ell)
+        *geodetic_to_cartesian(lat, lon, height, ell=ell), origin=origin, ell=ell
+    )
 
 
 @u.quantity_input
@@ -565,8 +585,8 @@ def enu_to_geodetic(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], el
     height : ~astropy.units.Quantity
         Geodetic height.
     """
-    return cartesian_to_geodetic(
-        *enu_to_ecef(x, y, z, origin=origin, ell=ell), ell=ell)
+    return cartesian_to_geodetic(*enu_to_ecef(x, y, z, origin=origin, ell=ell), ell=ell)
+
 
 ##############################################################################
 # 2D coordinates
@@ -609,7 +629,7 @@ def cartesian_to_polar(x: u.m, y: u.m):
         Radius.
     """
 
-    radius = _np.sqrt(x ** 2 + y ** 2)
+    radius = _np.sqrt(x**2 + y**2)
     theta = _np.arctan2(y, x)
 
     return theta, radius

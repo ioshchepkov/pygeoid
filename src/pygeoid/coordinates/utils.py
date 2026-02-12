@@ -1,4 +1,3 @@
-
 import astropy.units as u
 import numpy as np
 
@@ -33,8 +32,8 @@ def spherical_distance(lat1: u.deg, lon1: u.deg, lat2: u.deg, lon2: u.deg):
     lat_dif = lat1m - lat2m
     lon_dif = lon1m - lon2m
 
-    slatsq = np.sin(0.5 * lat_dif)**2
-    slonsq = np.sin(0.5 * lon_dif)**2
+    slatsq = np.sin(0.5 * lat_dif) ** 2
+    slonsq = np.sin(0.5 * lon_dif) ** 2
     spsi2 = np.sqrt(slatsq + slonsq * np.cos(lat1m) * np.cos(lat2m))
 
     psi = 2 * np.arcsin(spsi2)

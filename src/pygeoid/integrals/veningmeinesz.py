@@ -1,21 +1,17 @@
-"""Vening Meinesz kernel.
-
-"""
+"""Vening Meinesz kernel."""
 
 import astropy.units as u
 import numpy as np
 
 from pygeoid.integrals.core import SphericalKernel
 
-__all__ = ['VeningMeineszKernel']
+__all__ = ["VeningMeineszKernel"]
 
 
 class VeningMeineszKernel(SphericalKernel):
-    r"""Vening Meinesz kernel class.
+    r"""Vening Meinesz kernel class."""
 
-    """
-
-    _name = 'Vening Meinesz'
+    _name = "Vening Meinesz"
 
     @u.quantity_input
     def kernel(self, spherical_distance: u.deg):
@@ -51,12 +47,16 @@ class VeningMeineszKernel(SphericalKernel):
 
         """
 
-        psi = self._check_spherical_distance(
-            spherical_distance=spherical_distance)
+        psi = self._check_spherical_distance(spherical_distance=spherical_distance)
 
         cpsi2 = np.cos(psi / 2)
         spsi2 = np.sin(psi / 2)
         spsi = np.sin(psi)
 
-        return -0.5 * cpsi2 / spsi2**2 + 8 * spsi - 6 * cpsi2 -\
-            3 * (1 - spsi2) / spsi + 3 * spsi * np.log(spsi2 + spsi2**2)
+        return (
+            -0.5 * cpsi2 / spsi2**2
+            + 8 * spsi
+            - 6 * cpsi2
+            - 3 * (1 - spsi2) / spsi
+            + 3 * spsi * np.log(spsi2 + spsi2**2)
+        )

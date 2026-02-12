@@ -1,6 +1,4 @@
-""" This module contains Position3D class.
-
-"""
+"""This module contains Position3D class."""
 
 import astropy.units as u
 
@@ -120,7 +118,8 @@ class Position3D:
             Geodetic height.
         """
         lat, lon, height = transform.cartesian_to_geodetic(
-            self._x, self._y, self._z, ell=ell)
+            self._x, self._y, self._z, ell=ell
+        )
         return lat, lon, height
 
     def spherical(self):
@@ -135,8 +134,7 @@ class Position3D:
         r : ~astropy.units.Quantity
             Radius.
         """
-        lat, lon, radius = transform.cartesian_to_spherical(
-            self._x, self._y, self._z)
+        lat, lon, radius = transform.cartesian_to_spherical(self._x, self._y, self._z)
         return lat, lon, radius
 
     def ellipsoidal(self, ell):
@@ -157,7 +155,8 @@ class Position3D:
             Polar axis of the ellipsoid passing through the given point.
         """
         rlat, lon, u_ax = transform.cartesian_to_ellipsoidal(
-            self._x, self._y, self._z, ell=ell)
+            self._x, self._y, self._z, ell=ell
+        )
         return rlat, lon, u_ax
 
     @u.quantity_input
@@ -180,6 +179,7 @@ class Position3D:
             Local east-north-up cartesian coordinates.
         """
         east, north, up = transform.ecef_to_enu(
-            self._x, self._y, self._z, origin, ell=ell)
+            self._x, self._y, self._z, origin, ell=ell
+        )
 
         return east, north, up

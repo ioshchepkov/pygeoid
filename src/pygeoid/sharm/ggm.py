@@ -45,13 +45,15 @@ class GlobalGravityFieldModel:
     """
 
     @u.quantity_input
-    def __init__(self,
-                 coeffs: u.dimensionless_unscaled,
-                 gm: u.m**3 / u.s**2,
-                 r0 : u.m,
-                 errors: bool = None,
-                 ell=None,
-                 omega: 1 / u.s = None):
+    def __init__(
+        self,
+        coeffs: u.dimensionless_unscaled,
+        gm: u.m**3 / u.s**2,
+        r0: u.m,
+        errors: bool = None,
+        ell=None,
+        omega: 1 / u.s = None,
+    ):
 
         if ell is not None:
             self._ell = ell
@@ -61,52 +63,50 @@ class GlobalGravityFieldModel:
         if omega is None:
             omega = self._ell.omega
 
-        self._coeffs = _SHGravCoeffs.from_array(coeffs=coeffs, gm=gm, r0=r0,
-                                                errors=errors, omega=omega, copy=True)
+        self._coeffs = _SHGravCoeffs.from_array(
+            coeffs=coeffs, gm=gm, r0=r0, errors=errors, omega=omega, copy=True
+        )
 
     @property
     def resolution(self):
-        """Return half-wavelength of the model.
-
-        """
+        """Return half-wavelength of the model."""
         psi = 4 * _np.arcsin(1 / (self._coeffs.lmax + 1))
         return psi
 
     @property
     def _gravitational(self):
-        """Return `SHGravPotential` class instance for the gravitational potential.
-
-        """
-        return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
-                               r0=self._coeffs.r0, omega=None, copy=False)
+        """Return `SHGravPotential` class instance for the gravitational potential."""
+        return SHGravPotential(
+            coeffs=self._coeffs.coeffs,
+            gm=self._coeffs.gm,
+            r0=self._coeffs.r0,
+            omega=None,
+            copy=False,
+        )
 
     @property
     def gravitational_potential(self):
-        """Return `SHGravPotential` class instance for the gravitational potential.
-
-        """
+        """Return `SHGravPotential` class instance for the gravitational potential."""
         return self._gravitational
 
     @property
     def _gravity(self):
-        """Return `SHGravPotential` class instance for the gravity potential.
-
-        """
-        return SHGravPotential(coeffs=self._coeffs.coeffs, gm=self._coeffs.gm,
-                               r0=self._coeffs.r0, omega=self._coeffs.omega)
+        """Return `SHGravPotential` class instance for the gravity potential."""
+        return SHGravPotential(
+            coeffs=self._coeffs.coeffs,
+            gm=self._coeffs.gm,
+            r0=self._coeffs.r0,
+            omega=self._coeffs.omega,
+        )
 
     @property
     def gravity_potential(self):
-        """Return `SHGravPotential` class instance for the gravity potential.
-
-        """
+        """Return `SHGravPotential` class instance for the gravity potential."""
         return self._gravity
 
     @property
     def _anomalous(self):
-        """Return `SHGravPotential` class instance for anomalous potential.
-
-        """
+        """Return `SHGravPotential` class instance for anomalous potential."""
         _dc = _np.zeros_like(self._coeffs.coeffs)
         _dc[0, 0, 0] = 1 + (self._ell.gm - self._coeffs.gm) / self._coeffs.gm
 
@@ -115,25 +115,25 @@ class GlobalGravityFieldModel:
 
         zmax = 5
         for i in range(1, zmax + 1):
-            _dc[0, 2 * i, 0] += (ngm * _np.power(nr, 2 * i) *
-                                 -self._ell.j2n(i) / _np.sqrt(4 * i + 1))
+            _dc[0, 2 * i, 0] += (
+                ngm * _np.power(nr, 2 * i) * -self._ell.j2n(i) / _np.sqrt(4 * i + 1)
+            )
 
-        return SHGravPotential(self._coeffs.coeffs - _dc,
-                               gm=self._coeffs.gm, r0=self._coeffs.r0,
-                               omega=None)
+        return SHGravPotential(
+            self._coeffs.coeffs - _dc,
+            gm=self._coeffs.gm,
+            r0=self._coeffs.r0,
+            omega=None,
+        )
 
     @property
     def anomalous_potential(self):
-        """Return `SHGravPotential` class instance for anomalous potential.
-
-        """
+        """Return `SHGravPotential` class instance for anomalous potential."""
         return self._anomalous
 
     @property
     def normal_potential(self):
-        """Return normal potential class instance.
-
-        """
+        """Return normal potential class instance."""
         return self._ell
 
     @u.quantity_input
@@ -189,12 +189,12 @@ class GlobalGravityFieldModel:
         ~astropy.units.Quantity
             Gravity.
         """
-        return _np.squeeze(self._gravity.gradient(
-            lat, lon, r, lmax=lmax)[-1])
+        return _np.squeeze(self._gravity.gradient(lat, lon, r, lmax=lmax)[-1])
 
     @u.quantity_input
-    def gravity_disturbance(self,
-                            lat: u.deg, lon: u.deg, r: u.m, lmax: int = None) -> u.mGal:
+    def gravity_disturbance(
+        self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None
+    ) -> u.mGal:
         """Return gravity disturbance.
 
         The gravity disturbance is defined as the magnitude of the gradient of
@@ -219,8 +219,8 @@ class GlobalGravityFieldModel:
             Gravity disturbance.
         """
         rlat, _, u_ax = _transform.cartesian_to_ellipsoidal(
-            *_transform.spherical_to_cartesian(lat, lon, r),
-            self._ell)
+            *_transform.spherical_to_cartesian(lat, lon, r), self._ell
+        )
 
         g = self._gravity.gradient(lat, lon, r, lmax)[-1]
         gamma = self._ell.normal_gravity(rlat, u_ax)
@@ -228,9 +228,9 @@ class GlobalGravityFieldModel:
         return g - gamma
 
     @u.quantity_input
-    def gravity_disturbance_sa(self,
-                               lat: u.deg, lon: u.deg, r: u.m,
-                               lmax: int = None) -> u.mGal:
+    def gravity_disturbance_sa(
+        self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None
+    ) -> u.mGal:
         """Return gravity disturbance in spherical approximation.
 
         The gravity disturbance calculated by spherical approximation (eqs. 92
@@ -257,8 +257,9 @@ class GlobalGravityFieldModel:
         return -self.anomalous_potential.r_derivative(lat, lon, r, lmax=lmax)
 
     @u.quantity_input
-    def gravity_anomaly_sa(self,
-                           lat: u.deg, lon: u.deg, r: u.m, lmax: int = None) -> u.mGal:
+    def gravity_anomaly_sa(
+        self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None
+    ) -> u.mGal:
         """Return (Molodensky) gravity anomaly in spherical approximation.
 
         The gravity anomaly calculated by spherical approximation (eqs. 100 or
@@ -288,10 +289,17 @@ class GlobalGravityFieldModel:
         coeffs = self._anomalous._coeffs.coeffs
         cilm, lmax_comp = _get_lmax(coeffs, lmax=lmax)
         _, _, degrees, cosin, x, q = _expand.common_precompute(
-            lat, lon, r, self._coeffs.r0, lmax_comp)
+            lat, lon, r, self._coeffs.r0, lmax_comp
+        )
 
-        args = (_expand.in_coeff_gravity_anomaly, _expand.sum_potential,
-                lmax_comp, degrees, cosin, cilm)
+        args = (
+            _expand.in_coeff_gravity_anomaly,
+            _expand.sum_potential,
+            lmax_comp,
+            degrees,
+            cosin,
+            cilm,
+        )
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -301,8 +309,9 @@ class GlobalGravityFieldModel:
         return _np.squeeze(out)
 
     @u.quantity_input
-    def height_anomaly_ell(self, lat: u.deg, lon: u.deg, r: u.m,
-                           ref_pot: u.m**2 / u.s**2 = None, lmax=None) -> u.m:
+    def height_anomaly_ell(
+        self, lat: u.deg, lon: u.deg, r: u.m, ref_pot: u.m**2 / u.s**2 = None, lmax=None
+    ) -> u.m:
         """Return height anomaly above the ellispoid.
 
         The height anomaly can be generalised to a 3-d function, (sometimes
@@ -331,7 +340,8 @@ class GlobalGravityFieldModel:
             Anomaly height.
         """
         rlat, _, u_ax = _transform.cartesian_to_ellipsoidal(
-            *_transform.spherical_to_cartesian(lat, lon, r), self._ell)
+            *_transform.spherical_to_cartesian(lat, lon, r), self._ell
+        )
 
         T = self.anomalous_potential.potential(lat, lon, r, lmax=lmax)
 
@@ -346,12 +356,17 @@ class GlobalGravityFieldModel:
 
 
 class SHGravPotential:
-
     @u.quantity_input
-    def __init__(self,
-                 coeffs: u.dimensionless_unscaled,
-                 gm: u.m**3 / u.s**2, r0 : u.m, omega: 1 / u.s = None,
-                 errors: bool = None, lmax: int = None, copy: bool = False):
+    def __init__(
+        self,
+        coeffs: u.dimensionless_unscaled,
+        gm: u.m**3 / u.s**2,
+        r0: u.m,
+        omega: 1 / u.s = None,
+        errors: bool = None,
+        lmax: int = None,
+        copy: bool = False,
+    ):
 
         self._coeffs = _SHCoeffs.from_array(coeffs, lmax=lmax, copy=copy)
         self.gm = gm
@@ -363,8 +378,7 @@ class SHGravPotential:
             self.centrifugal = _Centrifugal(omega=self.omega)
 
     @u.quantity_input
-    def potential(self,
-                  lat: u.deg, lon: u.deg, r: u.m, lmax=None) -> u.m**2 / u.s**2:
+    def potential(self, lat: u.deg, lon: u.deg, r: u.m, lmax=None) -> u.m**2 / u.s**2:
         """Return potential value.
 
         Parameters
@@ -387,10 +401,17 @@ class SHGravPotential:
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
 
-        _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon,
-                                                               r, self.r0, lmax_comp)
-        args = (_expand.in_coeff_potential, _expand.sum_potential,
-                lmax_comp, degrees, cosin, cilm)
+        _, _, degrees, cosin, x, q = _expand.common_precompute(
+            lat, lon, r, self.r0, lmax_comp
+        )
+        args = (
+            _expand.in_coeff_potential,
+            _expand.sum_potential,
+            lmax_comp,
+            degrees,
+            cosin,
+            cilm,
+        )
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -404,8 +425,9 @@ class SHGravPotential:
         return out
 
     @u.quantity_input
-    def r_derivative(self,
-                     lat: u.deg, lon: u.deg, r: u.m, lmax: int = None) -> u.m / u.s**2:
+    def r_derivative(
+        self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None
+    ) -> u.m / u.s**2:
         """Return radial derivative of the potential.
 
         Parameters
@@ -427,11 +449,18 @@ class SHGravPotential:
         """
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                               self.r0, lmax_comp)
+        _, _, degrees, cosin, x, q = _expand.common_precompute(
+            lat, lon, r, self.r0, lmax_comp
+        )
 
-        args = (_expand.in_coeff_r_derivative, _expand.sum_potential,
-                lmax_comp, degrees, cosin, cilm)
+        args = (
+            _expand.in_coeff_r_derivative,
+            _expand.sum_potential,
+            lmax_comp,
+            degrees,
+            cosin,
+            cilm,
+        )
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -444,8 +473,7 @@ class SHGravPotential:
         return out
 
     @u.quantity_input
-    def lat_derivative(self,
-                       lat: u.deg, lon: u.deg, r: u.m, lmax: int = None):
+    def lat_derivative(self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None):
         """Return latitudinal derivative of the potential.
 
         Parameters
@@ -467,11 +495,18 @@ class SHGravPotential:
         """
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        lat, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                                 self.r0, lmax_comp)
+        lat, _, degrees, cosin, x, q = _expand.common_precompute(
+            lat, lon, r, self.r0, lmax_comp
+        )
 
-        args = (_expand.in_coeff_lat_derivative, _expand.sum_lat_derivative,
-                lmax_comp, degrees, cosin, cilm)
+        args = (
+            _expand.in_coeff_lat_derivative,
+            _expand.sum_lat_derivative,
+            lmax_comp,
+            degrees,
+            cosin,
+            cilm,
+        )
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -484,8 +519,7 @@ class SHGravPotential:
         return out
 
     @u.quantity_input
-    def lon_derivative(self, lat: u.deg,
-                       lon: u.deg, r: u.m, lmax: int = None):
+    def lon_derivative(self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None):
         """Return longitudinal derivative of the potential.
 
         Parameters
@@ -507,12 +541,20 @@ class SHGravPotential:
         """
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        _, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                               self.r0, lmax_comp)
+        _, _, degrees, cosin, x, q = _expand.common_precompute(
+            lat, lon, r, self.r0, lmax_comp
+        )
         m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
 
-        args = (_expand.in_coeff_lon_derivative, _expand.sum_lon_derivative,
-                lmax_comp, degrees, m_coeff, cosin, cilm)
+        args = (
+            _expand.in_coeff_lon_derivative,
+            _expand.sum_lon_derivative,
+            lmax_comp,
+            degrees,
+            m_coeff,
+            cosin,
+            cilm,
+        )
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -522,8 +564,7 @@ class SHGravPotential:
         return out.squeeze()
 
     @u.quantity_input
-    def gradient(self,
-                 lat: u.deg, lon: u.deg, r: u.m, lmax: int = None):
+    def gradient(self, lat: u.deg, lon: u.deg, r: u.m, lmax: int = None):
         """Return gradient vector.
 
         The magnitude and the components of the gradient of the potential
@@ -544,12 +585,20 @@ class SHGravPotential:
         """
 
         cilm, lmax_comp = _get_lmax(self._coeffs.coeffs, lmax=lmax)
-        lat, _, degrees, cosin, x, q = _expand.common_precompute(lat, lon, r,
-                                                                 self.r0, lmax_comp)
+        lat, _, degrees, cosin, x, q = _expand.common_precompute(
+            lat, lon, r, self.r0, lmax_comp
+        )
 
         m_coeff = _np.tile(degrees, (lmax_comp + 1, 1))
-        args = (_expand.in_coeff_gradient, _expand.sum_gradient, lmax_comp, degrees,
-                m_coeff, cosin, cilm)
+        args = (
+            _expand.in_coeff_gradient,
+            _expand.sum_gradient,
+            lmax_comp,
+            degrees,
+            m_coeff,
+            cosin,
+            cilm,
+        )
 
         values = _expand.expand_parallel(x, q, *args)
 
@@ -569,7 +618,6 @@ class SHGravPotential:
         clati = _np.atleast_2d(1 / _np.ma.masked_values(clat, 0.0))
         clati = clati.filled(0.0)
 
-        total = _np.sqrt((ri * lat_d)**2 + (clati * ri * lon_d)**2 + rad_d**2)
+        total = _np.sqrt((ri * lat_d) ** 2 + (clati * ri * lon_d) ** 2 + rad_d**2)
 
-        return (rad_d.squeeze(), lon_d.squeeze(),
-                lat_d.squeeze(), total.squeeze())
+        return (rad_d.squeeze(), lon_d.squeeze(), lat_d.squeeze(), total.squeeze())

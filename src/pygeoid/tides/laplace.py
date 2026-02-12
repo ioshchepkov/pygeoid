@@ -1,6 +1,4 @@
-"""Laplace's tidal representation.
-
-"""
+"""Laplace's tidal representation."""
 
 import astropy.units as u
 import numpy as np
@@ -12,11 +10,11 @@ from pygeoid.constants import standart_gravity_acceleration as g0
 
 
 def _zonal(lat, declination):
-    return 3 * (1 / 3 - np.sin(2 * declination)**2) * (1 / 3 - np.sin(lat)**2)
+    return 3 * (1 / 3 - np.sin(2 * declination) ** 2) * (1 / 3 - np.sin(lat) ** 2)
 
 
 def _zonal_dlat(lat, declination):
-    return 3 * (1 / 3 - np.sin(2 * declination)**2) * (-np.sin(2 * lat))
+    return 3 * (1 / 3 - np.sin(2 * declination) ** 2) * (-np.sin(2 * lat))
 
 
 def _tesseral(lat, declination, hour_angle):
@@ -32,15 +30,15 @@ def _tesseral_dlon(lat, declination, hour_angle):
 
 
 def _sectorial(lat, declination, hour_angle):
-    return np.cos(lat)**2 * np.cos(declination)**2 * np.cos(2 * hour_angle)
+    return np.cos(lat) ** 2 * np.cos(declination) ** 2 * np.cos(2 * hour_angle)
 
 
 def _sectorial_dlat(lat, declination, hour_angle):
-    return -np.sin(2 * lat) * np.cos(declination)**2 * np.cos(2 * hour_angle)
+    return -np.sin(2 * lat) * np.cos(declination) ** 2 * np.cos(2 * hour_angle)
 
 
 def _sectorial_dlon(lat, declination, hour_angle):
-    return np.cos(lat)**2 * np.cos(declination)**2 * -2 * np.sin(2 * hour_angle)
+    return np.cos(lat) ** 2 * np.cos(declination) ** 2 * -2 * np.sin(2 * hour_angle)
 
 
 def _doodson(point_distance, body_distance, body_gm):
@@ -52,38 +50,38 @@ def _doodson_dr(point_distance, body_distance, body_gm):
 
 
 _potential_parts = {
-    'tesseral': _tesseral,
-    'sectorial': _sectorial,
-    'zonal': _zonal,
-    'doodson' : _doodson
+    "tesseral": _tesseral,
+    "sectorial": _sectorial,
+    "zonal": _zonal,
+    "doodson": _doodson,
 }
 
 _potential_dlat_parts = {
-    'tesseral': _tesseral_dlat,
-    'sectorial': _sectorial_dlat,
-    'zonal': _zonal_dlat,
-    'doodson' : _doodson
+    "tesseral": _tesseral_dlat,
+    "sectorial": _sectorial_dlat,
+    "zonal": _zonal_dlat,
+    "doodson": _doodson,
 }
 
 _potential_dlon_parts = {
-    'tesseral': _tesseral_dlon,
-    'sectorial': _sectorial_dlon,
-    'zonal': None,
-    'doodson' : _doodson
+    "tesseral": _tesseral_dlon,
+    "sectorial": _sectorial_dlon,
+    "zonal": None,
+    "doodson": _doodson,
 }
 
 _potential_dr_parts = {
-    'tesseral': _tesseral,
-    'sectorial': _sectorial,
-    'zonal': _zonal,
-    'doodson' : _doodson_dr
+    "tesseral": _tesseral,
+    "sectorial": _sectorial,
+    "zonal": _zonal,
+    "doodson": _doodson_dr,
 }
 
 _func_parts = {
-    'potential': _potential_parts,
-    'potential_dlat': _potential_dlat_parts,
-    'potential_dlon': _potential_dlon_parts,
-    'potential_dr': _potential_dr_parts
+    "potential": _potential_parts,
+    "potential_dlat": _potential_dlat_parts,
+    "potential_dlon": _potential_dlon_parts,
+    "potential_dr": _potential_dr_parts,
 }
 
 
@@ -103,7 +101,7 @@ class LaplaceTidalEquation:
 
     If some tidal effect calculated from this class with all parts included
     (by default) and fot the elastic Earth is applied as a correction
-    (effect taken with the negative sign), then the corrected value will 
+    (effect taken with the negative sign), then the corrected value will
     be in the conventional
     tide free system, because a permanent part of the tide will also be removed.
     If mean or zero tide systems are desired, then permanent part
@@ -149,12 +147,15 @@ class LaplaceTidalEquation:
 
     """
 
-    def __init__(self, bodies: list = ['moon', 'sun'],
-                 parts: list = ['zonal', 'tesseral', 'sectorial'],
-                 love: dict = iers2010.DEGREE2_LOVE_NUMBERS,
-                 gravimetric_factor: float = 1.1563,
-                 diminishing_factor: float = 0.6947,
-                 ephemeris: str = None):
+    def __init__(
+        self,
+        bodies: list = ["moon", "sun"],
+        parts: list = ["zonal", "tesseral", "sectorial"],
+        love: dict = iers2010.DEGREE2_LOVE_NUMBERS,
+        gravimetric_factor: float = 1.1563,
+        diminishing_factor: float = 0.6947,
+        ephemeris: str = None,
+    ):
 
         self.bodies = [body.lower() for body in bodies]
 
@@ -162,60 +163,52 @@ class LaplaceTidalEquation:
         self.ephemeris = ephemeris
 
         for body in self.bodies:
-            if body.lower() == 'pluto':
-                raise ValueError('Pluto? Seriosly? No way. '
-                                 'It is not even a planet!')
-            if body.lower() in ('earth', 'earth-moon-barycenter'):
+            if body.lower() == "pluto":
+                raise ValueError("Pluto? Seriosly? No way. It is not even a planet!")
+            if body.lower() in ("earth", "earth-moon-barycenter"):
                 raise ValueError(
-                    f'Do not include \'{body}\' for calculation of the Earth '
-                    'tides!')
+                    f"Do not include '{body}' for calculation of the Earth tides!"
+                )
             if body.lower() not in solar_system_ephemeris.bodies:
-                raise ValueError(f'There is no ephemeris for {body}!')
+                raise ValueError(f"There is no ephemeris for {body}!")
             if body.lower() not in solar_system_gm.bodies:
-                raise ValueError(f'There is no GM for {body}!')
+                raise ValueError(f"There is no GM for {body}!")
 
         for part in parts:
-            if part not in ('zonal', 'tesseral', 'sectorial'):
-                raise ValueError('There are only zonal, '
-                                 'tessseral and sectorial parts!')
+            if part not in ("zonal", "tesseral", "sectorial"):
+                raise ValueError("There are only zonal, tessseral and sectorial parts!")
         self.parts = parts
 
-        if not all(item in love for item in ('k', 'l', 'h')):
-            raise ValueError('All Love ("k", "l", "h") numbers should be '
-                             'specified!')
+        if not all(item in love for item in ("k", "l", "h")):
+            raise ValueError('All Love ("k", "l", "h") numbers should be specified!')
 
         self.love = love
 
         if gravimetric_factor is None:
-            self.gravimetric_factor = 1 + self.love['h'] - \
-                3 / 2 * self.love['k']
+            self.gravimetric_factor = 1 + self.love["h"] - 3 / 2 * self.love["k"]
         else:
             self.gravimetric_factor = gravimetric_factor
 
         if diminishing_factor is None:
-            self.diminishing_factor = 1 + self.love['k'] - self.love['h']
+            self.diminishing_factor = 1 + self.love["k"] - self.love["h"]
         else:
             self.diminishing_factor = diminishing_factor
 
         self.bodies_gm = self._get_bodies_gm()
 
     def _get_bodies(self, time):
-        """Get position of the solar system bodies from Astropy.
-
-        """
-        return [get_body(body, time, ephemeris=self.ephemeris).
-                transform_to(ITRS) for body in self.bodies]
+        """Get position of the solar system bodies from Astropy."""
+        return [
+            get_body(body, time, ephemeris=self.ephemeris).transform_to(ITRS)
+            for body in self.bodies
+        ]
 
     def _get_bodies_gm(self):
-        """Get GM of the solar system bodies.
-
-        """
+        """Get GM of the solar system bodies."""
         return [solar_system_gm.get_body_gm(body) for body in self.bodies]
 
     def _functional(self, time, lat, lon, r, functional_name):
-        """Calculate tidal potenial functionals.
-
-        """
+        """Calculate tidal potenial functionals."""
         out = []
         bodies = self._get_bodies(time)
         for idx, body in enumerate(bodies):
@@ -225,29 +218,29 @@ class LaplaceTidalEquation:
             body_r = body.spherical.distance
 
             body_out = 0
-            if 'tesseral' in self.parts or 'sectorial' in self.parts:
+            if "tesseral" in self.parts or "sectorial" in self.parts:
                 hour_angle = lon - body_lon
-                if 'tesseral' in self.parts:
-                    body_out += _func_parts[functional_name]['tesseral'](
-                        lat, body_lat, hour_angle)
-                if 'sectorial' in self.parts:
-                    body_out += _func_parts[functional_name]['sectorial'](
-                        lat, body_lat, hour_angle)
+                if "tesseral" in self.parts:
+                    body_out += _func_parts[functional_name]["tesseral"](
+                        lat, body_lat, hour_angle
+                    )
+                if "sectorial" in self.parts:
+                    body_out += _func_parts[functional_name]["sectorial"](
+                        lat, body_lat, hour_angle
+                    )
 
-            if ('zonal' in self.parts) and (
-                    _func_parts[functional_name]['zonal'] is not None):
-                body_out += _func_parts[functional_name]['zonal'](
-                    lat, body_lat)
+            if ("zonal" in self.parts) and (
+                _func_parts[functional_name]["zonal"] is not None
+            ):
+                body_out += _func_parts[functional_name]["zonal"](lat, body_lat)
 
-            body_out *= _func_parts[
-                functional_name]['doodson'](r, body_r, body_gm)
+            body_out *= _func_parts[functional_name]["doodson"](r, body_r, body_gm)
             out.append(body_out)
 
         return sum(out)
 
     @u.quantity_input
-    def potential(self, time: Time,
-                  lat: u.deg, lon: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def potential(self, time: Time, lat: u.deg, lon: u.deg, r: u.m) -> u.m**2 / u.s**2:
         """Return tidal potential.
 
         Parameters
@@ -267,12 +260,14 @@ class LaplaceTidalEquation:
             Tidal potential.
 
         """
-        return self._functional(time=time, lat=lat, lon=lon, r=r,
-                                functional_name='potential')
+        return self._functional(
+            time=time, lat=lat, lon=lon, r=r, functional_name="potential"
+        )
 
     @u.quantity_input
-    def potential_lat_derivative(self, time: Time,
-                                 lat: u.deg, lon: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def potential_lat_derivative(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m
+    ) -> u.m**2 / u.s**2:
         """Return tidal potential latitude derivative.
 
         Parameters
@@ -292,12 +287,14 @@ class LaplaceTidalEquation:
             Tidal potential latitude derivative.
 
         """
-        return self._functional(time=time, lat=lat, lon=lon, r=r,
-                                functional_name='potential_dlat')
+        return self._functional(
+            time=time, lat=lat, lon=lon, r=r, functional_name="potential_dlat"
+        )
 
     @u.quantity_input
-    def potential_lon_derivative(self, time: Time,
-                                 lat: u.deg, lon: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def potential_lon_derivative(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m
+    ) -> u.m**2 / u.s**2:
         """Return tidal potential longitude derivative.
 
         Parameters
@@ -317,12 +314,14 @@ class LaplaceTidalEquation:
             Tidal potential longitude derivative.
 
         """
-        return self._functional(time=time, lat=lat, lon=lon, r=r,
-                                functional_name='potential_dlon')
+        return self._functional(
+            time=time, lat=lat, lon=lon, r=r, functional_name="potential_dlon"
+        )
 
     @u.quantity_input
-    def potential_r_derivative(self, time: Time,
-                               lat: u.deg, lon: u.deg, r: u.m) -> u.m / u.s**2:
+    def potential_r_derivative(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m
+    ) -> u.m / u.s**2:
         """Return tidal potential radial derivative.
 
         Parameters
@@ -342,12 +341,12 @@ class LaplaceTidalEquation:
             Tidal potential radial derivative.
 
         """
-        return self._functional(time=time, lat=lat, lon=lon, r=r,
-                                functional_name='potential_dr')
+        return self._functional(
+            time=time, lat=lat, lon=lon, r=r, functional_name="potential_dr"
+        )
 
     @u.quantity_input
-    def gradient(self, time: Time,
-                 lat: u.deg, lon: u.deg, r: u.m) -> u.m / u.s**2:
+    def gradient(self, time: Time, lat: u.deg, lon: u.deg, r: u.m) -> u.m / u.s**2:
         """Return tidal potential gradient (tidal acceleration).
 
         Parameters
@@ -368,16 +367,27 @@ class LaplaceTidalEquation:
 
         """
         r_part = self.potential_r_derivative(time=time, lat=lat, lon=lon, r=r)
-        lat_part = 1 / r * self.potential_lat_derivative(
-            time=time, lat=lat, lon=lon, r=r)
-        lon_part = 1 / (r * np.cos(lat)) * self.potential_lat_derivative(
-            time=time, lat=lat, lon=lon, r=r)
+        lat_part = (
+            1 / r * self.potential_lat_derivative(time=time, lat=lat, lon=lon, r=r)
+        )
+        lon_part = (
+            1
+            / (r * np.cos(lat))
+            * self.potential_lat_derivative(time=time, lat=lat, lon=lon, r=r)
+        )
 
         return np.sqrt(r_part**2 + lat_part**2 + lon_part**2)
 
     @u.quantity_input
-    def displacement(self, time: Time, lat: u.deg, lon: u.deg, r: u.m,
-                     gravity: u.m / u.s**2 = g0, elastic: bool = True) -> u.m:
+    def displacement(
+        self,
+        time: Time,
+        lat: u.deg,
+        lon: u.deg,
+        r: u.m,
+        gravity: u.m / u.s**2 = g0,
+        elastic: bool = True,
+    ) -> u.m:
         """Return direct tidal deformation for elastic or equilibrium Earth.
 
         Direct effect is an equipotential surface deformation
@@ -415,19 +425,22 @@ class LaplaceTidalEquation:
         if elastic:
             love = self.love
         else:
-            love = {'l' : 1.0, 'h' : 1.0}
+            love = {"l": 1.0, "h": 1.0}
 
-        u_lat = self.potential_lat_derivative(
-            time, lat, lon, r) * love['l'] / gravity
-        u_lon = self.potential_lon_derivative(
-            time, lat, lon, r) * love['l'] / (gravity * np.cos(lat))
-        u_r = self.potential(time, lat, lon, r) * love['h'] / gravity
+        u_lat = self.potential_lat_derivative(time, lat, lon, r) * love["l"] / gravity
+        u_lon = (
+            self.potential_lon_derivative(time, lat, lon, r)
+            * love["l"]
+            / (gravity * np.cos(lat))
+        )
+        u_r = self.potential(time, lat, lon, r) * love["h"] / gravity
 
         return u.Quantity([u_lat, u_lon, u_r])
 
     @u.quantity_input
-    def deformation_potential(self, time: Time,
-                              lat: u.deg, lon: u.deg, r: u.m) -> u.m**2 / u.s**2:
+    def deformation_potential(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m
+    ) -> u.m**2 / u.s**2:
         """Return deformation tidal potential.
 
         An incremental (deforamtion) potential is produced by
@@ -453,15 +466,14 @@ class LaplaceTidalEquation:
             Deformation potential.
 
         """
-        potential = self.potential_lat_derivative(
-            time, lat, lon, r)
+        potential = self.potential_lat_derivative(time, lat, lon, r)
 
-        return potential * self.love['k']
+        return potential * self.love["k"]
 
     @u.quantity_input
-    def gravity(self, time: Time,
-                lat: u.deg, lon: u.deg, r: u.m,
-                elastic: bool = True) -> u.m / u.s**2:
+    def gravity(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m, elastic: bool = True
+    ) -> u.m / u.s**2:
         """Return tidal gravity variation.
 
         Parameters
@@ -486,7 +498,8 @@ class LaplaceTidalEquation:
 
         """
         radial_derivative = self.potential_r_derivative(
-            time=time, lat=lat, lon=lon, r=r)
+            time=time, lat=lat, lon=lon, r=r
+        )
 
         if elastic:
             radial_derivative *= self.gravimetric_factor
@@ -494,9 +507,16 @@ class LaplaceTidalEquation:
         return -radial_derivative
 
     @u.quantity_input
-    def tilt(self, time: Time, lat: u.deg, lon: u.deg, r: u.m,
-             azimuth: u.deg = None, gravity: u.m / u.s**2 = g0,
-             elastic: bool = True) -> u.dimensionless_unscaled:
+    def tilt(
+        self,
+        time: Time,
+        lat: u.deg,
+        lon: u.deg,
+        r: u.m,
+        azimuth: u.deg = None,
+        gravity: u.m / u.s**2 = g0,
+        elastic: bool = True,
+    ) -> u.dimensionless_unscaled:
         """Return tidal tilt.
 
         Parameters
@@ -526,13 +546,15 @@ class LaplaceTidalEquation:
             Tidal tilt.
 
         """
-        xi = -self.potential_lat_derivative(
-            time=time, lat=lat, lon=lon, r=r)
-        eta = -1 / np.cos(lat) * self.potential_lon_derivative(
-            time=time, lat=lat, lon=lon, r=r)
+        xi = -self.potential_lat_derivative(time=time, lat=lat, lon=lon, r=r)
+        eta = (
+            -1
+            / np.cos(lat)
+            * self.potential_lon_derivative(time=time, lat=lat, lon=lon, r=r)
+        )
 
         if azimuth is not None:
-            g_hor = (np.cos(azimuth) * xi + np.sin(azimuth) * eta)
+            g_hor = np.cos(azimuth) * xi + np.sin(azimuth) * eta
         else:
             g_hor = np.sqrt(xi**2 + eta**2)
 
@@ -544,9 +566,9 @@ class LaplaceTidalEquation:
         return tilt
 
     @u.quantity_input
-    def geoidal_height(self, time: Time,
-                       lat: u.deg, lon: u.deg, r: u.m,
-                       gravity: u.m / u.s**2 = g0) -> u.m:
+    def geoidal_height(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m, gravity: u.m / u.s**2 = g0
+    ) -> u.m:
         """Return tidal variation of the geoidal height.
 
         Geoidal heights are affected by direct and indirect effects.
@@ -570,15 +592,14 @@ class LaplaceTidalEquation:
             Geoidal height tidal variation.
 
         """
-        potential = self.potential(
-            time, lat, lon, r)
+        potential = self.potential(time, lat, lon, r)
 
-        return (1 + self.love['k']) / gravity * potential
+        return (1 + self.love["k"]) / gravity * potential
 
     @u.quantity_input
-    def physical_height(self, time: Time,
-                        lat: u.deg, lon: u.deg, r: u.m,
-                        gravity: u.m / u.s**2 = g0) -> u.m:
+    def physical_height(
+        self, time: Time, lat: u.deg, lon: u.deg, r: u.m, gravity: u.m / u.s**2 = g0
+    ) -> u.m:
         """Return tidal variation of the (absolute) physical heights.
 
         Tidal variations of physically defined heights like
@@ -604,16 +625,21 @@ class LaplaceTidalEquation:
             Physical heights tidal variation.
 
         """
-        potential = self.potential(
-            time, lat, lon, r)
+        potential = self.potential(time, lat, lon, r)
 
         return -self.diminishing_factor / gravity * potential
 
     @u.quantity_input
-    def physical_height_difference(self, time: Time,
-                                   lat: u.deg, lon: u.deg, r: u.m,
-                                   azimuth: u.deg, length: u.m,
-                                   gravity: u.m / u.s**2 = g0) -> u.m:
+    def physical_height_difference(
+        self,
+        time: Time,
+        lat: u.deg,
+        lon: u.deg,
+        r: u.m,
+        azimuth: u.deg,
+        length: u.m,
+        gravity: u.m / u.s**2 = g0,
+    ) -> u.m:
         """Return tidal variation of the physical heights difference.
 
         Parameters
@@ -639,7 +665,14 @@ class LaplaceTidalEquation:
             Physical heights difference tidal variation.
 
         """
-        tilt = self.tilt(time=time, lat=lat, lon=lon, r=r,
-                         azimuth=azimuth, gravity=gravity, elastic=True)
+        tilt = self.tilt(
+            time=time,
+            lat=lat,
+            lon=lon,
+            r=r,
+            azimuth=azimuth,
+            gravity=gravity,
+            elastic=True,
+        )
 
         return -length * tilt

@@ -1,6 +1,4 @@
-"""Geometry of the reference ellipsoid.
-
-"""
+"""Geometry of the reference ellipsoid."""
 
 import astropy.units as u
 import numpy as _np
@@ -9,7 +7,7 @@ import pyproj as _proj
 from pygeoid.constants import _2pi, _4pi
 
 # default ellipsoid for geometrical (geodetic) applications
-DEFAULT_ELLIPSOID = 'GRS80'
+DEFAULT_ELLIPSOID = "GRS80"
 
 
 class Ellipsoid:
@@ -27,18 +25,19 @@ class Ellipsoid:
         Default is 'GRS80'.
     """
 
-    def __init__(self, ellps: 'str' = None, **kwargs):
+    def __init__(self, ellps: "str" = None, **kwargs):
         if not kwargs:
             if ellps in _proj.pj_ellps:
-                kwargs['ellps'] = ellps
-            elif ellps is None or ellps.lower() == 'default':
-                kwargs['ellps'] = DEFAULT_ELLIPSOID
+                kwargs["ellps"] = ellps
+            elif ellps is None or ellps.lower() == "default":
+                kwargs["ellps"] = DEFAULT_ELLIPSOID
             else:
                 raise ValueError(
-                    f'No ellipsoid with name {ellps}, possible values \
-                        are:\n{_proj.pj_ellps.keys()}')
+                    f"No ellipsoid with name {ellps}, possible values \
+                        are:\n{_proj.pj_ellps.keys()}"
+                )
         # else:
-            # TODO: Check if all parameters are in SI units
+        # TODO: Check if all parameters are in SI units
         #    pass
 
         # define useful short-named attributes
@@ -46,28 +45,24 @@ class Ellipsoid:
         self.a = self.geod.a * u.m
         self.b = self.geod.b * u.m
         # flattening
-        self.f = self.geod.f * u.dimensionless_unscaled  
+        self.f = self.geod.f * u.dimensionless_unscaled
         # eccentricity squared
-        self.e2 = _np.float64(self.geod.es) * u.dimensionless_unscaled  
+        self.e2 = _np.float64(self.geod.es) * u.dimensionless_unscaled
         # eccentricity
-        self.e = _np.sqrt(self.e2) * u.dimensionless_unscaled  
+        self.e = _np.sqrt(self.e2) * u.dimensionless_unscaled
         # 2nd eccentricity squared
         self.e12 = self.e2 / (1 - self.e2) * u.dimensionless_unscaled
         # 2nd eccentricity
-        self.e1 = _np.sqrt(self.e12) * u.dimensionless_unscaled  
+        self.e1 = _np.sqrt(self.e12) * u.dimensionless_unscaled
 
     @property
     def equatorial_radius(self):
-        """Return semi-major or equatorial axis radius, in metres.
-
-        """
+        """Return semi-major or equatorial axis radius, in metres."""
         return self.a
 
     @property
     def polar_radius(self):
-        """Return semi-minor or polar axis radius, in metres.
-
-        """
+        """Return semi-minor or polar axis radius, in metres."""
         return self.b
 
     @property
@@ -88,9 +83,7 @@ class Ellipsoid:
 
     @property
     def reciprocal_flattening(self):
-        """Return reciprocal (inverse) flattening.
-
-        """
+        """Return reciprocal (inverse) flattening."""
         return 1 / self.flattening
 
     @property
@@ -111,9 +104,7 @@ class Ellipsoid:
 
     @property
     def eccentricity_squared(self):
-        """Return first eccentricity squared.
-
-        """
+        """Return first eccentricity squared."""
         return self.e2
 
     @property
@@ -134,9 +125,7 @@ class Ellipsoid:
 
     @property
     def second_eccentricity_squared(self):
-        """Return second eccentricity squared.
-
-        """
+        """Return second eccentricity squared."""
         return self.e12
 
     @property
@@ -188,10 +177,18 @@ class Ellipsoid:
         eccentricity.
         """
         prc = self.polar_curvature_radius
-        return prc * _np.pi / 2 * (1 -
-                                   3 / 4 * self.e12 + 45 / 64 * self.e12**2 -
-                                   175 / 256 * self.e12 ** 3 +
-                                   11025 / 16384 * self.e12**4)
+        return (
+            prc
+            * _np.pi
+            / 2
+            * (
+                1
+                - 3 / 4 * self.e12
+                + 45 / 64 * self.e12**2
+                - 175 / 256 * self.e12**3
+                + 11025 / 16384 * self.e12**4
+            )
+        )
 
     @property
     def surface_area(self):
@@ -208,10 +205,11 @@ class Ellipsoid:
         where :math:`a` -- equatorial axis of the ellipsoid, :math:`e` --
         (first) eccentricity.
         """
-        return _2pi * self.a**2 * (
-            1 + 0.5 * (1 - self.e2) / self.e * _np.log((1 +
-                                                        self.e) / (1 -
-                                                                   self.e)))
+        return (
+            _2pi
+            * self.a**2
+            * (1 + 0.5 * (1 - self.e2) / self.e * _np.log((1 + self.e) / (1 - self.e)))
+        )
 
     @property
     def volume(self):
@@ -230,7 +228,7 @@ class Ellipsoid:
         """
         return _4pi * self.a**2 * self.b / 3
 
-    def mean_radius(self, kind: str = 'arithmetic'):
+    def mean_radius(self, kind: str = "arithmetic"):
         r"""Return the radius of a sphere.
 
         Parameters
@@ -273,14 +271,14 @@ class Ellipsoid:
         .. math:: R_V = a^2 b.
 
         """
-        if kind == 'arithmetic':
+        if kind == "arithmetic":
             radius = (2 * self.a + self.b) / 3
-        elif kind == 'same_area':
+        elif kind == "same_area":
             radius = _np.sqrt(self.surface_area / _4pi)
-        elif kind == 'same_volume':
+        elif kind == "same_volume":
             radius = _np.power(self.a**2 * self.b, 1 / 3)
         else:
-            raise ValueError('Not a valid `kind` of the radius.')
+            raise ValueError("Not a valid `kind` of the radius.")
 
         return radius
 
@@ -468,8 +466,10 @@ class Ellipsoid:
         :math:`N` -- radius of curvature of prime vertical.
 
         """
-        return 0.5 * (1 / self.prime_vertical_curvature_radius(lat) +
-                      1 / self.meridian_curvature_radius(lat))
+        return 0.5 * (
+            1 / self.prime_vertical_curvature_radius(lat)
+            + 1 / self.meridian_curvature_radius(lat)
+        )
 
     #########################################################################
     # Arc distances, geodetic problems
@@ -492,7 +492,7 @@ class Ellipsoid:
             The distance between two parallels.
 
         """
-        return self.inv(lat1, 0. * u.deg, lat2, 0. * u.deg)[-1]
+        return self.inv(lat1, 0.0 * u.deg, lat2, 0.0 * u.deg)[-1]
 
     @u.quantity_input
     def parallel_arc_distance(self, lat: u.deg, lon1: u.deg, lon2: u.deg):
@@ -512,7 +512,7 @@ class Ellipsoid:
         ~astropy.units.Quantity
             The distance between two meridians along the parallel.
         """
-        return self.circle_radius(lat) * (lon2 - lon1).to('radian')
+        return self.circle_radius(lat) * (lon2 - lon1).to("radian")
 
     @u.quantity_input
     def fwd(self, lat: u.deg, lon: u.deg, azimuth: u.deg, distance: u.m):
@@ -544,11 +544,13 @@ class Ellipsoid:
         back_azimuth : ~astropy.units.Quantity
             Back geodetic azimuth.
         """
-        out_lon, out_lat, out_baz = self.geod.fwd(lon.to('radian').value,
-                                                  lat.to('radian').value,
-                                                  azimuth.to('radian').value,
-                                                  distance.to('m').value,
-                                                  radians=True)
+        out_lon, out_lat, out_baz = self.geod.fwd(
+            lon.to("radian").value,
+            lat.to("radian").value,
+            azimuth.to("radian").value,
+            distance.to("m").value,
+            radians=True,
+        )
         return out_lat * u.rad, out_lon * u.rad, out_baz * u.rad
 
     @u.quantity_input
@@ -582,16 +584,19 @@ class Ellipsoid:
             Distance, in metres.
         """
         azimuth, back_azimuth, distance = self.geod.inv(
-            lon1.to('radian').value,
-            lat1.to('radian').value,
-            lon2.to('radian').value,
-            lat2.to('radian').value, radians=True)
+            lon1.to("radian").value,
+            lat1.to("radian").value,
+            lon2.to("radian").value,
+            lat2.to("radian").value,
+            radians=True,
+        )
 
         return azimuth * u.rad, back_azimuth * u.rad, distance * u.m
 
     @u.quantity_input
-    def npts(self, lat1: u.deg, lon1: u.deg,
-             lat2: u.deg, lon2: u.deg, npts: int) -> u.deg:
+    def npts(
+        self, lat1: u.deg, lon1: u.deg, lat2: u.deg, lon2: u.deg, npts: int
+    ) -> u.deg:
         """Return equaly spaced points along geodesic line.
 
         Given a single initial point and terminus point (specified by
@@ -621,10 +626,13 @@ class Ellipsoid:
             List of latitudes and longitudes of the intermediate points.
         """
         points = self.geod.npts(
-            lon1.to('radian').value,
-            lat1.to('radian').value,
-            lon2.to('radian').value,
-            lat2.to('radian').value, npts, radians=True)
+            lon1.to("radian").value,
+            lat1.to("radian").value,
+            lon2.to("radian").value,
+            lat2.to("radian").value,
+            npts,
+            radians=True,
+        )
 
         return points * u.rad
 
@@ -678,8 +686,9 @@ class Ellipsoid:
         where :math:`a` and :math:`b` -- equatorial and polar axis of the
         ellipsoid respectively, :math:`\vartheta` -- geocentric latitude.
         """
-        return (self.a * self.b) / (_np.sqrt(self.a**2 * _np.sin(lat)**2 +
-                                             self.b**2 * _np.cos(lat)**2))
+        return (self.a * self.b) / (
+            _np.sqrt(self.a**2 * _np.sin(lat) ** 2 + self.b**2 * _np.cos(lat) ** 2)
+        )
 
     #########################################################################
     # Latitudes
@@ -709,7 +718,7 @@ class Ellipsoid:
 
         where :math:`f` -- flattening of the ellipsoid.
         """
-        geoc_lat = _np.arctan((1 - self.f)**2 * _np.tan(lat))
+        geoc_lat = _np.arctan((1 - self.f) ** 2 * _np.tan(lat))
 
         return geoc_lat
 

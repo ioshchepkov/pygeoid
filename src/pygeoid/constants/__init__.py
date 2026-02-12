@@ -1,6 +1,4 @@
-"""Collection of useful constants.
-
-"""
+"""Collection of useful constants."""
 
 from astropy.constants import Constant as _Constant
 
@@ -21,12 +19,13 @@ standart_gravity_acceleration = g0
 ####################################################
 
 W0_IHRF = _Constant(
-    abbrev='W0',
-    name='Potential of the geoid for the International Height Reference Frame(IHRF)',
+    abbrev="W0",
+    name="Potential of the geoid for the International Height Reference Frame(IHRF)",
     value=62636853.4,
-    unit='m**2 / s**2',
+    unit="m**2 / s**2",
     uncertainty=0.02,
-    reference='IAG 2015 Resolution No.1')
+    reference="IAG 2015 Resolution No.1",
+)
 
 ####################################################
 # Frequently used expressions

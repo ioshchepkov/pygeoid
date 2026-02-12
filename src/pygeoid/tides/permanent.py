@@ -1,6 +1,4 @@
-"""Permanent tide.
-
-"""
+"""Permanent tide."""
 
 import astropy.units as u
 import numpy as np
@@ -10,8 +8,8 @@ from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 DEFAULT_COEFF_A = -2.9166 * u.m**2 / u.s**2
 
-DEFAULT_FROM_SYSTEM = 'non-tidal'
-DEFAULT_TO_SYSTEM = 'mean-tide'
+DEFAULT_FROM_SYSTEM = "non-tidal"
+DEFAULT_TO_SYSTEM = "mean-tide"
 
 
 class PermanentTide:
@@ -57,24 +55,26 @@ class PermanentTide:
 
     """
 
-    def __init__(self, coeff: u.m**2 / u.s**2 = DEFAULT_COEFF_A,
-                 r0: u.m = 6378137 * u.m,
-                 love: dict = iers2010.DEGREE2_LOVE_NUMBERS,
-                 gravimetric_factor: float = 1.1563,
-                 diminishing_factor: float = 0.6947):
+    def __init__(
+        self,
+        coeff: u.m**2 / u.s**2 = DEFAULT_COEFF_A,
+        r0: u.m = 6378137 * u.m,
+        love: dict = iers2010.DEGREE2_LOVE_NUMBERS,
+        gravimetric_factor: float = 1.1563,
+        diminishing_factor: float = 0.6947,
+    ):
 
         self.coeff = coeff
         self.r0 = r0
         self.love = love
 
         if gravimetric_factor is None:
-            self.gravimetric_factor = 1 + self.love['h'] - \
-                3 / 2 * self.love['k']
+            self.gravimetric_factor = 1 + self.love["h"] - 3 / 2 * self.love["k"]
         else:
             self.gravimetric_factor = gravimetric_factor
 
         if diminishing_factor is None:
-            self.diminishing_factor = 1 + self.love['k'] - self.love['h']
+            self.diminishing_factor = 1 + self.love["k"] - self.love["h"]
         else:
             self.diminishing_factor = diminishing_factor
 
@@ -95,7 +95,7 @@ class PermanentTide:
             Permanent tidal potential.
 
         """
-        return self.coeff * (r / self.r0)**2 * (np.sin(lat)**2 - 1 / 3)
+        return self.coeff * (r / self.r0) ** 2 * (np.sin(lat) ** 2 - 1 / 3)
 
     @u.quantity_input
     def potential_lat_derivative(self, lat: u.deg, r: u.m) -> u.m**2 / u.s**2:
@@ -114,7 +114,7 @@ class PermanentTide:
             Permanent Tidal potential latitude derivative.
 
         """
-        return self.coeff * (r / self.r0)**2 * np.sin(2 * lat)
+        return self.coeff * (r / self.r0) ** 2 * np.sin(2 * lat)
 
     @u.quantity_input
     def potential_r_derivative(self, lat: u.deg, r: u.m) -> u.m / u.s**2:
@@ -133,7 +133,7 @@ class PermanentTide:
             Permanent tidal potential radial derivative.
 
         """
-        return self.coeff * 2 * r / self.r0**2 * (np.sin(lat)**2 - 1 / 3)
+        return self.coeff * 2 * r / self.r0**2 * (np.sin(lat) ** 2 - 1 / 3)
 
     @u.quantity_input
     def gradient(self, lat: u.deg, r: u.m) -> u.m / u.s**2:
@@ -158,8 +158,9 @@ class PermanentTide:
         return np.sqrt(r_part**2 + lat_part**2)
 
     @u.quantity_input
-    def displacement(self, lat: u.deg, r: u.m,
-                     gravity: u.m / u.s**2 = g0, elastic: bool = True) -> u.m:
+    def displacement(
+        self, lat: u.deg, r: u.m, gravity: u.m / u.s**2 = g0, elastic: bool = True
+    ) -> u.m:
         """Return direct tidal deformation for elastic or equilibrium Earth.
 
         Direct effect is an equipotential surface deformation
@@ -191,18 +192,17 @@ class PermanentTide:
         if elastic:
             love = self.love
         else:
-            love = {'l' : 1.0, 'h' : 1.0}
+            love = {"l": 1.0, "h": 1.0}
 
-        u_lat = self.potential_lat_derivative(
-            lat, r) * love['l'] / gravity
-        u_r = self.potential(
-            lat, r) * love['h'] / gravity
+        u_lat = self.potential_lat_derivative(lat, r) * love["l"] / gravity
+        u_r = self.potential(lat, r) * love["h"] / gravity
 
         return u.Quantity([u_lat, u_r])
 
     @u.quantity_input
-    def geodetic_height(self, lat: u.deg, r: u.m,
-                        gravity: u.m / u.s**2 = g0, elastic: bool = True) -> u.m:
+    def geodetic_height(
+        self, lat: u.deg, r: u.m, gravity: u.m / u.s**2 = g0, elastic: bool = True
+    ) -> u.m:
         """Return tidal change in the geodetic height.
 
         Approximated as the deformation in radial direction.
@@ -234,9 +234,9 @@ class PermanentTide:
         if elastic:
             love = self.love
         else:
-            love = {'l' : 1.0, 'h' : 1.0}
+            love = {"l": 1.0, "h": 1.0}
 
-        return self.potential(lat, r) * love['h'] / gravity
+        return self.potential(lat, r) * love["h"] / gravity
 
     @u.quantity_input
     def deformation_potential(self, lat: u.deg, r: u.m) -> u.m**2 / u.s**2:
@@ -261,11 +261,10 @@ class PermanentTide:
             Deformation potentia.
 
         """
-        return self.love['k'] * self.potential_lat_derivative(lat, r)
+        return self.love["k"] * self.potential_lat_derivative(lat, r)
 
     @u.quantity_input
-    def gravity(self, lat: u.deg, r: u.m,
-                elastic: bool = True) -> u.m / u.s**2:
+    def gravity(self, lat: u.deg, r: u.m, elastic: bool = True) -> u.m / u.s**2:
         """Return permanent tidal gravity variation.
 
         This is just a negative radial derivative of the permanent tidal
@@ -288,8 +287,7 @@ class PermanentTide:
             Permanent Tidal gravity variation.
 
         """
-        radial_derivative = self.potential_r_derivative(
-            lat=lat, r=r)
+        radial_derivative = self.potential_r_derivative(lat=lat, r=r)
 
         if elastic:
             radial_derivative *= self.gravimetric_factor
@@ -297,9 +295,9 @@ class PermanentTide:
         return -radial_derivative
 
     @u.quantity_input
-    def gravity_ell(self, lat: u.deg,
-                    height: u.m, ell: Ellipsoid,
-                    elastic: bool = True) -> u.m / u.s**2:
+    def gravity_ell(
+        self, lat: u.deg, height: u.m, ell: Ellipsoid, elastic: bool = True
+    ) -> u.m / u.s**2:
         """Return permanent tidal gravity variation along the ellipsoidal normal.
 
         Parameters
@@ -323,9 +321,16 @@ class PermanentTide:
         """
         pvcr = ell.prime_vertical_curvature_radius(lat.radian) * u.m
 
-        delta_g = 2 / 3 * self.coeff / self.r0**2 * (
-            (pvcr * (3 - 2 * ell.e2) + 3 * height) * np.sin(lat)**2 -
-            (pvcr + height))
+        delta_g = (
+            2
+            / 3
+            * self.coeff
+            / self.r0**2
+            * (
+                (pvcr * (3 - 2 * ell.e2) + 3 * height) * np.sin(lat) ** 2
+                - (pvcr + height)
+            )
+        )
 
         if elastic:
             delta_g *= self.gravimetric_factor
@@ -334,9 +339,12 @@ class PermanentTide:
 
     @u.quantity_input
     def convert_gravity_correction(
-        self, lat: u.deg, r: u.m,
+        self,
+        lat: u.deg,
+        r: u.m,
         from_system: str = DEFAULT_FROM_SYSTEM,
-        to_system: str = DEFAULT_TO_SYSTEM) -> u.m**2 / u.s**2:
+        to_system: str = DEFAULT_TO_SYSTEM,
+    ) -> u.m**2 / u.s**2:
         """Return correction to convert gravity between tide systems.
 
         Add this value to the gravity in the tide system specified by `from_system`
@@ -365,25 +373,30 @@ class PermanentTide:
 
         pot_dr = self.potential_r_derivative(lat, r)
 
-        if from_system == 'zero-tide' and to_system == 'mean-tide':
+        if from_system == "zero-tide" and to_system == "mean-tide":
             factor = 1
-        elif from_system == 'mean-tide' and to_system == 'zero-tide':
+        elif from_system == "mean-tide" and to_system == "zero-tide":
             factor = -1
-        elif from_system == 'mean-tide' and to_system == 'non-tidal':
+        elif from_system == "mean-tide" and to_system == "non-tidal":
             factor = -self.gravimetric_factor
-        elif from_system == 'non-tidal' and to_system == 'mean-tide':
+        elif from_system == "non-tidal" and to_system == "mean-tide":
             factor = self.gravimetric_factor
-        elif from_system == 'zero-tide' and to_system == 'non-tidal':
+        elif from_system == "zero-tide" and to_system == "non-tidal":
             factor = -(self.gravimetric_factor - 1)
-        elif from_system == 'non-tidal' and to_system == 'zero-tide':
-            factor = (self.gravimetric_factor - 1)
+        elif from_system == "non-tidal" and to_system == "zero-tide":
+            factor = self.gravimetric_factor - 1
 
         return factor * pot_dr
 
     @u.quantity_input
-    def tilt(self, lat: u.deg, r: u.m,
-             azimuth: u.deg = None, gravity: u.m / u.s**2 = g0,
-             elastic: bool = True) -> u.dimensionless_unscaled:
+    def tilt(
+        self,
+        lat: u.deg,
+        r: u.m,
+        azimuth: u.deg = None,
+        gravity: u.m / u.s**2 = g0,
+        elastic: bool = True,
+    ) -> u.dimensionless_unscaled:
         """Return permanent tidal tilt.
 
         Parameters
@@ -424,8 +437,7 @@ class PermanentTide:
         return tilt
 
     @u.quantity_input
-    def geoidal_height(self, lat: u.deg, r: u.m,
-                       gravity: u.m / u.s**2 = g0) -> u.m:
+    def geoidal_height(self, lat: u.deg, r: u.m, gravity: u.m / u.s**2 = g0) -> u.m:
         """Return permanent tidal variation of the geoidal height.
 
         Geoidal heights are affected by direct and indirect effects.
@@ -447,13 +459,17 @@ class PermanentTide:
         """
         potential = self.potential(lat, r)
 
-        return (1 + self.love['k']) / gravity * potential
+        return (1 + self.love["k"]) / gravity * potential
 
     @u.quantity_input
-    def convert_geoidal_height_correction(self, lat: u.deg, r: u.m,
-                                          from_system: str = DEFAULT_FROM_SYSTEM,
-                                          to_system: str = DEFAULT_TO_SYSTEM,
-                                          gravity: u.m / u.s**2 = g0) -> u.m:
+    def convert_geoidal_height_correction(
+        self,
+        lat: u.deg,
+        r: u.m,
+        from_system: str = DEFAULT_FROM_SYSTEM,
+        to_system: str = DEFAULT_TO_SYSTEM,
+        gravity: u.m / u.s**2 = g0,
+    ) -> u.m:
         """Return correction to convert geoidal height between tide systems.
 
         Add this value to the geoidal height (or height anomaly)
@@ -486,24 +502,23 @@ class PermanentTide:
 
         pot = self.potential(lat, r) / gravity
 
-        if from_system == 'zero-tide' and to_system == 'mean-tide':
+        if from_system == "zero-tide" and to_system == "mean-tide":
             factor = 1
-        elif from_system == 'mean-tide' and to_system == 'zero-tide':
+        elif from_system == "mean-tide" and to_system == "zero-tide":
             factor = -1
-        elif from_system == 'mean-tide' and to_system == 'non-tidal':
-            factor = -(self.love['k'] + 1)
-        elif from_system == 'non-tidal' and to_system == 'mean-tide':
-            factor = (self.love['k'] + 1)
-        elif from_system == 'zero-tide' and to_system == 'non-tidal':
-            factor = -self.love['k']
-        elif from_system == 'non-tidal' and to_system == 'zero-tide':
-            factor = self.love['k']
+        elif from_system == "mean-tide" and to_system == "non-tidal":
+            factor = -(self.love["k"] + 1)
+        elif from_system == "non-tidal" and to_system == "mean-tide":
+            factor = self.love["k"] + 1
+        elif from_system == "zero-tide" and to_system == "non-tidal":
+            factor = -self.love["k"]
+        elif from_system == "non-tidal" and to_system == "zero-tide":
+            factor = self.love["k"]
 
         return factor * pot
 
     @u.quantity_input
-    def physical_height(self, lat: u.deg, r: u.m,
-                        gravity: u.m / u.s**2 = g0) -> u.m:
+    def physical_height(self, lat: u.deg, r: u.m, gravity: u.m / u.s**2 = g0) -> u.m:
         """Return permanent tidal variation of the (absolute) physical heights.
 
         Tidal variations of physically defined heights like
@@ -530,10 +545,14 @@ class PermanentTide:
         return -self.diminishing_factor / gravity * potential
 
     @u.quantity_input
-    def convert_physical_height_correction(self, lat: u.deg, r: u.m,
-                                           from_system: str = DEFAULT_FROM_SYSTEM,
-                                           to_system: str = DEFAULT_TO_SYSTEM,
-                                           gravity: u.m / u.s**2 = g0) -> u.m:
+    def convert_physical_height_correction(
+        self,
+        lat: u.deg,
+        r: u.m,
+        from_system: str = DEFAULT_FROM_SYSTEM,
+        to_system: str = DEFAULT_TO_SYSTEM,
+        gravity: u.m / u.s**2 = g0,
+    ) -> u.m:
         """Return correction to convert physical heights between tide systems.
 
         Add this value to the physical height in the tide system specified by
@@ -565,17 +584,17 @@ class PermanentTide:
 
         pot = self.potential(lat, r) / gravity
 
-        if from_system == 'zero-tide' and to_system == 'mean-tide':
+        if from_system == "zero-tide" and to_system == "mean-tide":
             factor = 1
-        elif from_system == 'mean-tide' and to_system == 'zero-tide':
+        elif from_system == "mean-tide" and to_system == "zero-tide":
             factor = -1
-        elif from_system == 'mean-tide' and to_system == 'non-tidal':
+        elif from_system == "mean-tide" and to_system == "non-tidal":
             factor = -self.diminishing_factor
-        elif from_system == 'non-tidal' and to_system == 'mean-tide':
+        elif from_system == "non-tidal" and to_system == "mean-tide":
             factor = self.diminishing_factor
-        elif from_system == 'zero-tide' and to_system == 'non-tidal':
+        elif from_system == "zero-tide" and to_system == "non-tidal":
             factor = -(self.diminishing_factor - 1)
-        elif from_system == 'non-tidal' and to_system == 'zero-tide':
-            factor = (self.diminishing_factor - 1)
+        elif from_system == "non-tidal" and to_system == "zero-tide":
+            factor = self.diminishing_factor - 1
 
         return factor * pot

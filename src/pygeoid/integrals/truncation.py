@@ -1,6 +1,4 @@
-"""Truncation coefficients for Stokes's integral.
-
-"""
+"""Truncation coefficients for Stokes's integral."""
 
 import numpy as np
 import scipy.integrate as spi
@@ -8,13 +6,11 @@ from pyshtools.legendre import PLegendre
 
 from pygeoid.integrals.stokes import StokesKernel
 
-__all__ = ['molodensky_truncation_coefficients', 'paul_coefficients']
+__all__ = ["molodensky_truncation_coefficients", "paul_coefficients"]
 
 
 def _qn_hagiwara(t, n_max):
-    """Molodensky's truncation coefficients by Hagiwara (1976).
-
-    """
+    """Molodensky's truncation coefficients by Hagiwara (1976)."""
     p = PLegendre(n_max + 2, t)
 
     n = np.arange(n_max + 2)
@@ -40,23 +36,19 @@ def _qn_hagiwara(t, n_max):
 
 
 def _qn_numerical(t, n_max, **kwargs):
-    """Molodensky's truncation coefficients by numerical integration.
+    """Molodensky's truncation coefficients by numerical integration."""
 
-    """
     def f(x, n):
         return StokesKernel()._kernel_t(x) * PLegendre(n, x)[-1]
 
-    q = [spi.quad(f, -1, t, args=(i,), **kwargs)[0]
-         for i in range(2, n_max + 1)]
+    q = [spi.quad(f, -1, t, args=(i,), **kwargs)[0] for i in range(2, n_max + 1)]
 
     return q
 
 
 def molodensky_truncation_coefficients(
-        spherical_distance: float,
-        degree_n: int,
-        method: str = 'hagiwara',
-        **kwargs) -> np.ndarray:
+    spherical_distance: float, degree_n: int, method: str = "hagiwara", **kwargs
+) -> np.ndarray:
     r"""Evaluate Molodensky's truncation coefficients Qn.
 
     Compute sequence of Molodensky's truncation coefficients for all degrees
@@ -113,7 +105,7 @@ def molodensky_truncation_coefficients(
 
     """
     if degree_n < 0 or not isinstance(degree_n, int):
-        raise ValueError('degree_n must be non-negative integer.')
+        raise ValueError("degree_n must be non-negative integer.")
 
     if spherical_distance == 0:
         q = np.array([2 / (i - 1) if i > 1 else 0 for i in range(degree_n + 1)])
@@ -122,23 +114,36 @@ def molodensky_truncation_coefficients(
     elif 0 < spherical_distance < 180:
         q = np.empty(degree_n + 1)
         t = np.sin(np.radians(0.5 * spherical_distance))
-        q[0] = -4 * t + 5 * t**2 + 6 * t**3 - 7 * t**4 +\
-            (6 * t**2 - 6 * t**4) * np.log(t * (1 + t))
+        q[0] = (
+            -4 * t
+            + 5 * t**2
+            + 6 * t**3
+            - 7 * t**4
+            + (6 * t**2 - 6 * t**4) * np.log(t * (1 + t))
+        )
         if degree_n > 0:
             log1 = np.log(t * (1 + t))
             log2 = 2 * np.log(1 + t)
-            q[1] = -2 * t + 4 * t**2 + 28 / 3 * t**3 - 14 * t**4 - 8 * t**5 +\
-                32 / 3 * t**6 + (6 * t**2 - 12 * t**4 + 8 * t**6) * log1 - log2
+            q[1] = (
+                -2 * t
+                + 4 * t**2
+                + 28 / 3 * t**3
+                - 14 * t**4
+                - 8 * t**5
+                + 32 / 3 * t**6
+                + (6 * t**2 - 12 * t**4 + 8 * t**6) * log1
+                - log2
+            )
         if degree_n > 1:
             t = np.cos(np.radians(spherical_distance))
-            if method == 'hagiwara':
+            if method == "hagiwara":
                 q[2:] = _qn_hagiwara(t, degree_n)
-            elif method == 'numerical':
+            elif method == "numerical":
                 q[2:] = _qn_numerical(t, degree_n, **kwargs)
             else:
-                raise ValueError('method must be `hagiwara` or `numerical`')
+                raise ValueError("method must be `hagiwara` or `numerical`")
     else:
-        raise ValueError('spherical_distance not in range: 0 <= psi <= 180 ')
+        raise ValueError("spherical_distance not in range: 0 <= psi <= 180 ")
 
     return q
 
@@ -154,6 +159,7 @@ def _rnk_tril_paul(r, t):
     # non-diagonal elements
     def w(x):
         return x * (x + 1) / (2 * x + 1)
+
     w1 = w(n) * p[k] * (p[n + 1] - p[n - 1])
     w2 = w(k) * p[n] * (p[k + 1] - p[k - 1])
     r[n, k] = (w1 - w2) / ((n - k) * (n + k + 1))
@@ -163,20 +169,23 @@ def _rnk_tril_paul(r, t):
         w1 = (n + 1) * (2 * n - 1) / (n * (2 * n + 1))
         w2 = (n - 1) / n
         w3 = (2 * n - 1) / (2 * n + 1)
-        r[n, n] = w1 * r[n + 1, n - 1] - w2 * r[n,
-                                                n - 2] + w3 * r[n - 1, n - 1]
+        r[n, n] = w1 * r[n + 1, n - 1] - w2 * r[n, n - 2] + w3 * r[n - 1, n - 1]
     return r
 
 
 def _rnk_tril_num(r, t):
     for i, j in zip(*np.tril_indices_from(r)):
         if i != j:
+
             def f(x, ni, ki):
                 return PLegendre(ni, x)[-1] * PLegendre(ki, x)[-1]
+
             args = (i, j)
         else:
+
             def f(x, ni):
-                return PLegendre(ni, x)[-1]**2
+                return PLegendre(ni, x)[-1] ** 2
+
             args = (i,)
         r[i, j] = spi.quad(f, -1, t, args=args, limit=1000)[0]
 
@@ -184,11 +193,8 @@ def _rnk_tril_num(r, t):
 
 
 def paul_coefficients(
-        spherical_distance: float,
-        n: int,
-        k: int = None,
-        method: str = 'paul',
-        **kwargs) -> np.ndarray:
+    spherical_distance: float, n: int, k: int = None, method: str = "paul", **kwargs
+) -> np.ndarray:
     r"""Return Paul's coefficients.
 
     In the original article (1973) the Paul's coefficients are denoted as Rnk,
@@ -245,22 +251,22 @@ def paul_coefficients(
     if 0 <= psi <= 180:
         t = np.cos(np.radians(psi))
     else:
-        raise ValueError('psi not in range: 0 <= psi <= 180 ')
+        raise ValueError("psi not in range: 0 <= psi <= 180 ")
 
     if k is None:
         k = n
     if n < 0 or k < 0:
-        raise ValueError('n and k must be >= 0')
+        raise ValueError("n and k must be >= 0")
 
     dmax = max(n, k)
     r = np.zeros((dmax + 2, dmax + 2))
 
-    if method == 'paul':
+    if method == "paul":
         r = _rnk_tril_paul(r, t)
-    elif method == 'numerical':
+    elif method == "numerical":
         r = _rnk_tril_num(r, t)
 
     # smart symmetry
     r = r + r.T - np.diag(r.diagonal())
 
-    return r[:n + 1, :k + 1]
+    return r[: n + 1, : k + 1]

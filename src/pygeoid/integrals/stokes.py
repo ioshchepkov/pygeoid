@@ -1,6 +1,4 @@
-"""Stokes integral and kernel.
-
-"""
+"""Stokes integral and kernel."""
 
 import astropy.units as u
 import numpy as np
@@ -8,15 +6,13 @@ import numpy as np
 from pygeoid.integrals.core import SphericalKernel
 from pygeoid.integrals.veningmeinesz import VeningMeineszKernel
 
-__all__ = ['StokesKernel', 'StokesExtendedKernel']
+__all__ = ["StokesKernel", "StokesExtendedKernel"]
 
 
 class StokesKernel(SphericalKernel):
-    r"""Stokes kernel class.
+    r"""Stokes kernel class."""
 
-    """
-
-    _name = 'Stokes'
+    _name = "Stokes"
 
     @u.quantity_input
     def kernel(self, spherical_distance: u.deg):
@@ -45,14 +41,14 @@ class StokesKernel(SphericalKernel):
             Freeman, San Francisco
 
         """
-        psi = self._check_spherical_distance(
-            spherical_distance=spherical_distance)
+        psi = self._check_spherical_distance(spherical_distance=spherical_distance)
 
         spsi2 = np.sin(psi / 2)
         cpsi = np.cos(psi)
 
-        return 1 + 1 / spsi2 - 6 * spsi2 - 5 * cpsi -\
-            3 * cpsi * np.log(spsi2 + spsi2**2)
+        return (
+            1 + 1 / spsi2 - 6 * spsi2 - 5 * cpsi - 3 * cpsi * np.log(spsi2 + spsi2**2)
+        )
 
     @u.quantity_input
     def derivative_spherical_distance(self, spherical_distance):
@@ -82,8 +78,7 @@ class StokesKernel(SphericalKernel):
             Freeman, San Francisco
 
         """
-        return VeningMeineszKernel().kernel(
-            spherical_distance=spherical_distance)
+        return VeningMeineszKernel().kernel(spherical_distance=spherical_distance)
 
     def _kernel_t(self, t):
         r"""Evaluate Stokes kernel for -1 <= t <= 1.
@@ -115,7 +110,7 @@ class StokesKernel(SphericalKernel):
 
         """
         if not np.logical_and(t >= -1, t <= 1).any():
-            raise ValueError('t must be between -1 and 1.')
+            raise ValueError("t must be between -1 and 1.")
 
         sq2 = np.sqrt(2)
         sq1t = np.sqrt(1 - t)
@@ -155,7 +150,7 @@ class StokesKernel(SphericalKernel):
 
         """
         if not np.logical_and(t >= -1, t <= 1).any():
-            raise ValueError('t must be between -1 and 1.')
+            raise ValueError("t must be between -1 and 1.")
 
         sq2 = np.sqrt(2)
         sq1t = np.sqrt(1 - t)
@@ -168,8 +163,7 @@ class StokesKernel(SphericalKernel):
 
 
 class StokesExtendedKernel(SphericalKernel):
-
-    _name = 'Extended Stokes'
+    _name = "Extended Stokes"
 
     def kernel(self, radius, spherical_distance):
         raise NotImplementedError

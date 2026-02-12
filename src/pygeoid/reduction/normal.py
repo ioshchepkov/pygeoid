@@ -9,30 +9,38 @@ from scipy import optimize, special
 from pygeoid.coordinates.ellipsoid import Ellipsoid
 
 LEVEL_ELLIPSOIDS = {
-    'GRS80': {'description': 'GRS 80',
-              'a': 6378137.0 * u.m,
-              'j2': 108263e-8 * u.dimensionless_unscaled,
-              'gm': 3986005e8 * u.m**3 / u.s**2,
-              'omega': 7292115e-11 / u.s},
-    'WGS84': {'description': 'WGS 84',
-              'a': 6378137.0 * u.m,
-              'rf': 298.2572235630 * u.dimensionless_unscaled,
-              'gm': 3986004.418e8 * u.m**3 / u.s**2,
-              'omega': 7292115e-11 / u.s},
-    'PZ90': {'description': 'PZ 90.11',
-             'a': 6378136.0 * u.m,
-             'rf': 298.25784 * u.dimensionless_unscaled,
-             'gm': 3986004.418e8 * u.m**3 / u.s**2,
-             'omega': 7292115e-11 * u.rad / u.s},
-    'GSK2011': {'description': 'GSK-2011',
-                'a': 6378136.5 * u.m,
-                'rf': 298.2564151 * u.dimensionless_unscaled,
-                'gm': 3986004.415e8 * u.m**3 / u.s**2,
-                'omega': 7292115e-11 / u.s},
+    "GRS80": {
+        "description": "GRS 80",
+        "a": 6378137.0 * u.m,
+        "j2": 108263e-8 * u.dimensionless_unscaled,
+        "gm": 3986005e8 * u.m**3 / u.s**2,
+        "omega": 7292115e-11 / u.s,
+    },
+    "WGS84": {
+        "description": "WGS 84",
+        "a": 6378137.0 * u.m,
+        "rf": 298.2572235630 * u.dimensionless_unscaled,
+        "gm": 3986004.418e8 * u.m**3 / u.s**2,
+        "omega": 7292115e-11 / u.s,
+    },
+    "PZ90": {
+        "description": "PZ 90.11",
+        "a": 6378136.0 * u.m,
+        "rf": 298.25784 * u.dimensionless_unscaled,
+        "gm": 3986004.418e8 * u.m**3 / u.s**2,
+        "omega": 7292115e-11 * u.rad / u.s,
+    },
+    "GSK2011": {
+        "description": "GSK-2011",
+        "a": 6378136.5 * u.m,
+        "rf": 298.2564151 * u.dimensionless_unscaled,
+        "gm": 3986004.415e8 * u.m**3 / u.s**2,
+        "omega": 7292115e-11 / u.s,
+    },
 }
 
 # default level ellipsoid for normal gravity field
-DEFAULT_LEVEL_ELLIPSOID = 'GRS80'
+DEFAULT_LEVEL_ELLIPSOID = "GRS80"
 
 
 class Centrifugal:
@@ -61,7 +69,7 @@ class Centrifugal:
         radius : ~astropy.units.Quantity
             Radius.
         """
-        return 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
+        return 0.5 * self.omega**2 * radius**2 * np.cos(lat) ** 2
 
     @u.quantity_input
     def r_derivative(self, lat: u.deg, radius: u.m):
@@ -87,7 +95,7 @@ class Centrifugal:
         radius : ~astropy.units.Quantity
             Radius.
         """
-        return -self.omega**2 * radius**2 * np.cos(lat) * np.sin(lat)
+        return -(self.omega**2) * radius**2 * np.cos(lat) * np.sin(lat)
 
     @u.quantity_input
     def gradient(self, lat: u.deg, radius: u.deg) -> u.m / u.s**2:
@@ -107,18 +115,14 @@ class Centrifugal:
 
 
 def _j2_to_flattening(j2, a, gm, omega):
-    """Calculate flattening from J2, a, GM and omega.
-
-    """
+    """Calculate flattening from J2, a, GM and omega."""
     _m1 = omega**2 * a**3 / gm
 
     def e2(e2, j2, _m1):
-        """Compute e2 from J2.
-
-        """
+        """Compute e2 from J2."""
         e1 = np.sqrt(e2 / (1 - e2))
         q0 = 0.5 * ((1 + 3 / e1**2) * np.arctan(e1) - 3 / e1)
-        return 3 * j2 + 2 / 15 * _m1 * np.sqrt(e2)**3 / q0 - e2
+        return 3 * j2 + 2 / 15 * _m1 * np.sqrt(e2) ** 3 / q0 - e2
 
     _e2_0 = 3 * j2 + 2 / 15 * _m1
     _e2 = optimize.fsolve(e2, _e2_0, args=(j2, _m1), xtol=1e-10)[0]
@@ -143,79 +147,90 @@ class LevelEllipsoid(Ellipsoid):
         if not kwargs:
             if ellps in LEVEL_ELLIPSOIDS:
                 kwargs = LEVEL_ELLIPSOIDS[ellps]
-            elif ellps is None or ellps.lower() == 'default':
+            elif ellps is None or ellps.lower() == "default":
                 kwargs = LEVEL_ELLIPSOIDS[DEFAULT_LEVEL_ELLIPSOID]
             else:
                 raise ValueError(
-                    f'No ellipsoid with name {ellps:%s}, possible values \
-                        are:\n{LEVEL_ELLIPSOIDS.keys():%s}')
+                    f"No ellipsoid with name {ellps:%s}, possible values \
+                        are:\n{LEVEL_ELLIPSOIDS.keys():%s}"
+                )
 
-        if 'j2' in kwargs:
-            kwargs['f'] = _j2_to_flattening(
-                kwargs['j2'].si.value,
-                kwargs['a'].si.value,
-                kwargs['gm'].si.value,
-                kwargs['omega'].si.value) * u.dimensionless_unscaled
+        if "j2" in kwargs:
+            kwargs["f"] = (
+                _j2_to_flattening(
+                    kwargs["j2"].si.value,
+                    kwargs["a"].si.value,
+                    kwargs["gm"].si.value,
+                    kwargs["omega"].si.value,
+                )
+                * u.dimensionless_unscaled
+            )
 
-            self._j2 = kwargs['j2']
+            self._j2 = kwargs["j2"]
 
-        self._gm = kwargs['gm']
-        self._omega = kwargs['omega']
+        self._gm = kwargs["gm"]
+        self._omega = kwargs["omega"]
 
         kwargs_nounits = {
-            key: x.si.value for key, x in kwargs.items() if hasattr(x, 'unit')
+            key: x.si.value for key, x in kwargs.items() if hasattr(x, "unit")
         }
 
         super().__init__(self, **kwargs_nounits)
 
         # define useful short-named attributes
         self._m = self.omega**2 * self.a**2 * self.b / self.gm
-        self._q0 = 0.5 * ((1 + 3 / self.e1**2) *
-                          np.arctan(self.e1).value *\
-            u.dimensionless_unscaled - 3 / self.e1)
+        self._q0 = 0.5 * (
+            (1 + 3 / self.e1**2) * np.arctan(self.e1).value * u.dimensionless_unscaled
+            - 3 / self.e1
+        )
 
-        if not hasattr(self, '_j2'):
+        if not hasattr(self, "_j2"):
             self._j2 = self.e2 / 3 * (1 - 2 / 15 * self.m * self.e1 / self._q0)
 
-        self._q01 = 3 * (1 + 1 / self.e12) *\
-            (1 - np.arctan(self.e1).value * u.dimensionless_unscaled / self.e1) - 1
+        self._q01 = (
+            3
+            * (1 + 1 / self.e12)
+            * (1 - np.arctan(self.e1).value * u.dimensionless_unscaled / self.e1)
+            - 1
+        )
 
-        self._surface_potential = self.gm / self.linear_eccentricity *\
-            np.arctan(self.second_eccentricity).value * u.dimensionless_unscaled +\
-            1 / 3 * self.omega ** 2 * self.a ** 2
+        self._surface_potential = (
+            self.gm
+            / self.linear_eccentricity
+            * np.arctan(self.second_eccentricity).value
+            * u.dimensionless_unscaled
+            + 1 / 3 * self.omega**2 * self.a**2
+        )
 
-        self._gamma_e = self.gm / (
-            self.a * self.b) * (
-                1 - self.m - self.m / 6 * self.e1 * self._q01 / self._q0)
+        self._gamma_e = (
+            self.gm
+            / (self.a * self.b)
+            * (1 - self.m - self.m / 6 * self.e1 * self._q01 / self._q0)
+        )
 
-        self._gamma_p = self.gm / self.a**2 *\
-            (1 + self.m / 3 * self.e1 * self._q01 / self._q0)
+        self._gamma_p = (
+            self.gm / self.a**2 * (1 + self.m / 3 * self.e1 * self._q01 / self._q0)
+        )
 
-        self._gravity_flattening = (self._gamma_p -
-                                    self._gamma_e) / self._gamma_e
+        self._gravity_flattening = (self._gamma_p - self._gamma_e) / self._gamma_e
 
-        self._k = (self.b * self._gamma_p -
-                   self.a * self._gamma_e) / (self.a * self._gamma_e)
+        self._k = (self.b * self._gamma_p - self.a * self._gamma_e) / (
+            self.a * self._gamma_e
+        )
 
     @property
     def j2(self):
-        """Return dynamic form factor J2.
-
-        """
+        """Return dynamic form factor J2."""
         return self._j2
 
     @property
     def gm(self):
-        """Return geocentric gravitational constant.
-
-        """
+        """Return geocentric gravitational constant."""
         return self._gm
 
     @property
     def omega(self):
-        """Return angular velocity, in radians.
-
-        """
+        """Return angular velocity, in radians."""
         return self._omega
 
     @property
@@ -244,12 +259,14 @@ class LevelEllipsoid(Ellipsoid):
 
     @u.quantity_input
     def _q(self, u_ax: u.m):
-        """Return auxiliary function q(u).
-
-        """
+        """Return auxiliary function q(u)."""
         E = self.linear_eccentricity
-        return 0.5 * ((1 + 3 * u_ax**2 / E**2) * np.arctan2(E, u_ax).value *
-                      u.dimensionless_unscaled - 3 * u_ax / E)
+        return 0.5 * (
+            (1 + 3 * u_ax**2 / E**2)
+            * np.arctan2(E, u_ax).value
+            * u.dimensionless_unscaled
+            - 3 * u_ax / E
+        )
 
     @u.quantity_input
     def gravitational_potential(self, rlat: u.deg, u_ax: u.m) -> u.m**2 / u.s**2:
@@ -273,9 +290,9 @@ class LevelEllipsoid(Ellipsoid):
         arctanEu = np.arctan2(E, u_ax).value * u.dimensionless_unscaled
         _qr = self._q(u_ax) / self._q0
 
-        return (self.gm / E) * arctanEu + \
-            0.5 * self.omega**2 * self.a**2 * \
-            _qr * (np.sin(rlat)**2 - 1 / 3)
+        return (self.gm / E) * arctanEu + 0.5 * self.omega**2 * self.a**2 * _qr * (
+            np.sin(rlat) ** 2 - 1 / 3
+        )
 
     @u.quantity_input
     def gravity_potential(self, rlat: u.deg, u_ax: u.m) -> u.m**2 / u.s**2:
@@ -296,8 +313,12 @@ class LevelEllipsoid(Ellipsoid):
             Normal gravity potential.
         """
         gravitational = self.gravitational_potential(rlat, u_ax)
-        centrifugal = 0.5 * self.omega**2 * (
-            u_ax**2 + self.linear_eccentricity**2) * np.cos(rlat)**2
+        centrifugal = (
+            0.5
+            * self.omega**2
+            * (u_ax**2 + self.linear_eccentricity**2)
+            * np.cos(rlat) ** 2
+        )
         return gravitational + centrifugal
 
     #########################################################################
@@ -305,25 +326,23 @@ class LevelEllipsoid(Ellipsoid):
     #########################################################################
     @property
     def equatorial_normal_gravity(self):
-        """Return normal gravity at the equator.
-
-        """
+        """Return normal gravity at the equator."""
         return self._gamma_e
 
     @property
     def polar_normal_gravity(self):
-        """Return normal gravity at the poles.
-
-        """
+        """Return normal gravity at the poles."""
         return self._gamma_p
 
     @property
     def mean_normal_gravity(self):
-        """Return mean normal gravity over ellipsoid.
-
-        """
-        return 4 * np.pi / self.surface_area * (
-            self._gm - 2 / 3 * self._omega**2 * self.a**2 * self.b)
+        """Return mean normal gravity over ellipsoid."""
+        return (
+            4
+            * np.pi
+            / self.surface_area
+            * (self._gm - 2 / 3 * self._omega**2 * self.a**2 * self.b)
+        )
 
     @property
     def gravity_flattening(self):
@@ -372,7 +391,7 @@ class LevelEllipsoid(Ellipsoid):
             Geodetic latitude.
         """
         gamma = self.surface_normal_gravity(lat)
-        return -2 * gamma * self.average_curvature(lat) - 2 * self.omega ** 2
+        return -2 * gamma * self.average_curvature(lat) - 2 * self.omega**2
 
     @u.quantity_input
     def height_correction(self, lat: u.deg, height: u.m) -> u.m / u.s**2:
@@ -388,10 +407,14 @@ class LevelEllipsoid(Ellipsoid):
             Geodetic height.
         """
         gammae = self.equatorial_normal_gravity
-        out = -2 * gammae / self.a * (
-            1 + self.f + self.m + (-3 * self.f +\
-                2.5 * self.m) * np.sin(lat)**2) * height +\
-            3 * gammae * height**2 / self.a**2
+        out = (
+            -2
+            * gammae
+            / self.a
+            * (1 + self.f + self.m + (-3 * self.f + 2.5 * self.m) * np.sin(lat) ** 2)
+            * height
+            + 3 * gammae * height**2 / self.a**2
+        )
 
         return out
 
@@ -419,17 +442,24 @@ class LevelEllipsoid(Ellipsoid):
         _qr = self._q(u_ax) / self._q0
 
         uE = u_ax**2 + E**2
-        w = np.sqrt((u_ax**2 + E**2 * np.sin(rlat)**2) / uE)
+        w = np.sqrt((u_ax**2 + E**2 * np.sin(rlat) ** 2) / uE)
         arctan2Eu = np.arctan2(E, u_ax).value * u.dimensionless_unscaled
         q1 = 3 * (1 + u_ax**2 / E**2) * (1 - u_ax / E * arctan2Eu) - 1
 
         u_deriv = self.gm / uE
-        u_deriv += self.omega**2 * self.a ** 2 * E / uE * q1 / self._q0 * (
-            0.5 * np.sin(rlat)**2 - 1 / 6)
-        u_deriv -= self.omega**2 * u_ax * np.cos(rlat)**2
+        u_deriv += (
+            self.omega**2
+            * self.a**2
+            * E
+            / uE
+            * q1
+            / self._q0
+            * (0.5 * np.sin(rlat) ** 2 - 1 / 6)
+        )
+        u_deriv -= self.omega**2 * u_ax * np.cos(rlat) ** 2
         u_deriv *= -1 / w
 
-        rlat_deriv = -self.omega**2 * self.a**2 / np.sqrt(uE) * _qr
+        rlat_deriv = -(self.omega**2) * self.a**2 / np.sqrt(uE) * _qr
         rlat_deriv += self.omega**2 * np.sqrt(uE)
         rlat_deriv *= -1 / w * np.sin(rlat) * np.cos(rlat)
 
@@ -453,13 +483,18 @@ class LevelEllipsoid(Ellipsoid):
         n : int
             Degree of the J coefficient.
         """
-        j2n = (-1)**(n + 1) * (3 * self.e2**(n - 1)) / ((2 * n + 1) * (2 * n + 3)) * \
-            ((1 - n) * self.e2 + 5 * n * self.j2)
+        j2n = (
+            (-1) ** (n + 1)
+            * (3 * self.e2 ** (n - 1))
+            / ((2 * n + 1) * (2 * n + 3))
+            * ((1 - n) * self.e2 + 5 * n * self.j2)
+        )
         return j2n
 
     @u.quantity_input
     def gravitational_potential_sph(
-            self, lat: u.deg, radius: u.m, n_max: int = 4) -> u.m**2 / u.s**2:
+        self, lat: u.deg, radius: u.m, n_max: int = 4
+    ) -> u.m**2 / u.s**2:
         """Return normal gravitational potential V.
 
         Calculate normal gravitational potential from spherical approximation.
@@ -480,9 +515,9 @@ class LevelEllipsoid(Ellipsoid):
         return self.gm / radius * (1 - out)
 
     @u.quantity_input
-    def gravity_potential_sph(self,
-                              lat: u.deg, radius: u.m,
-                              n_max: int = 4) -> u.m**2 / u.s**2:
+    def gravity_potential_sph(
+        self, lat: u.deg, radius: u.m, n_max: int = 4
+    ) -> u.m**2 / u.s**2:
         """Return normal gravitational potential V.
 
         Calculate normal gravitational potential from spherical approximation.
@@ -496,34 +531,45 @@ class LevelEllipsoid(Ellipsoid):
         n_max : int
             Maximum degree.
         """
-        gravitational_sph = self.gravitational_potential_sph(lat=lat,
-                                                             radius=radius,
-                                                             n_max=n_max)
-        centrifugal = 0.5 * self.omega**2 * radius**2 * np.cos(lat)**2
+        gravitational_sph = self.gravitational_potential_sph(
+            lat=lat, radius=radius, n_max=n_max
+        )
+        centrifugal = 0.5 * self.omega**2 * radius**2 * np.cos(lat) ** 2
         return gravitational_sph + centrifugal
 
 
 NORMAL_GRAVITY_COEFFS = {
-    'helmert': (978030 * u.mGal,
-                0.005302 * u.dimensionless_unscaled,
-                0.000007 * u.dimensionless_unscaled),
-    'helmert_14mGal': (
+    "helmert": (
+        978030 * u.mGal,
+        0.005302 * u.dimensionless_unscaled,
+        0.000007 * u.dimensionless_unscaled,
+    ),
+    "helmert_14mGal": (
         (978030 - 14) * u.mGal,
         0.005302 * u.dimensionless_unscaled,
-        0.000007 * u.dimensionless_unscaled),
-    '1930': (978049 * u.mGal,
-             0.0052884 * u.dimensionless_unscaled,
-             0.0000059 * u.dimensionless_unscaled),
-    '1930_14mGal': (
+        0.000007 * u.dimensionless_unscaled,
+    ),
+    "1930": (
+        978049 * u.mGal,
+        0.0052884 * u.dimensionless_unscaled,
+        0.0000059 * u.dimensionless_unscaled,
+    ),
+    "1930_14mGal": (
         (978049 - 14) * u.mGal,
         0.0052884 * u.dimensionless_unscaled,
-        0.0000059 * u.dimensionless_unscaled),
-    '1967': (978031.8 * u.mGal,
-             0.0053024 * u.dimensionless_unscaled,
-             0.0000059 * u.dimensionless_unscaled),
-    '1980': (978032.7 * u.mGal,
-             0.0053024 * u.dimensionless_unscaled,
-             0.0000058 * u.dimensionless_unscaled)}
+        0.0000059 * u.dimensionless_unscaled,
+    ),
+    "1967": (
+        978031.8 * u.mGal,
+        0.0053024 * u.dimensionless_unscaled,
+        0.0000059 * u.dimensionless_unscaled,
+    ),
+    "1980": (
+        978032.7 * u.mGal,
+        0.0053024 * u.dimensionless_unscaled,
+        0.0000058 * u.dimensionless_unscaled,
+    ),
+}
 
 
 @u.quantity_input
@@ -542,7 +588,7 @@ def surface_normal_gravity_clairaut(lat: u.deg, model: str = None) -> u.m / u.s*
     if model is not None and model in NORMAL_GRAVITY_COEFFS:
         gamma_e, beta, beta1 = NORMAL_GRAVITY_COEFFS[model]
     else:
-        msg = 'No formula with name {:%s}, possible values are:\n{:%s}'
+        msg = "No formula with name {:%s}, possible values are:\n{:%s}"
         raise ValueError(msg.format(model, model.keys()))
 
-    return gamma_e * (1 + beta * np.sin(lat)**2 - beta1 * np.sin(2 * lat)**2)
+    return gamma_e * (1 + beta * np.sin(lat) ** 2 - beta1 * np.sin(2 * lat) ** 2)

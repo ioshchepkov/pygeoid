@@ -13,11 +13,12 @@ def _limits_sum(function):
 
     def wraper(self, x, y, z):
         x1b, x2b, y1b, y2b, z1b, z2b = self._bounds
-        cond = (x >= x1b) & (x <= x2b) & (y >= y1b) & (
-            y <= y2b) & (z >= z1b) & (z <= z2b)
+        cond = (
+            (x >= x1b) & (x <= x2b) & (y >= y1b) & (y <= y2b) & (z >= z1b) & (z <= z2b)
+        )
 
         if np.any(cond):
-            raise ValueError('Point within or on the prism!')
+            raise ValueError("Point within or on the prism!")
 
         x1 = self._bounds[0] - x
         x2 = self._bounds[1] - x
@@ -31,8 +32,9 @@ def _limits_sum(function):
         for index in itertools.product([1, 2], [3, 4], [5, 6], repeat=1):
             index = np.asarray(index)
             coords = np.asarray(bounds)[index - 1]
-            total_sum += (-1)**(index.sum()) * function(self, *coords)
+            total_sum += (-1) ** (index.sum()) * function(self, *coords)
         return total_sum * G.value * self.density
+
     return wraper
 
 
@@ -76,8 +78,7 @@ class Prism(ForwardModel):
             Cartesian coordinates of the attracted point, in metres.
         """
         r = _radius(x, y, z)
-        out = x * y * np.log(z + r) + y * z * \
-            np.log(x + r) + z * x * np.log(y + r)
+        out = x * y * np.log(z + r) + y * z * np.log(x + r) + z * x * np.log(y + r)
         out -= 0.5 * x**2 * np.arctan2(y * z, x * r)
         out -= 0.5 * y**2 * np.arctan2(z * x, y * r)
         out -= 0.5 * z**2 * np.arctan2(x * y, z * r)

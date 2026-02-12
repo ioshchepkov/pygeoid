@@ -9,18 +9,20 @@ from joblib import Parallel, delayed
 
 from .legendre import lplm, lplm_d1
 
-np.seterr(over='raise')
+np.seterr(over="raise")
 
 
 def expand_parallel(x, q, *args):
     nlat = x.shape[0]
     # parallel only if there are more than one circle
     if nlat > 1:
-        values = np.array(Parallel(n_jobs=-1)(delayed(expand_circle)(x[i], q[i], *args)
-                                              for i in range(nlat)))
+        values = np.array(
+            Parallel(n_jobs=-1)(
+                delayed(expand_circle)(x[i], q[i], *args) for i in range(nlat)
+            )
+        )
     else:
-        values = np.array([expand_circle(x[i], q[i], *args)
-                           for i in range(nlat)])
+        values = np.array([expand_circle(x[i], q[i], *args) for i in range(nlat)])
     return values
 
 
@@ -60,7 +62,7 @@ def common_precompute(lat, lon, r, r0, lmax):
     q = np.asarray(r0 * ri)
 
     if np.any(q > 1.01):
-        warnings.filterwarnings('once')
+        warnings.filterwarnings("once")
         warnings.warn("Possible singularity in downward continuation, r << r0")
 
     return lat, lon, degrees, cosin, x, q
@@ -131,8 +133,7 @@ def in_coeff_lon_derivative(x, q, lmax, degrees, m_coeff):
 
 def sum_lon_derivative(in_coeff, cosin, cilm):
     if not np.all(in_coeff == 0.0):
-        lon_d = np.sum(in_coeff * (-cilm[1] * cosin[0] +
-                                   cilm[0] * cosin[1]))
+        lon_d = np.sum(in_coeff * (-cilm[1] * cosin[0] + cilm[0] * cosin[1]))
     else:
         lon_d = 0.0
 
@@ -167,8 +168,7 @@ def sum_gradient(in_coeff, cosin, cilm):
 
     if not np.all(in_coeff[1:] == 0.0):
         lat_d = np.sum(in_coeff[1] * (cosm_sinm_sum))
-        lon_d = np.sum(in_coeff[2] * (-cilm[1] * cosin[0] +
-                                      cilm[0] * cosin[1]))
+        lon_d = np.sum(in_coeff[2] * (-cilm[1] * cosin[0] + cilm[0] * cosin[1]))
     else:
         lat_d = lon_d = 0.0
 

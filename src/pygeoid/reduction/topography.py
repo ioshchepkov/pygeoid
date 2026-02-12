@@ -7,8 +7,7 @@ from pygeoid.constants import _2piG
 
 
 @u.quantity_input
-def bouguer_plate(height: u.m,
-                  density: u.kg / u.m**3 = 2670 * u.kg / u.m**3) -> u.mGal:
+def bouguer_plate(height: u.m, density: u.kg / u.m**3 = 2670 * u.kg / u.m**3) -> u.mGal:
     r"""Return an attraction of an infinite Bouguer plate.
 
     Parameters
@@ -30,8 +29,9 @@ def bouguer_plate(height: u.m,
 
 
 @u.quantity_input
-def spherical_bouguer_cap(height: u.m,
-                          density: u.kg / u.m**3 = 2670 * u.kg / u.m**3) -> u.mGal:
+def spherical_bouguer_cap(
+    height: u.m, density: u.kg / u.m**3 = 2670 * u.kg / u.m**3
+) -> u.mGal:
     r"""Return spherical Bouguer correction.
 
     Parameters
@@ -73,14 +73,14 @@ def spherical_bouguer_cap(height: u.m,
     eta = height / R
     mu = 1 / 3 * eta**2 - eta
 
-    d = 3 * np.cos(alpha)**2 - 2
+    d = 3 * np.cos(alpha) ** 2 - 2
     f = np.cos(alpha)
-    k = np.sin(alpha)**2
-    p = -6 * np.cos(alpha)**2 * np.sin(alpha / 2) + 4 * np.sin(alpha / 2)**3
-    m = -3 * np.sin(alpha)**2 * np.cos(alpha)
-    n = 2 * (np.sin(alpha / 2) - np.sin(alpha / 2)**2)
+    k = np.sin(alpha) ** 2
+    p = -6 * np.cos(alpha) ** 2 * np.sin(alpha / 2) + 4 * np.sin(alpha / 2) ** 3
+    m = -3 * np.sin(alpha) ** 2 * np.cos(alpha)
+    n = 2 * (np.sin(alpha / 2) - np.sin(alpha / 2) ** 2)
 
-    sqrt_f_delta = np.sqrt((f - delta)**2 + k)
+    sqrt_f_delta = np.sqrt((f - delta) ** 2 + k)
     llambda_1 = (d + f * delta + delta**2) * sqrt_f_delta + p
     llambda_2 = m * np.log(n / (f - delta + sqrt_f_delta))
     llambda = 1 / 3 * (llambda_1 + llambda_2)

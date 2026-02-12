@@ -5,9 +5,7 @@ from pyshtools.legendre import PlmBar, PlmBar_d1, PlmIndex
 
 
 def _lplm_index(lmax):
-    """Change index for 1d pyshtools array to 2d array.
-
-    """
+    """Change index for 1d pyshtools array to 2d array."""
     return np.fromfunction(PlmIndex, (lmax + 1, lmax + 1), dtype=int)
 
 

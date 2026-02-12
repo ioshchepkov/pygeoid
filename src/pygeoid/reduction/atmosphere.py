@@ -1,6 +1,4 @@
-"""Calculate atmospheric correction for the gravity anomalies.
-
-"""
+"""Calculate atmospheric correction for the gravity anomalies."""
 
 import os
 from collections.abc import Callable
@@ -43,10 +41,13 @@ def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
     altitude_max = 84852 * u.m
     base_alt = np.array([0.0, 11.0, 20.0, 32.0, 47.0, 51.0, 71.0]) * u.km
     base_lapse = np.array([-6.5, 0.0, 1.0, 2.8, 0.0, -2.8, -2.0]) * u.K / u.km
-    base_temp = np.array([288.15, 216.65, 216.650, 228.650, 270.650, 270.650,
-                          214.650]) * u.K
-    base_press = np.array([1.01325e3, 2.2632e2, 5.4748e1, 8.6801, 1.1090,
-                           6.6938e-1, 3.9564e-2]) * u.mbar
+    base_temp = (
+        np.array([288.15, 216.65, 216.650, 228.650, 270.650, 270.650, 214.650]) * u.K
+    )
+    base_press = (
+        np.array([1.01325e3, 2.2632e2, 5.4748e1, 8.6801, 1.1090, 6.6938e-1, 3.9564e-2])
+        * u.mbar
+    )
     M0 = 28.9644 * u.kg / u.kilomole
 
     # Initialize Outputs
@@ -56,7 +57,7 @@ def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
     for idx in range(alt_arr.size):
         alt = alt_arr[idx]
         if alt > altitude_max:
-            msg = f'Altitude exceeds the model: h > hmax = {altitude_max} m'
+            msg = f"Altitude exceeds the model: h > hmax = {altitude_max} m"
             raise ValueError(msg)
 
         # Figure out base height
@@ -65,7 +66,7 @@ def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
         elif alt > base_alt[-1]:
             base_idx = len(base_alt) - 1
         else:
-            base_idx = np.searchsorted(base_alt, alt, side='left') - 1
+            base_idx = np.searchsorted(base_alt, alt, side="left") - 1
 
         alt_base = base_alt[base_idx]
         temp_base = base_temp[base_idx]
@@ -74,12 +75,11 @@ def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
 
         temp = temp_base + lapse_base * (alt_arr[idx] - alt_base)
         if lapse_base == 0.0:
-            press = press_base * \
-                np.exp(-g0 * M0 * (alt_arr[idx] -
-                                   alt_base) / Rstar / temp_base)
+            press = press_base * np.exp(
+                -g0 * M0 * (alt_arr[idx] - alt_base) / Rstar / temp_base
+            )
         else:
-            press = press_base * \
-                (temp_base / temp) ** (g0 * M0 / Rstar / lapse_base)
+            press = press_base * (temp_base / temp) ** (g0 * M0 / Rstar / lapse_base)
 
         dens_arr[idx] = press * M0 / Rstar / temp
 
@@ -87,8 +87,12 @@ def ussa76_density(alt_arr: u.km = 0.0 * u.km) -> u.kg / u.m**3:
 
 
 @u.quantity_input
-def iag_atm_corr_sph(density_function: Callable[[u.Quantity], u.Quantity],
-                     height: u.m, height_max: u.m, samples=1e4) -> u.mGal:
+def iag_atm_corr_sph(
+    density_function: Callable[[u.Quantity], u.Quantity],
+    height: u.m,
+    height_max: u.m,
+    samples=1e4,
+) -> u.mGal:
     r"""Return atmospheric correction to the gravity anomalies by IAG approach.
 
     This function numerically integrates samples from density function by
@@ -121,17 +125,16 @@ def iag_atm_corr_sph(density_function: Callable[[u.Quantity], u.Quantity],
 
     """
     Rearth = 6378e3 * u.m
-    r2 = (Rearth + height)**2
+    r2 = (Rearth + height) ** 2
     hinf = np.linspace(height, height_max, samples)
     density = density_function(hinf) * r2
-    M = 4 * np.pi * trapz(density.to('kg / m').value,
-                          hinf.to('m').value) * u.kg
-    gc = (G * M / r2)
+    M = 4 * np.pi * trapz(density.to("kg / m").value, hinf.to("m").value) * u.kg
+    gc = G * M / r2
     return gc
 
 
 @u.quantity_input
-def grs80_atm_corr_interp(height: u.m, kind: str = 'linear') -> u.mGal:
+def grs80_atm_corr_interp(height: u.m, kind: str = "linear") -> u.mGal:
     """Return GRS 80 atmospheric correction, in mGal.
 
     Interpolated from the table data [1]_.
@@ -161,13 +164,20 @@ def grs80_atm_corr_interp(height: u.m, kind: str = 'linear') -> u.mGal:
     Bulletin Géodésique, 54(3), 395-405
 
     """
-    fname = os.path.join(os.path.dirname(__file__),
-                         'data/IAG_atmosphere_correction_table.txt')
-    table_heights, corr = np.loadtxt(fname, unpack=True, delimiter=',',
-                                     skiprows=4, dtype=float)
-    interp = interp1d(table_heights * 1000, corr, kind=kind,
-                      fill_value='extrapolate', assume_sorted=True)
-    return interp(height.to('m').value) * u.mGal
+    fname = os.path.join(
+        os.path.dirname(__file__), "data/IAG_atmosphere_correction_table.txt"
+    )
+    table_heights, corr = np.loadtxt(
+        fname, unpack=True, delimiter=",", skiprows=4, dtype=float
+    )
+    interp = interp1d(
+        table_heights * 1000,
+        corr,
+        kind=kind,
+        fill_value="extrapolate",
+        assume_sorted=True,
+    )
+    return interp(height.to("m").value) * u.mGal
 
 
 @u.quantity_input
@@ -190,7 +200,7 @@ def wenzel_atm_corr(height: u.m) -> u.mGal:
     Gravitationspotential der Erde [1]: Wissenschaftliche arbeiten der
     Fachrichtung Vermessungswesen der Universitat Hannover, 137
     """
-    height = height.to('m').value
+    height = height.to("m").value
     return (0.874 - 9.9e-5 * height + 3.56e-9 * height**2) * u.mGal
 
 
@@ -209,5 +219,5 @@ def pz90_atm_corr(height: u.m) -> u.mGal:
         Atmospheric correction.
 
     """
-    height = height.to('km').value
-    return 0.87 * np.exp(-0.116 * (height)**(1.047)) * u.mGal
+    height = height.to("km").value
+    return 0.87 * np.exp(-0.116 * (height) ** (1.047)) * u.mGal
