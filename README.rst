@@ -4,8 +4,8 @@ pygeoid
 .. image:: https://img.shields.io/pypi/v/pygeoid.svg
     :target: https://pypi.org/project/pygeoid/
 
-.. image:: https://readthedocs.org/projects/pygeoid/badge/?version=latest
-    :target: http://pygeoid.readthedocs.io/en/latest/?badge=latest
+.. image:: https://app.readthedocs.org/projects/pygeoid/badge/?version=latest
+    :target: http://pygeoid.readthedocs.io/latest/?badge=latest
     :alt: Documentation Status
 
 Local gravity field modelling with Python.

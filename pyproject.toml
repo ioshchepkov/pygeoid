@@ -32,7 +32,12 @@ dependencies = [
 [project.optional-dependencies]
 tests = ["pytest"]
 dev = ["pytest", "ruff"]
-docs = ["sphinx", "sphinx-rtd-theme"]
+docs = [
+    "sphinx>=8",
+    "sphinx-rtd-theme>=2",
+    "nbsphinx",
+    "jupyter"
+]
 
 [tool.setuptools]
 include-package-data = true

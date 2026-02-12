@@ -7,7 +7,7 @@ from astropy.constants import Constant as _Constant
 ####################################################
 # Import constants
 ####################################################
-from astropy.constants import G  #, R_earth, g0
+from astropy.constants import G, g0
 from numpy import pi
 
 from .iers2010 import DEGREE2_LOVE_NUMBERS as DEGREE2_LOVE_NUMBERS
@@ -15,7 +15,7 @@ from .iers2010 import GM_earth_tt as GM_earth_tt
 from .solar_system_gm import get_body_gm as get_body_gm
 
 gm_earth = GM_earth_tt
-
+standart_gravity_acceleration = g0
 ####################################################
 # Define constants
 ####################################################

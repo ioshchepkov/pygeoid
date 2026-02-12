@@ -7,7 +7,8 @@ import numpy as np
 from astropy.coordinates import ITRS, get_body, solar_system_ephemeris
 from astropy.time import Time
 
-from pygeoid.constants import g0, iers2010, solar_system_gm
+from pygeoid.constants import iers2010, solar_system_gm
+from pygeoid.constants import standart_gravity_acceleration as g0
 
 
 def _zonal(lat, declination):
