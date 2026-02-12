@@ -41,9 +41,10 @@ docs = [
 
 [tool.setuptools]
 include-package-data = true
+package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
-include = ["pygeoid*"]
+where = ["src"]
 
 [tool.setuptools_scm]
 
