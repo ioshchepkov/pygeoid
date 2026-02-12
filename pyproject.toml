@@ -6,17 +6,23 @@ build-backend = "setuptools.build_meta"
 name = "pygeoid"
 dynamic = ["version"]
 description = "Python toolkit for physical geodesy"
-readme = "README.rst"
-requires-python = ">=3.12"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
 license = { text = "MIT" }
 authors = [
     { name = "Ilya Oshchepkov" }
 ]
 keywords = ["geodesy", "gravimetry", "gravity", "geoid"]
 classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Education",
+  "Intended Audience :: Science/Research",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
   "License :: OSI Approved :: MIT License",
+  "Topic :: Education",
+  "Topic :: Scientific/Engineering",
 ]
 
 dependencies = [
@@ -40,6 +46,7 @@ dev = [
 ]
 docs = [
     "sphinx>=8",
+    "myst-parser",
     "sphinx-rtd-theme>=2",
     "nbsphinx",
     "jupyter"

@@ -1,22 +1,9 @@
 include LICENSE.txt
-include README.rst
+include CITATION.cff
 include CODE_OF_CONDUCT.md
-include requirements*txt
-include Pipfile*
 
-# docs
+recursive-include logo *
 recursive-include docs *
+prune docs/_build
 
-# data
-recursive-include pygeoid/reduction/data *
-
-# tests
-recursive-include pygeoid/coordinates/test *
-recursive-include pygeoid/reduction/test *
-recursive-include pygeoid/sharm/test *
-recursive-include pygeoid/simple/test *
-
-global-exclude __pycache__ *.pyc
-
-include versioneer.py
-include pygeoid/_version.py
+recursive-include tests *

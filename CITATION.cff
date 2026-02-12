@@ -1,0 +1,34 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: PyGeoid
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Ilya
+    family-names: Oshchepkov
+    email: ilya.oshchepkov@thegeodesy.com
+    orcid: 'https://orcid.org/0000-0002-1883-7242'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.4692429
+    description: This DOI represents all versions.
+repository-code: 'https://github.com/ioshchepkov/pygeoid'
+url: 'https://pygeoid.thegeodesy.com'
+abstract: >-
+  Gravity field modelling and computational geodesy in
+  Python. PyGeoid implements computational methods for
+  modelling and analysing the Earth's gravity field and
+  related geodetic quantities.
+keywords:
+  - geodesy
+  - geoid
+  - gravity field
+  - physical geodesy
+  - gravimetry
+  - earth science
+  - geophysics
+license: MIT

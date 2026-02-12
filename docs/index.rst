@@ -1,8 +1,15 @@
 
-Welcome to pygeoid's documentation!
+Welcome to PyGeoid's documentation!
 ===================================
 
-.. include:: ../README.rst
+.. image:: _static/pygeoid_logo_red_blue_with_text_200dpi.png
+   :width: 400
+   :alt: PyGeoid
+   :align: center
+
+.. include:: ../README.md
+   :parser: myst_parser.sphinx_
+   :start-after: <!-- DOCS-START -->
 
 .. toctree::
   :maxdepth: 2

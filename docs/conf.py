@@ -42,6 +42,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx_rtd_theme",
+    "myst_parser",
 ]
 
 # sorting for autodoc
@@ -55,14 +56,16 @@ templates_path = ["_templates"]
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 # The master toctree document.
 master_doc = "index"
 
 # General information about the project.
-project = "pygeoid"
+project = "PyGeoid"
 copyright = "2017-2026, Ilya Oshchepkov"
 author = "Ilya Oshchepkov"
 
