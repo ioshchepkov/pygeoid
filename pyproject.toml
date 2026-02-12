@@ -30,8 +30,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-tests = ["pytest"]
-dev = ["pytest", "ruff"]
+test = [
+    "pytest",
+    "pytest-cov"
+]
+dev = [
+  "pytest",
+  "ruff"
+]
 docs = [
     "sphinx>=8",
     "sphinx-rtd-theme>=2",
@@ -50,7 +56,12 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = [
+    "-ra",
+    "--cov=pygeoid",
+    "--cov-report=term-missing",
+    "--cov-report=xml"
+]
 python_files = "test_*.py"
 
 [tool.ruff]
@@ -69,3 +80,14 @@ ignore = []
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.coverage.run]
+branch = true
+source = ["pygeoid"]
+omit = [
+  "tests/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

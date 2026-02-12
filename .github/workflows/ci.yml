@@ -18,11 +18,26 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: python -m pip install -U pip setuptools wheel build
-      - run: python -m pip install -e ".[dev]"
-      - run: ruff check .
-      - run: python -m pytest -q
-      - run: python -m build
+      - name: Install
+        run: |
+          python -m pip install -U pip setuptools wheel build
+          python -m pip install -e ".[test,dev]"
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Build
+        run: python -m build
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: coverage.xml
+
   modern-conda:
     # Mode B: conda
     runs-on: ubuntu-latest
