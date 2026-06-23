@@ -8,9 +8,13 @@ API Reference
    :maxdepth: 2
    :hidden:
 
-   coordinates/index
-   integrals/index
-   reduction/index
-   sharm/index
-   simple/index
-   tides/index
+   geometry/index
+   conventions/index
+   estimation/index
+   fields/index
+   earth/index
+   io/index
+   numerics/index
+   observations/index
+   reference/index
+   uncertainty/index

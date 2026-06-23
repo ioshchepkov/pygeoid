@@ -33,7 +33,8 @@ Welcome to PyGeoid's documentation!
 .. toctree::
   :maxdepth: 1
   :caption: Developer
-  
+
+  developer/index.rst
 
 Indices and tables
 ==================

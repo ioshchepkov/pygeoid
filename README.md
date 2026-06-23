@@ -47,7 +47,7 @@
   </a>
 </p>
 
-## Overview
+# Overview
 
 PyGeoid implements computational methods for modelling and analysing 
 the Earth's gravity field and related geodetic quantities.
@@ -57,7 +57,7 @@ The library is intended for research and educational use in geodesy.
 The project is under **active development**.
 APIs may and will change between minor versions.
 
-## Installation
+# Installation
 
 Install from `PyPI`:
 
@@ -71,11 +71,11 @@ Install development version:
 pip install -U git+https://github.com/ioshchepkov/pygeoid@develop
 ```
 
-## Documentation
+# Documentation
 
 https://pygeoid.thegeodesy.com
 
-## Citation
+# Citation
 
 If you use PyGeoid in academic work, please cite it.
 
@@ -84,7 +84,7 @@ Citation metadata is available in:
 - `CITATION.cff`
 - Zenodo DOI: https://doi.org/10.5281/zenodo.4692429
 
-## Contributing
+# Contributing
 
 Contributions related to theory, algorithms, validation, and documentation are welcome.
 

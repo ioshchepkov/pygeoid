@@ -45,6 +45,8 @@ extensions = [
     "myst_parser",
 ]
 
+autodoc_mock_imports = ["pyshtools"]
+
 # sorting for autodoc
 autodoc_member_order = "bysource"
 autodoc_typehints = "description"
