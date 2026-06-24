@@ -1,5 +1,7 @@
 """Geometry of the reference ellipsoid."""
 
+import functools as _functools
+
 import numpy as _np
 import pyproj as _proj
 
@@ -39,20 +41,42 @@ class Ellipsoid:
         # TODO: Check if all parameters are in SI units
         #    pass
 
-        # define useful short-named attributes
         self.geod = _proj.Geod(**kwargs)
-        self.a = self.geod.a * u.m
-        self.b = self.geod.b * u.m
-        # flattening
-        self.f = self.geod.f * u.dimensionless_unscaled
-        # eccentricity squared
-        self.e2 = _np.float64(self.geod.es) * u.dimensionless_unscaled
-        # eccentricity
-        self.e = _np.sqrt(self.e2) * u.dimensionless_unscaled
-        # 2nd eccentricity squared
-        self.e12 = self.e2 / (1 - self.e2) * u.dimensionless_unscaled
-        # 2nd eccentricity
-        self.e1 = _np.sqrt(self.e12) * u.dimensionless_unscaled
+
+    @_functools.cached_property
+    def a(self):
+        """Return semi-major or equatorial axis radius, in metres."""
+        return self.geod.a * u.m
+
+    @_functools.cached_property
+    def b(self):
+        """Return semi-minor or polar axis radius, in metres."""
+        return self.geod.b * u.m
+
+    @_functools.cached_property
+    def f(self):
+        """Return flattening of the ellipsoid."""
+        return self.geod.f * u.dimensionless_unscaled
+
+    @_functools.cached_property
+    def e2(self):
+        """Return first eccentricity squared."""
+        return _np.float64(self.geod.es) * u.dimensionless_unscaled
+
+    @_functools.cached_property
+    def e(self):
+        """Return first eccentricity."""
+        return _np.sqrt(self.e2) * u.dimensionless_unscaled
+
+    @_functools.cached_property
+    def e12(self):
+        """Return second eccentricity squared."""
+        return self.e2 / (1 - self.e2) * u.dimensionless_unscaled
+
+    @_functools.cached_property
+    def e1(self):
+        """Return second eccentricity."""
+        return _np.sqrt(self.e12) * u.dimensionless_unscaled
 
     @property
     def equatorial_radius(self):
@@ -255,7 +279,7 @@ class Ellipsoid:
         -----
         The arithmetic mean radius of the ellipsoid is
 
-        .. math:: R_m = \frac{2a + b}{2},
+        .. math:: R_m = \frac{2a + b}{3},
 
         where :math:`a` and :math:`b` are equatorial and polar axis of the
         ellipsoid respectively.
@@ -268,7 +292,7 @@ class Ellipsoid:
 
         A sphere with the same volume as the ellipsoid has the radius
 
-        .. math:: R_V = a^2 b.
+        .. math:: R_V = \sqrt[3]{a^2 b}.
 
         """
         if kind == "arithmetic":
