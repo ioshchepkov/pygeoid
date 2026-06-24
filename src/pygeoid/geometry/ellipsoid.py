@@ -419,8 +419,8 @@ class Ellipsoid:
         return 1 / _np.sqrt(meridian_curv_radius * pvertical_curv_radius)
 
     @u.quantity_input
-    def gaussian_curvature(self, lat: u.deg) -> 1 / u.m:
-        """Return Gaussian curvature, in inverse metres.
+    def gaussian_curvature(self, lat: u.deg) -> 1 / u.m**2:
+        """Return Gaussian curvature, in inverse squared metres.
 
         Parameters
         ----------
@@ -430,7 +430,7 @@ class Ellipsoid:
         Returns
         -------
         ~pygeoid.conventions.units.Quantity
-            Value of the Gaussian radius of curvature.
+            Value of the Gaussian curvature.
 
         Notes
         -----
@@ -440,7 +440,7 @@ class Ellipsoid:
         """
         meridian_curv_radius = self.meridian_curvature_radius(lat)
         pvertical_curv_radius = self.prime_vertical_curvature_radius(lat)
-        return _np.sqrt(meridian_curv_radius * pvertical_curv_radius)
+        return 1 / (meridian_curv_radius * pvertical_curv_radius)
 
     @u.quantity_input
     def average_curvature(self, lat: u.deg) -> 1 / u.m:

@@ -82,6 +82,17 @@ def test_latitude_dependend_values():
                                    6386175.289, decimal=3)
     np.testing.assert_almost_equal(ell.mean_curvature(lat).value,
                                    1 / 6372785.088, decimal=16)
+    gaussian_curvature = ell.gaussian_curvature(lat)
+    np.testing.assert_almost_equal(
+        gaussian_curvature.value,
+        1
+        / (
+            ell.meridian_curvature_radius(lat).value
+            * ell.prime_vertical_curvature_radius(lat).value
+        ),
+        decimal=28,
+    )
+    assert gaussian_curvature.unit.is_equivalent(1 / u.m**2)
     np.testing.assert_almost_equal(ell.meridian_arc_distance(0.0 * u.deg, lat).value,
                                    4186320.340, decimal=3)
 
