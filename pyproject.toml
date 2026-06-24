@@ -7,11 +7,9 @@ name = "pygeoid"
 dynamic = ["version"]
 description = "Python toolkit for physical geodesy"
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.12"
 license = { text = "MIT" }
-authors = [
-    { name = "Ilya Oshchepkov" }
-]
+authors = [{ name = "Ilya Oshchepkov" }]
 keywords = ["geodesy", "gravimetry", "gravity", "geoid"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -36,25 +34,19 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
-    "pytest",
-    "pytest-cov"
-]
-dev = [
-  "pytest",
-  "ruff"
-]
+test = ["pytest", "pytest-cov"]
+dev = ["pytest", "ruff"]
 docs = [
-    "sphinx>=8",
-    "myst-parser",
-    "sphinx-rtd-theme>=2",
-    "nbsphinx",
-    "jupyter"
+  "sphinx>=8",
+  "myst-parser",
+  "sphinx-rtd-theme>=2",
+  "nbsphinx",
+  "jupyter",
 ]
 
 [tool.setuptools]
 include-package-data = true
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -64,10 +56,10 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = [
-    "-ra",
-    "--cov=pygeoid",
-    "--cov-report=term-missing",
-    "--cov-report=xml"
+  "-ra",
+  "--cov=pygeoid",
+  "--cov-report=term-missing",
+  "--cov-report=xml",
 ]
 python_files = "test_*.py"
 
@@ -77,10 +69,10 @@ extend-exclude = ["*test*"]
 
 [tool.ruff.lint]
 select = [
-  "E",   # pycodestyle
-  "F",   # pyflakes
-  "I",   # isort
-  "UP",  # pyupgrade
+  "E",  # pycodestyle
+  "F",  # pyflakes
+  "I",  # isort
+  "UP", # pyupgrade
 ]
 ignore = []
 
@@ -91,9 +83,7 @@ indent-style = "space"
 [tool.coverage.run]
 branch = true
 source = ["pygeoid"]
-omit = [
-  "tests/*",
-]
+omit = ["tests/*"]
 
 [tool.coverage.report]
 show_missing = true
