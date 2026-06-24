@@ -11,7 +11,7 @@ from pygeoid.conventions import units as u
 DEFAULT_ELLIPSOID = "GRS80"
 
 _GEOD_LENGTH_PARAMETERS = {"a", "b"}
-_GEOD_DIMENSIONLESS_PARAMETERS = {"f", "rf", "es"}
+_GEOD_DIMENSIONLESS_PARAMETERS = {"e", "f", "rf", "es"}
 
 
 def get_ellps_map():
@@ -52,7 +52,7 @@ class Ellipsoid:
     Custom ellipsoids can be created with keyword parameters accepted by
     `pyproj.Geod`, but unlike `pyproj.Geod`, numeric custom values must be
     quantities with proper units. Length parameters such as ``a`` and ``b`` are
-    converted to metres; dimensionless parameters such as ``f``, ``rf``, and
+    converted to metres; dimensionless parameters such as ``f``, ``rf``, ``e`` and
     ``es`` are converted to plain dimensionless values.
 
     Use `get_ellps_map` to get PyProj's named ellipsoid definitions with units

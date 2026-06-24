@@ -17,6 +17,9 @@ def test_init():
     np.testing.assert_equal(ell.a.value, 6378137.0)
     np.testing.assert_almost_equal(ell.reciprocal_flattening.value, 298.257222101)
 
+    ell = Ellipsoid(a=6378137.0 * u.m, e=0.0818191910428 * u.one)
+    np.testing.assert_almost_equal(ell.eccentricity.value, 0.0818191910428)
+
     with pytest.raises(TypeError):
         Ellipsoid(a=6378137.0, rf=298.257222101)
 
