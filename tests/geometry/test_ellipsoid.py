@@ -2,13 +2,39 @@ import os
 import pytest
 import numpy as np
 import astropy.units as u
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.ellipsoid import Ellipsoid, get_ellps_map
 from pygeoid.geometry.transform import geodetic_to_cartesian, geodetic_to_spherical
 
 
 def test_init():
     with pytest.raises(ValueError):
-        ell = Ellipsoid("xxx")
+        Ellipsoid("xxx")
+
+    ell = Ellipsoid(
+        a=6378137.0 * u.m,
+        rf=298.257222101 * u.dimensionless_unscaled,
+    )
+    np.testing.assert_equal(ell.a.value, 6378137.0)
+    np.testing.assert_almost_equal(ell.reciprocal_flattening.value, 298.257222101)
+
+    with pytest.raises(TypeError):
+        Ellipsoid(a=6378137.0, rf=298.257222101)
+
+    with pytest.raises(u.UnitTypeError):
+        Ellipsoid(a=6378137.0 * u.s, rf=298.257222101 * u.dimensionless_unscaled)
+
+
+def test_get_ellps_map():
+    ellps_map = get_ellps_map()
+    grs80 = ellps_map["GRS80"]
+
+    assert grs80["a"].unit == u.m
+    assert grs80["rf"].unit == u.dimensionless_unscaled
+    assert isinstance(grs80["description"], str)
+
+    ell = Ellipsoid(**grs80)
+    np.testing.assert_equal(ell.a.value, 6378137.0)
+    np.testing.assert_almost_equal(ell.reciprocal_flattening.value, 298.257222101)
 
 
 def test_short_long_names():

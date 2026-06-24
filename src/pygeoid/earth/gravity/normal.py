@@ -100,11 +100,11 @@ class LevelEllipsoid(Ellipsoid):
         self._gm = kwargs["gm"]
         self._omega = kwargs["omega"]
 
-        kwargs_nounits = {
-            key: x.si.value for key, x in kwargs.items() if hasattr(x, "unit")
+        geod_kwargs = {
+            key: kwargs[key] for key in ("a", "b", "f", "rf", "es") if key in kwargs
         }
 
-        super().__init__(self, **kwargs_nounits)
+        super().__init__(**geod_kwargs)
 
         # define useful short-named attributes
         self._m = self.omega**2 * self.a**2 * self.b / self.gm

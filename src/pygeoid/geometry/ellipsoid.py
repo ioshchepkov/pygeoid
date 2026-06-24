@@ -10,38 +10,108 @@ from pygeoid.conventions import units as u
 # default ellipsoid for geometrical (geodetic) applications
 DEFAULT_ELLIPSOID = "GRS80"
 
+_GEOD_LENGTH_PARAMETERS = {"a", "b"}
+_GEOD_DIMENSIONLESS_PARAMETERS = {"f", "rf", "es"}
+
+
+def get_ellps_map():
+    """Return pyproj ellipsoid definitions with unit-aware parameters.
+
+    This wraps `pyproj.get_ellps_map` and returns a new dictionary where
+    semi-axis parameters are quantities in metres and flattening parameters are
+    dimensionless quantities. Descriptions are preserved as strings.
+    """
+    return {
+        ellps: {
+            key: _ellipsoid_parameter_with_units(key, value)
+            for key, value in params.items()
+        }
+        for ellps, params in _proj.get_ellps_map().items()
+    }
+
+
+def _ellipsoid_parameter_with_units(key, value):
+    if key in _GEOD_LENGTH_PARAMETERS:
+        return value * u.m
+    if key in _GEOD_DIMENSIONLESS_PARAMETERS:
+        return value * u.dimensionless_unscaled
+    return value
+
 
 class Ellipsoid:
-    """Class represents an ellipsoid of revolution and its geometry.
+    """Ellipsoid of revolution and its geometric properties.
 
-    This class uses proj.Geod class from pyproj package, so any valid init
-    string for Proj are accepted as arguments. See `pyproj.Geod.__new__`
-    documentation (https://pyproj4.github.io/pyproj/stable/api/geod.html)
-    for more information.
+    This class wraps `pyproj.Geod` for geodesic calculations and exposes
+    common ellipsoid parameters and derived geometric quantities as unit-aware
+    properties.
+
+    Named ellipsoids can be selected with ``ellps``. If no name or custom
+    parameters are given, the default named ellipsoid is ``GRS80``. ``None``
+    and ``"default"`` also select ``GRS80``.
+
+    Custom ellipsoids can be created with keyword parameters accepted by
+    `pyproj.Geod`, but unlike `pyproj.Geod`, numeric custom values must be
+    quantities with proper units. Length parameters such as ``a`` and ``b`` are
+    converted to metres; dimensionless parameters such as ``f``, ``rf``, and
+    ``es`` are converted to plain dimensionless values.
+
+    Use `get_ellps_map` to get PyProj's named ellipsoid definitions with units
+    attached to numeric parameters. Those definitions can be passed directly to
+    this constructor with ``Ellipsoid(**params)``.
 
     Parameters
     ----------
-    ellps : str, optional
-        Ellipsoid name, most common ellipsoids are accepted.
-        Default is 'GRS80'.
+    ellps : str or None, optional
+        Named ellipsoid understood by `pyproj.Geod`.
+    **kwargs
+        Custom ellipsoid parameters with units accepted by `pyproj.Geod`,
+        including definitions returned by `get_ellps_map`.
     """
 
-    def __init__(self, ellps: "str" = None, **kwargs):
-        if not kwargs:
-            if ellps in _proj.pj_ellps:
-                kwargs["ellps"] = ellps
-            elif ellps is None or ellps.lower() == "default":
-                kwargs["ellps"] = DEFAULT_ELLIPSOID
-            else:
-                raise ValueError(
-                    f"No ellipsoid with name {ellps}, possible values \
-                        are:\n{_proj.pj_ellps.keys()}"
-                )
-        # else:
-        # TODO: Check if all parameters are in SI units
-        #    pass
+    def __init__(self, ellps: str | None = None, **kwargs):
+        if kwargs:
+            kwargs = self._geod_kwargs_from_quantities(kwargs)
+            if ellps is not None:
+                kwargs["ellps"] = self._ellipsoid_name(ellps)
+        else:
+            kwargs["ellps"] = self._ellipsoid_name(ellps)
 
         self.geod = _proj.Geod(**kwargs)
+
+    @staticmethod
+    def _ellipsoid_name(ellps):
+        if ellps in _proj.pj_ellps:
+            return ellps
+        if ellps is None or ellps.lower() == "default":
+            return DEFAULT_ELLIPSOID
+        raise ValueError(
+            f"No ellipsoid with name {ellps}, possible values \
+                are:\n{_proj.pj_ellps.keys()}"
+        )
+
+    @staticmethod
+    def _geod_kwargs_from_quantities(kwargs):
+        geod_kwargs = {}
+        for key, value in kwargs.items():
+            if key == "description":
+                geod_kwargs[key] = value
+                continue
+
+            if not isinstance(value, u.Quantity):
+                raise TypeError(f"`{key}` must be a quantity with units.")
+
+            if key in _GEOD_LENGTH_PARAMETERS:
+                if not value.unit.is_equivalent(u.m):
+                    raise u.UnitTypeError(f"`{key}` must have length units.")
+                geod_kwargs[key] = value.to(u.m).value
+            elif key in _GEOD_DIMENSIONLESS_PARAMETERS:
+                if not value.unit.is_equivalent(u.dimensionless_unscaled):
+                    raise u.UnitTypeError(f"`{key}` must be dimensionless.")
+                geod_kwargs[key] = value.to(u.dimensionless_unscaled).value
+            else:
+                geod_kwargs[key] = value.si.value
+
+        return geod_kwargs
 
     @_functools.cached_property
     def a(self):
