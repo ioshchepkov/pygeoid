@@ -395,6 +395,14 @@ class Ellipsoid:
         return self.polar_curvature_radius / self._v(lat)
 
     @u.quantity_input
+    def _principal_curvature_radii(self, lat: u.deg):
+        """Return both meridian and prime vertical curvature radii."""
+        return (
+            self.meridian_curvature_radius(lat),
+            self.prime_vertical_curvature_radius(lat),
+        )
+
+    @u.quantity_input
     def mean_curvature(self, lat: u.deg) -> 1 / u.m:
         r"""Return mean curvature, in inverse metres.
 
@@ -414,9 +422,8 @@ class Ellipsoid:
         :math:`M` -- radius of curvature of meridian normal section,
         :math:`N` -- radius of curvature of prime vertical.
         """
-        meridian_curv_radius = self.meridian_curvature_radius(lat)
-        pvertical_curv_radius = self.prime_vertical_curvature_radius(lat)
-        return 1 / _np.sqrt(meridian_curv_radius * pvertical_curv_radius)
+        m_rad, n_rad = self._principal_curvature_radii(lat)
+        return 1 / _np.sqrt(m_rad * n_rad)
 
     @u.quantity_input
     def gaussian_curvature(self, lat: u.deg) -> 1 / u.m**2:
@@ -438,9 +445,8 @@ class Ellipsoid:
         :math:`M` -- radius of curvature of meridian normal section,
         :math:`N` -- radius of curvature of prime vertical.
         """
-        meridian_curv_radius = self.meridian_curvature_radius(lat)
-        pvertical_curv_radius = self.prime_vertical_curvature_radius(lat)
-        return 1 / (meridian_curv_radius * pvertical_curv_radius)
+        m_rad, n_rad = self._principal_curvature_radii(lat)
+        return 1 / (m_rad * n_rad)
 
     @u.quantity_input
     def average_curvature(self, lat: u.deg) -> 1 / u.m:
@@ -466,10 +472,8 @@ class Ellipsoid:
         :math:`N` -- radius of curvature of prime vertical.
 
         """
-        return 0.5 * (
-            1 / self.prime_vertical_curvature_radius(lat)
-            + 1 / self.meridian_curvature_radius(lat)
-        )
+        m_rad, n_rad = self._principal_curvature_radii(lat)
+        return 0.5 * (1 / m_rad + 1 / n_rad)
 
     #########################################################################
     # Arc distances, geodetic problems
