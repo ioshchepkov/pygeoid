@@ -2,7 +2,7 @@ import astropy.units as u
 import numpy as np
 
 from pygeoid.geometry.ellipsoid import Ellipsoid
-from pygeoid.geometry.frame import ECEF
+from pygeoid.geometry.frame import ECEF, LocalTangentPlane
 from pygeoid.geometry.transform import ecef_to_enu, enu_to_ecef
 
 ell = Ellipsoid("GRS80")
@@ -112,3 +112,31 @@ def test_enu_uses_given_ellipsoid():
     np.testing.assert_allclose(actual[0].value, expected[0].value)
     np.testing.assert_allclose(actual[1].value, expected[1].value)
     np.testing.assert_allclose(actual[2].value, expected[2].value)
+
+
+def test_local_tangent_plane_transform_roundtrip():
+    origin = ECEF.from_geodetic(55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
+    point = ECEF.from_geodetic(55.001 * u.deg, 37.002 * u.deg, 120.0 * u.m)
+    local = LocalTangentPlane(origin=origin)
+
+    local_point = point.transform_to(local)
+    back = local_point.transform_to(ECEF())
+
+    np.testing.assert_allclose(
+        back.cartesian.xyz.to_value(u.m), point.cartesian.xyz.to_value(u.m)
+    )
+
+
+def test_local_tangent_plane_to_local_transform_roundtrip():
+    origin0 = ECEF.from_geodetic(55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
+    origin1 = ECEF.from_geodetic(55.01 * u.deg, 37.01 * u.deg, 90.0 * u.m)
+    point = ECEF.from_geodetic(55.001 * u.deg, 37.002 * u.deg, 120.0 * u.m)
+    local0 = LocalTangentPlane(origin=origin0)
+    local1 = LocalTangentPlane(origin=origin1)
+
+    local1_point = point.transform_to(local0).transform_to(local1)
+    back = local1_point.transform_to(ECEF())
+
+    np.testing.assert_allclose(
+        back.cartesian.xyz.to_value(u.m), point.cartesian.xyz.to_value(u.m)
+    )

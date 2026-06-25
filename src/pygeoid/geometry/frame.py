@@ -4,9 +4,9 @@ import inspect
 
 import numpy as _np
 from astropy.coordinates import (
+    AffineTransform,
     Attribute,
     BaseCoordinateFrame,
-    FunctionTransform,
     frame_transform_graph,
 )
 from astropy.coordinates.angles import Latitude, Longitude
@@ -254,7 +254,10 @@ class LocalTangentPlane(BaseCoordinateFrame):
 
     def __init__(self, *args, origin, orientation=None, **kwargs):
 
-        super().__init__(*args, origin=origin, orientation=orientation, **kwargs)
+        if orientation is None:
+            super().__init__(*args, origin=origin, **kwargs)
+        else:
+            super().__init__(*args, origin=origin, orientation=orientation, **kwargs)
 
         def vector(lat, lon, name):
             _name = name[0].upper()
@@ -294,7 +297,7 @@ class LocalTangentPlane(BaseCoordinateFrame):
         self._basis = _np.column_stack((ux, uy, uz))
 
 
-@frame_transform_graph.transform(FunctionTransform, ECEF, LocalTangentPlane)
+@frame_transform_graph.transform(AffineTransform, ECEF, LocalTangentPlane)
 def ecef_to_local(ecef, local):
     """Compute the transformation from ECEF to LocalTangentPlane coordinates.
 
@@ -310,17 +313,15 @@ def ecef_to_local(ecef, local):
     LocalTangentPlane
         The LocalTangentPlane frame with transformed coordinates
     """
+    matrix = local._basis.T
+    offset = None
     c = ecef.represent_as("cartesian")
     if c.x.unit.is_equivalent("m"):
-        c = c.copy()
-        c -= local._origin.represent_as("cartesian")
-
-    c = c.transform(local._basis.T)
-
-    return local.realize_frame(c)
+        offset = -local._origin.represent_as("cartesian").transform(matrix)
+    return matrix, offset
 
 
-@frame_transform_graph.transform(FunctionTransform, LocalTangentPlane, ECEF)
+@frame_transform_graph.transform(AffineTransform, LocalTangentPlane, ECEF)
 def local_to_ecef(local, ecef):
     """Compute the transformation from LocalTangentPlane to ECEF coordinates.
 
@@ -336,15 +337,16 @@ def local_to_ecef(local, ecef):
     ECEF
         The ECEF frame with transformed coordinates
     """
-    c = local.represent_as("cartesian").transform(local._basis)
+    matrix = local._basis
+    offset = None
+    c = local.represent_as("cartesian")
     if c.x.unit.is_equivalent("m"):
-        c += local._origin.represent_as("cartesian")
-
-    return ecef.realize_frame(c)
+        offset = local._origin.represent_as("cartesian")
+    return matrix, offset
 
 
 @frame_transform_graph.transform(
-    FunctionTransform, LocalTangentPlane, LocalTangentPlane
+    AffineTransform, LocalTangentPlane, LocalTangentPlane
 )
 def local_to_local(local0, local1):
     """Compute the transformation between LocalTangentPlane coordinates.
@@ -362,33 +364,12 @@ def local_to_local(local0, local1):
         The LocalTangentPlane frame with transformed coordinates.
 
     """
+    matrix = local1._basis.T @ local0._basis
+    offset = None
     c = local0.represent_as("cartesian")
-    translate = c.x.unit.is_equivalent("m")
-
-    # Check if the two frames are identicals
-    if _np.array_equal(local0._basis, local1._basis):
-        local0_c = local0._origin.represent_as("cartesian")
-        local1_c = local1._origin.represent_as("cartesian")
-        if not translate or (
-            (local0_c.x == local1_c.x)
-            and (local0_c.y == local1_c.y)
-            and (local0_c.z == local1_c.z)
-        ):
-            # CartesianRepresentations might not eveluate to equal though the
-            # coordinates are equal
-            return local1.realize_frame(c)
-
-    # Transform from Local0 to ECEF
-    c = c.transform(local0._basis)
-    if translate:
-        c = c.copy()
-        c += local0._origin.represent_as("cartesian")
-
-    # Transform back from ECEF to Local1
-    if translate:
-        c = c.copy()
-        c -= local1._origin.represent_as("cartesian")
-
-    c = c.transform(local1._basis.T)
-
-    return local1.realize_frame(c)
+    if c.x.unit.is_equivalent("m"):
+        offset = (
+            local0._origin.represent_as("cartesian")
+            - local1._origin.represent_as("cartesian")
+        ).transform(local1._basis.T)
+    return matrix, offset
