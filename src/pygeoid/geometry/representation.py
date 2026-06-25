@@ -12,7 +12,7 @@ from astropy.coordinates.angles import Latitude, Longitude
 
 from pygeoid.conventions import units as u
 from pygeoid.geometry import transform
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid
 
 
 class GeodeticRepresentation(BaseRepresentation):
@@ -20,16 +20,15 @@ class GeodeticRepresentation(BaseRepresentation):
         [("lon", Longitude), ("lat", Latitude), ("height", u.Quantity)]
     )
 
-    _ellipsoid = Ellipsoid()
-
     def __init__(self, lon, lat=None, height=None, ell=None, copy=True):
         if height is None and not isinstance(lat, self.__class__):
             height = 0 << u.m
 
         super().__init__(lon, lat, height, copy=copy)
 
-        if ell is not None:
-            self._ellipsoid = ell
+        if ell is None:
+            ell = Ellipsoid(DEFAULT_ELLIPSOID)
+        self._ellipsoid = ell
 
         if not self.height.unit.is_equivalent(u.m):
             raise u.UnitTypeError(
@@ -97,7 +96,7 @@ class GeodeticRepresentation(BaseRepresentation):
         x, y, z = cart.get_xyz()
 
         if ell is None:
-            ell = cls._ellipsoid
+            ell = Ellipsoid(DEFAULT_ELLIPSOID)
 
         lat, lon, height = transform.cartesian_to_geodetic(x, y, z, ell=ell)
         return cls(lon=lon, lat=lat, height=height, ell=ell, copy=True)
@@ -112,14 +111,13 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
         [("rlat", Latitude), ("lon", Longitude), ("u_ax", u.Quantity)]
     )
 
-    _ellipsoid = Ellipsoid()
-
     def __init__(self, rlat, lon=None, u_ax=None, ell=None, copy=True):
 
         super().__init__(rlat, lon, u_ax, copy=copy)
 
-        if ell is not None:
-            self._ellipsoid = ell
+        if ell is None:
+            ell = Ellipsoid(DEFAULT_ELLIPSOID)
+        self._ellipsoid = ell
 
         if not self.u_ax.unit.is_equivalent(u.m):
             raise u.UnitTypeError(
@@ -181,7 +179,7 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
         x, y, z = cart.get_xyz()
 
         if ell is None:
-            ell = cls._ellipsoid
+            ell = Ellipsoid(DEFAULT_ELLIPSOID)
 
         rlat, lon, u_ax = transform.cartesian_to_ellipsoidal(x, y, z, ell=ell)
         return cls(rlat, lon, u_ax, ell=ell, copy=False)

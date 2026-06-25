@@ -7,4 +7,5 @@ Coordinate Systems and Transformations (`pygeoid.geometry`)
    :maxdepth: 1
 
    ellipsoid.rst
+   position.rst
    transform.rst

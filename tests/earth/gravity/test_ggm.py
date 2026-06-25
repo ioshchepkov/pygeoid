@@ -10,7 +10,7 @@ import pytest
 pytest.importorskip("pyshtools")
 from pyshtools.shio import read_icgem_gfc
 
-from pygeoid.geometry.frame import ECEF
+from pygeoid.geometry import Position
 from pygeoid.earth.gravity.ggm import GlobalGravityFieldModel
 from pygeoid.earth.gravity.normal import LevelEllipsoid
 from pygeoid.earth.gravity.spherical_harmonics import get_lmax
@@ -43,7 +43,7 @@ def read_test_data():
 model = read_test_model()
 data = read_test_data()
 
-position = ECEF.from_geodetic(
+position = Position.from_geodetic(
     data["latitude"].values * u.deg,
     data["longitude"].values * u.deg,
     0.0 * u.m,
@@ -102,7 +102,7 @@ def test_height_anomaly_ell():
 
 def test_dov():
 
-    position = ECEF.from_geodetic(
+    position = Position.from_geodetic(
         data["latitude"].values * u.deg,
         data["longitude"].values * u.deg,
         data["h_over_geoid"].values * u.m,

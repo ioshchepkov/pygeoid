@@ -3,13 +3,18 @@ import pytest
 import numpy as np
 import astropy.units as u
 import pyproj
-from pygeoid.geometry.ellipsoid import Ellipsoid, get_ellps_map
+from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid, get_ellps_map
 from pygeoid.geometry.transform import geodetic_to_cartesian, geodetic_to_spherical
 
 
 def test_init():
     with pytest.raises(ValueError):
         Ellipsoid("xxx")
+
+    assert DEFAULT_ELLIPSOID == "GRS80"
+
+    ell = Ellipsoid()
+    np.testing.assert_equal(ell.a.value, Ellipsoid(DEFAULT_ELLIPSOID).a.value)
 
     ell = Ellipsoid(
         a=6378137.0 * u.m,
@@ -86,6 +91,13 @@ def test_to_proj_geod():
     assert geod.initstring == ell.geod.initstring
     np.testing.assert_equal(geod.a, ell.a.value)
     np.testing.assert_almost_equal(geod.f, ell.f.value)
+
+
+def test_geod_is_read_only():
+    ell = Ellipsoid("GRS80")
+
+    with pytest.raises(AttributeError):
+        ell.geod = pyproj.Geod(ellps="WGS84")
 
 
 def test_short_long_names():

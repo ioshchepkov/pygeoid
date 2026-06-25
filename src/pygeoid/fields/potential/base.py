@@ -101,7 +101,7 @@ class PotentialBase(ScalarField, metaclass=abc.ABCMeta):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
 
         """
         return self._hessian(position, *args, **kwargs)

@@ -1,8 +1,13 @@
 import astropy.units as u
 import numpy as np
 
-from pygeoid.geometry.ellipsoid import Ellipsoid
-from pygeoid.geometry.frame import ECEF, LocalTangentPlane
+from pygeoid.geometry import Position
+from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid
+from pygeoid.geometry.frame import LocalTangentPlane
+from pygeoid.geometry.representation import (
+    EllipsoidalHarmonicRepresentation,
+    GeodeticRepresentation,
+)
 from pygeoid.geometry.transform import ecef_to_enu, enu_to_ecef
 
 ell = Ellipsoid("GRS80")
@@ -12,7 +17,7 @@ n_test = 10  # * 2
 r_ = np.geomspace(1, 1e8, num=n_test)
 r_ = np.append(-r_[::-1], r_)
 x, y, z = np.meshgrid(r_, r_, r_, indexing="ij") * u.m
-p = ECEF(x, y, z)
+p = Position(x, y, z)
 
 
 def test_cartesian():
@@ -23,15 +28,36 @@ def test_cartesian():
     np.testing.assert_equal([x.value, y.value, z.value], p.cartesian.xyz.value)
 
 
+def test_default_ellipsoid_is_instance_attribute():
+    p = Position(1 * u.m, 2 * u.m, 3 * u.m)
+    geod = GeodeticRepresentation(37 * u.deg, 55 * u.deg, 100 * u.m)
+    ellharm = EllipsoidalHarmonicRepresentation(
+        55 * u.deg, 37 * u.deg, 1e7 * u.m
+    )
+
+    assert not hasattr(Position, "_ellipsoid")
+    assert not hasattr(GeodeticRepresentation, "_ellipsoid")
+    assert not hasattr(EllipsoidalHarmonicRepresentation, "_ellipsoid")
+    assert p.ellipsoid is not geod.ellipsoid
+    assert geod.ellipsoid is not ellharm.ellipsoid
+    np.testing.assert_equal(p.ellipsoid.a.value, Ellipsoid(DEFAULT_ELLIPSOID).a.value)
+    np.testing.assert_equal(geod.ellipsoid.a.value, Ellipsoid(DEFAULT_ELLIPSOID).a.value)
+    np.testing.assert_equal(
+        ellharm.ellipsoid.a.value, Ellipsoid(DEFAULT_ELLIPSOID).a.value
+    )
+
+
 def test_from_to_geodetic():
-    b_p = ECEF.from_geodetic(p.geodetic.lat, p.geodetic.lon, p.geodetic.height, ell=ell)
+    b_p = Position.from_geodetic(
+        p.geodetic.lat, p.geodetic.lon, p.geodetic.height, ell=ell
+    )
     np.testing.assert_array_almost_equal(
         b_p.cartesian.xyz.value, [x.value, y.value, z.value], decimal=5
     )
 
 
 def test_from_to_spherical():
-    b_p = ECEF.from_spherical(p.spherical.lat, p.spherical.lon, p.spherical.distance)
+    b_p = Position.from_spherical(p.spherical.lat, p.spherical.lon, p.spherical.distance)
     np.testing.assert_array_almost_equal(
         b_p.cartesian.xyz.value, [x.value, y.value, z.value], decimal=5
     )
@@ -46,9 +72,9 @@ def test_from_to_ellipsoidal():
     y_ = np.ma.masked_where(cond, y).compressed()
     z_ = np.ma.masked_where(cond, z).compressed()
 
-    p = ECEF(x_, y_, z_, ell=ell)
+    p = Position(x_, y_, z_, ell=ell)
     ellipsoidal_harmonic = p.ellipsoidal_harmonic
-    b_p = ECEF.from_ellipsoidal_harmonic(
+    b_p = Position.from_ellipsoidal_harmonic(
         ellipsoidal_harmonic.rlat,
         ellipsoidal_harmonic.lon,
         ellipsoidal_harmonic.u_ax,
@@ -63,9 +89,9 @@ def test_from_to_ellipsoidal():
 
 
 def test_from_to_ellipsoidal_default_ellipsoid():
-    p = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m)
+    p = Position(1e7 * u.m, 2e7 * u.m, 3e7 * u.m)
 
-    b_p = ECEF.from_ellipsoidal_harmonic(
+    b_p = Position.from_ellipsoidal_harmonic(
         p.ellipsoidal_harmonic.rlat,
         p.ellipsoidal_harmonic.lon,
         p.ellipsoidal_harmonic.u_ax,
@@ -78,8 +104,8 @@ def test_represent_as_preserves_frame_ellipsoid():
     ell1 = Ellipsoid("GRS80")
     ell2 = Ellipsoid("intl")
 
-    p1 = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m, ell=ell1)
-    p2 = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m, ell=ell2)
+    p1 = Position(1e7 * u.m, 2e7 * u.m, 3e7 * u.m, ell=ell1)
+    p2 = Position(1e7 * u.m, 2e7 * u.m, 3e7 * u.m, ell=ell2)
 
     assert p1.represent_as("geodetic").ellipsoid is ell1
     assert p2.represent_as("geodetic").ellipsoid is ell2
@@ -103,7 +129,7 @@ def test_to_enu_ell():
 
 def test_enu_uses_given_ellipsoid():
     ell = Ellipsoid("intl")
-    point = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m)
+    point = Position(1e7 * u.m, 2e7 * u.m, 3e7 * u.m)
     origin = (55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
 
     expected = ecef_to_enu(point.x, point.y, point.z, origin=origin, ell=ell)
@@ -115,12 +141,12 @@ def test_enu_uses_given_ellipsoid():
 
 
 def test_local_tangent_plane_transform_roundtrip():
-    origin = ECEF.from_geodetic(55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
-    point = ECEF.from_geodetic(55.001 * u.deg, 37.002 * u.deg, 120.0 * u.m)
+    origin = Position.from_geodetic(55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
+    point = Position.from_geodetic(55.001 * u.deg, 37.002 * u.deg, 120.0 * u.m)
     local = LocalTangentPlane(origin=origin)
 
     local_point = point.transform_to(local)
-    back = local_point.transform_to(ECEF())
+    back = local_point.transform_to(Position())
 
     np.testing.assert_allclose(
         back.cartesian.xyz.to_value(u.m), point.cartesian.xyz.to_value(u.m)
@@ -128,14 +154,14 @@ def test_local_tangent_plane_transform_roundtrip():
 
 
 def test_local_tangent_plane_to_local_transform_roundtrip():
-    origin0 = ECEF.from_geodetic(55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
-    origin1 = ECEF.from_geodetic(55.01 * u.deg, 37.01 * u.deg, 90.0 * u.m)
-    point = ECEF.from_geodetic(55.001 * u.deg, 37.002 * u.deg, 120.0 * u.m)
+    origin0 = Position.from_geodetic(55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
+    origin1 = Position.from_geodetic(55.01 * u.deg, 37.01 * u.deg, 90.0 * u.m)
+    point = Position.from_geodetic(55.001 * u.deg, 37.002 * u.deg, 120.0 * u.m)
     local0 = LocalTangentPlane(origin=origin0)
     local1 = LocalTangentPlane(origin=origin1)
 
     local1_point = point.transform_to(local0).transform_to(local1)
-    back = local1_point.transform_to(ECEF())
+    back = local1_point.transform_to(Position())
 
     np.testing.assert_allclose(
         back.cartesian.xyz.to_value(u.m), point.cartesian.xyz.to_value(u.m)

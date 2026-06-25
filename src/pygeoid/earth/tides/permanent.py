@@ -89,7 +89,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -117,7 +117,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -135,7 +135,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -162,7 +162,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~pygeoid.conventions.units.Quantity
             Mean global gravity of the Earth.
@@ -204,7 +204,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~pygeoid.conventions.units.Quantity
             Mean global gravity of the Earth.
@@ -238,7 +238,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -258,7 +258,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         elastic : bool, optional
             If True then the Earth is elastic (deformable)
@@ -284,7 +284,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         elastic : bool, optional
             If True then the Earth is elastic (deformable)
@@ -332,7 +332,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         from_system : {'zero-tide', 'mean-tide', 'non-tidal'}, optional
             In which tide system the gravity is given. Default value is set to
@@ -377,7 +377,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         azimuth : ~pygeoid.conventions.units.Quantity, optional
             If given then tilt will be returned in that direction.
@@ -418,7 +418,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~pygeoid.conventions.units.Quantity, optional
             Mean global gravity of the Earth.
@@ -451,7 +451,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         from_system : {'zero-tide', 'mean-tide', 'non-tidal'}, optional
             In which tide system the geoidal height is given.
@@ -496,7 +496,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         gravity : ~pygeoid.conventions.units.Quantity, optional
             Mean global gravity of the Earth.
@@ -527,7 +527,7 @@ class PermanentTide(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         from_system : {'zero-tide', 'mean-tide', 'non-tidal'}, optional
             In which tide system the pgysical height is given.

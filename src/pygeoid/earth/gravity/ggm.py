@@ -174,7 +174,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -206,7 +206,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -245,7 +245,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -266,7 +266,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -286,7 +286,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -311,7 +311,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -338,7 +338,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -362,7 +362,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -407,7 +407,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
         ref_pot : ~pygeoid.conventions.units.Quantity
             Reference potential value W0 for the zero degree term. Defaut is
@@ -441,7 +441,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -494,7 +494,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -538,7 +538,7 @@ class GlobalGravityFieldModel:
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -610,7 +610,7 @@ class SHGravPotential(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -695,7 +695,7 @@ class SHGravPotential(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -716,7 +716,7 @@ class SHGravPotential(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns
@@ -738,7 +738,7 @@ class SHGravPotential(_PotentialBase):
 
         Parameters
         ----------
-        position : ~pygeoid.geometry.frame.ECEF
+        position : ~pygeoid.geometry.Position
             Position in the Earth-Centered-Earth-Fixed frame.
 
         Returns

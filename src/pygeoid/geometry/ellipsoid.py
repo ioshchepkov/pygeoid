@@ -76,7 +76,7 @@ class Ellipsoid:
         else:
             kwargs["ellps"] = self._ellipsoid_name(ellps)
 
-        self.geod = _proj.Geod(**kwargs)
+        self._geod = _proj.Geod(**kwargs)
 
     @classmethod
     def from_pyproj_crs(cls, crs):
@@ -94,8 +94,13 @@ class Ellipsoid:
             Ellipsoid initialized from the CRS geodesic definition.
         """
         self = cls.__new__(cls)
-        self.geod = _proj.CRS.from_user_input(crs).get_geod()
+        self._geod = _proj.CRS.from_user_input(crs).get_geod()
         return self
+
+    @property
+    def geod(self):
+        """Read-only `pyproj.Geod` backend."""
+        return self._geod
 
     def to_proj_geod(self):
         """Return a `pyproj.Geod` initialized from the original parameters."""

@@ -4,4 +4,6 @@ This subpackage contains classes and functions for coordinate objects and
 transformations frequently used in physical geodesy.
 """
 
-__all__ = []
+from .position import Position
+
+__all__ = ["Position"]

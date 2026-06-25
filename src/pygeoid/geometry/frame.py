@@ -1,7 +1,5 @@
 """This module contains frame classes."""
 
-import inspect
-
 import numpy as _np
 from astropy.coordinates import (
     AffineTransform,
@@ -9,218 +7,18 @@ from astropy.coordinates import (
     BaseCoordinateFrame,
     frame_transform_graph,
 )
-from astropy.coordinates.angles import Latitude, Longitude
 from astropy.coordinates.representation import CartesianRepresentation
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry import transform
-from pygeoid.geometry.ellipsoid import Ellipsoid
-from pygeoid.geometry.representation import (
-    EllipsoidalHarmonicRepresentation,
-    GeodeticRepresentation,
-)
+from pygeoid.geometry import Position, transform
 
-__all__ = ["LocalFrame", "ECEF", "LocalTangentPlane"]
+__all__ = ["LocalFrame", "LocalTangentPlane"]
 
 
 class LocalFrame(BaseCoordinateFrame):
     """Arbitrary local cartesian frame."""
 
     default_representation = CartesianRepresentation
-
-
-class ECEF(BaseCoordinateFrame):
-    """Earth-Centered, Earth-Fixed frame.
-
-    Parameters
-    ----------
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
-        Reference ellipsoid to which geodetic coordinates are referenced to.
-    *args
-        Any representation of the frame data, e.g. x, y, and z coordinates.
-    **kwargs
-        Any extra BaseCoordinateFrame arguments.
-
-    """
-
-    default_representation = CartesianRepresentation
-    """Default representation of local frames"""
-
-    _ellipsoid = Ellipsoid()
-
-    def __init__(self, *args, ell=None, **kwargs):
-
-        super().__init__(*args, **kwargs)
-
-        if ell is not None:
-            self._ellipsoid = ell
-
-    @property
-    def ellipsoid(self):
-        """Reference ellipsoid."""
-        return self._ellipsoid
-
-    @ellipsoid.setter
-    def ellipsoid(self, ellipsoid):
-        if not isinstance(ellipsoid, Ellipsoid):
-            raise ValueError(
-                "elliposid should be an instance of the "
-                "`pygeoid.geometry.ellipsoid.Ellipsoid`!"
-            )
-        else:
-            self._ellipsoid = ellipsoid
-
-    @classmethod
-    def from_spherical(cls, lat, lon, radius):
-        """Position, initialized from spherical coordinates.
-
-        Parameters
-        ----------
-        lat : ~pygeoid.conventions.units.Quantity or array-like
-            Spherical latitude. Can be anything that initialises an
-            `~astropy.coordinates.Latitude` object.
-            (if array-like, in degrees).
-        lon : ~pygeoid.conventions.units.Quantity or array-like
-            Spherical longitude. Can be anything that initialises an
-            `~astropy.coordinates.Longitude` object.
-            (if array-like, in degrees).
-        radius : ~pygeoid.conventions.units.Quantity or array-like
-            Radius (if array-like, in metres).
-        """
-        lat = Latitude(lat, u.degree, copy=False)
-        lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
-
-        if not isinstance(radius, u.Quantity):
-            radius = u.Quantity(radius, u.m, copy=False)
-
-        x, y, z = u.Quantity(transform.spherical_to_cartesian(lat, lon, radius))
-
-        return cls(x, y, z)
-
-    @classmethod
-    def from_geodetic(cls, lat, lon, height=0.0, ell=None):
-        """Position, initialized from geodetic coordinates.
-
-        Parameters
-        ----------
-        lat : ~pygeoid.conventions.units.Quantity or array-like
-            Geodetic latitude. Can be anything that initialises an
-            `~astropy.coordinates.Latitude` object (if array-like, in degrees).
-        lon : ~pygeoid.conventions.units.Quantity or array-like
-            Geodetic longitude. Can be anything that initialises an
-            `~astropy.coordinates.Longitude` object (if array-like, in degrees).
-        height : ~pygeoid.conventions.units.Quantity or array-like
-            Geodetic height (if array-like, in metres). Default is 0 m.
-        ell : ~`pygeoid.geometry.ellipsoid.Ellipsoid`, optional
-            Reference ellipsoid to which geodetic coordinates are referenced to.
-            Default is None, which means the default ellipsoid of the class
-            instance, but if given, it also will change the ellipsoid for
-            the class instance.
-
-        """
-        lat = Latitude(lat, u.degree, copy=False)
-        lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
-
-        if not isinstance(height, u.Quantity):
-            height = u.Quantity(height, u.m, copy=False)
-
-        if ell is None:
-            ell = cls._ellipsoid
-
-        x, y, z = u.Quantity(transform.geodetic_to_cartesian(lat, lon, height, ell))
-
-        self = cls(x, y, z)
-        self._ellipsoid = ell
-
-        return self
-
-    @property
-    def geodetic(self):
-        return GeodeticRepresentation.from_cartesian(
-            self.cartesian, ell=self._ellipsoid
-        )
-
-    @classmethod
-    def from_ellipsoidal_harmonic(cls, rlat, lon, u_ax, ell=None):
-        """Position, initialized from ellipsoidal-harmonic coordinates.
-
-        Parameters
-        ----------
-        rlat : ~pygeoid.conventions.units.Quantity or array-like
-            Reduced latitude. Can be anything that initialises an
-            `~astropy.coordinates.Latitude` object.
-        lon : ~pygeoid.conventions.units.Quantity or array-like
-            Spherical longitude. Can be anything that initialises an
-            `~astropy.coordinates.Longitude` object.
-            (if array-like, in degrees).
-        u_ax : ~pygeoid.conventions.units.Quantity or array-like
-            Polar axis of the ellipsoid passing through the given point
-            (if array-like, in metres).
-        ell : ~`pygeoid.geometry.ellipsoid.Ellipsoid`
-            Reference ellipsoid to which coordinates are referenced to.
-            Default is None, which means the default ellipsoid of the class
-            instance, but if given, it also will change the ellipsoid for
-            the class instance.
-        """
-        rlat = Latitude(rlat, u.degree, copy=False)
-        lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
-
-        if not isinstance(u_ax, u.Quantity):
-            u_ax = u.Quantity(u_ax, u.m, copy=False)
-
-        if ell is None:
-            ell = cls._ellipsoid
-
-        x, y, z = u.Quantity(
-            transform.ellipsoidal_to_cartesian(rlat, lon, u_ax, ell=ell)
-        )
-
-        self = cls(x, y, z)
-        self._ellipsoid = ell
-
-        return self
-
-    @property
-    def ellipsoidal_harmonic(self):
-        return EllipsoidalHarmonicRepresentation.from_cartesian(
-            self.cartesian, ell=self._ellipsoid
-        )
-
-    @u.quantity_input
-    def enu(self, origin: tuple[u.deg, u.deg, u.m], ell=None):
-        """Return local east-north-up cartesian coordinates.
-
-        Parameters
-        ----------
-        origin : tuple of ~pygeoid.conventions.units.Quantity
-            Ggeocentric (spherical) or geodetic coordinates of the origin
-            (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
-        ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
-            Reference ellipsoid to which geodetic coordinates
-            are referenced to. Default is None, meaning spherical
-            coordinates instead of geodetic.
-
-        Returns
-        -------
-        east, north, up : ~pygeoid.conventions.units.Quantity
-            Local east-north-up cartesian coordinates.
-        """
-        east, north, up = transform.ecef_to_enu(self.x, self.y, self.z, origin, ell=ell)
-
-        return east, north, up
-
-    def represent_as(self, base, s="base", in_frame_units=False):
-        if (
-            inspect.isclass(base) and issubclass(base, GeodeticRepresentation)
-        ) or base == "geodetic":
-            return self.geodetic
-        elif (
-            inspect.isclass(base)
-            and issubclass(base, EllipsoidalHarmonicRepresentation)
-        ) or base == "ellipsoidalharmonic":
-            return self.ellipsoidal_harmonic
-        else:
-            return super().represent_as(base, s=s, in_frame_units=in_frame_units)
 
 
 class LocalTangentPlane(BaseCoordinateFrame):
@@ -230,7 +28,7 @@ class LocalTangentPlane(BaseCoordinateFrame):
     ----------
     *args
         Any representation of the frame data, e.g. x, y, and z coordinates
-    origin : `pygeoid.geometry.frame.ECEF`
+    origin : `pygeoid.geometry.Position`
         The location on Earth of the local frame origin
     orientation : sequence of str, optional
         The cardinal directions of the x, y, and z axis (default: E, N, U)
@@ -297,14 +95,14 @@ class LocalTangentPlane(BaseCoordinateFrame):
         self._basis = _np.column_stack((ux, uy, uz))
 
 
-@frame_transform_graph.transform(AffineTransform, ECEF, LocalTangentPlane)
-def ecef_to_local(ecef, local):
-    """Compute the transformation from ECEF to LocalTangentPlane coordinates.
+@frame_transform_graph.transform(AffineTransform, Position, LocalTangentPlane)
+def position_to_local(position, local):
+    """Compute the transformation from Position to LocalTangentPlane coordinates.
 
     Parameters
     ----------
-    ecef : ECEF
-        The initial coordinates in ECEF
+    position : Position
+        The initial coordinates
     local : LocalTangentPlane
         The LocalTangentPlane frame to transform to
 
@@ -315,27 +113,27 @@ def ecef_to_local(ecef, local):
     """
     matrix = local._basis.T
     offset = None
-    c = ecef.represent_as("cartesian")
+    c = position.represent_as("cartesian")
     if c.x.unit.is_equivalent("m"):
         offset = -local._origin.represent_as("cartesian").transform(matrix)
     return matrix, offset
 
 
-@frame_transform_graph.transform(AffineTransform, LocalTangentPlane, ECEF)
-def local_to_ecef(local, ecef):
-    """Compute the transformation from LocalTangentPlane to ECEF coordinates.
+@frame_transform_graph.transform(AffineTransform, LocalTangentPlane, Position)
+def local_to_position(local, position):
+    """Compute the transformation from LocalTangentPlane to Position coordinates.
 
     Parameters
     ----------
     local : LocalTangentPlane
         The initial coordinates in LocalTangentPlane
-    ecef : ECEF
-        The ECEF frame to transform to
+    position : Position
+        The Position frame to transform to
 
     Returns
     -------
-    ECEF
-        The ECEF frame with transformed coordinates
+    Position
+        The Position frame with transformed coordinates
     """
     matrix = local._basis
     offset = None
