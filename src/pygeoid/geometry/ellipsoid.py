@@ -78,6 +78,29 @@ class Ellipsoid:
 
         self.geod = _proj.Geod(**kwargs)
 
+    @classmethod
+    def from_pyproj_crs(cls, crs):
+        """Create an ellipsoid from a pyproj-compatible CRS definition.
+
+        Parameters
+        ----------
+        crs
+            Any input accepted by `pyproj.CRS.from_user_input`, such as an EPSG
+            code, authority string, WKT, PROJ string, or `pyproj.CRS` instance.
+
+        Returns
+        -------
+        Ellipsoid
+            Ellipsoid initialized from the CRS geodesic definition.
+        """
+        self = cls.__new__(cls)
+        self.geod = _proj.CRS.from_user_input(crs).get_geod()
+        return self
+
+    def to_proj_geod(self):
+        """Return a `pyproj.Geod` initialized from the original parameters."""
+        return _proj.Geod(self.geod.initstring)
+
     @staticmethod
     def _ellipsoid_name(ellps):
         if ellps in _proj.pj_ellps:

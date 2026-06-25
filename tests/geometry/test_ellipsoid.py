@@ -2,6 +2,7 @@ import os
 import pytest
 import numpy as np
 import astropy.units as u
+import pyproj
 from pygeoid.geometry.ellipsoid import Ellipsoid, get_ellps_map
 from pygeoid.geometry.transform import geodetic_to_cartesian, geodetic_to_spherical
 
@@ -38,6 +39,53 @@ def test_get_ellps_map():
     ell = Ellipsoid(**grs80)
     np.testing.assert_equal(ell.a.value, 6378137.0)
     np.testing.assert_almost_equal(ell.reciprocal_flattening.value, 298.257222101)
+
+
+def test_from_pyproj_crs():
+    ell = Ellipsoid.from_pyproj_crs("EPSG:4326")
+    geod = pyproj.CRS.from_epsg(4326).get_geod()
+
+    assert ell.geod.initstring == geod.initstring
+    np.testing.assert_equal(ell.a.value, 6378137.0)
+    np.testing.assert_almost_equal(ell.b.value, 6356752.314245179)
+    np.testing.assert_almost_equal(ell.reciprocal_flattening.value, 298.257223563)
+
+    crs = pyproj.CRS.from_epsg(3857)
+    ell_from_crs = Ellipsoid.from_pyproj_crs(crs)
+
+    assert ell_from_crs.geod.initstring == crs.get_geod().initstring
+    np.testing.assert_equal(ell_from_crs.a.value, ell.a.value)
+    np.testing.assert_almost_equal(ell_from_crs.b.value, ell.b.value)
+
+
+def test_to_proj_geod():
+    ell = Ellipsoid("GRS80")
+    geod = ell.to_proj_geod()
+
+    assert isinstance(geod, pyproj.Geod)
+    assert geod is not ell.geod
+    assert geod.initstring == ell.geod.initstring
+    np.testing.assert_equal(geod.a, ell.a.value)
+    np.testing.assert_equal(geod.b, ell.b.value)
+    np.testing.assert_almost_equal(geod.f, ell.f.value)
+
+    ell = Ellipsoid(
+        a=6378137.0 * u.m,
+        rf=298.257222101 * u.dimensionless_unscaled,
+    )
+    geod = ell.to_proj_geod()
+
+    assert geod.initstring == ell.geod.initstring
+    np.testing.assert_equal(geod.a, ell.a.value)
+    np.testing.assert_almost_equal(geod.f, ell.f.value)
+
+    ell = Ellipsoid.from_pyproj_crs("EPSG:4326")
+    geod = ell.to_proj_geod()
+
+    assert geod is not ell.geod
+    assert geod.initstring == ell.geod.initstring
+    np.testing.assert_equal(geod.a, ell.a.value)
+    np.testing.assert_almost_equal(geod.f, ell.f.value)
 
 
 def test_short_long_names():
