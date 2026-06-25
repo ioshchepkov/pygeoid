@@ -143,9 +143,7 @@ def local_to_position(local, position):
     return matrix, offset
 
 
-@frame_transform_graph.transform(
-    AffineTransform, LocalTangentPlane, LocalTangentPlane
-)
+@frame_transform_graph.transform(AffineTransform, LocalTangentPlane, LocalTangentPlane)
 def local_to_local(local0, local1):
     """Compute the transformation between LocalTangentPlane coordinates.
 
