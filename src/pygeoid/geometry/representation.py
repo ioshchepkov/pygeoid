@@ -96,13 +96,11 @@ class GeodeticRepresentation(BaseRepresentation):
     def from_cartesian(cls, cart, ell=None):
         x, y, z = cart.get_xyz()
 
-        if ell is not None:
-            cls._ellipsoid = ell
+        if ell is None:
+            ell = cls._ellipsoid
 
-        lat, lon, height = transform.cartesian_to_geodetic(x, y, z, ell=cls._ellipsoid)
-        return GeodeticRepresentation(
-            lon=lon, lat=lat, height=height, ell=cls._ellipsoid, copy=True
-        )
+        lat, lon, height = transform.cartesian_to_geodetic(x, y, z, ell=ell)
+        return cls(lon=lon, lat=lat, height=height, ell=ell, copy=True)
 
 
 class GeodeticDifferential(BaseDifferential):
@@ -182,13 +180,11 @@ class EllipsoidalHarmonicRepresentation(BaseRepresentation):
     def from_cartesian(cls, cart, ell=None):
         x, y, z = cart.get_xyz()
 
-        if ell is not None:
-            cls._ellipsoid = ell
+        if ell is None:
+            ell = cls._ellipsoid
 
-        rlat, lon, u_ax = transform.cartesian_to_ellipsoidal(
-            x, y, z, ell=cls._ellipsoid
-        )
-        return cls(rlat, lon, u_ax, copy=False)
+        rlat, lon, u_ax = transform.cartesian_to_ellipsoidal(x, y, z, ell=ell)
+        return cls(rlat, lon, u_ax, ell=ell, copy=False)
 
 
 class EllipsoidalHarmonicDifferential(BaseDifferential):

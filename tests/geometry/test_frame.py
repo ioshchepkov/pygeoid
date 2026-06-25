@@ -3,7 +3,7 @@ import numpy as np
 
 from pygeoid.geometry.ellipsoid import Ellipsoid
 from pygeoid.geometry.frame import ECEF
-from pygeoid.geometry.transform import enu_to_ecef
+from pygeoid.geometry.transform import ecef_to_enu, enu_to_ecef
 
 ell = Ellipsoid("GRS80")
 
@@ -74,6 +74,19 @@ def test_from_to_ellipsoidal_default_ellipsoid():
     np.testing.assert_allclose(b_p.cartesian.xyz.value, p.cartesian.xyz.value)
 
 
+def test_represent_as_preserves_frame_ellipsoid():
+    ell1 = Ellipsoid("GRS80")
+    ell2 = Ellipsoid("intl")
+
+    p1 = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m, ell=ell1)
+    p2 = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m, ell=ell2)
+
+    assert p1.represent_as("geodetic").ellipsoid is ell1
+    assert p2.represent_as("geodetic").ellipsoid is ell2
+    assert p1.represent_as("ellipsoidalharmonic").ellipsoid is ell1
+    assert p2.represent_as("ellipsoidalharmonic").ellipsoid is ell2
+
+
 def test_to_enu_ell():
     lat0, lon0, height0 = 55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m
     origin = (lat0, lon0, height0)
@@ -86,3 +99,16 @@ def test_to_enu_ell():
     np.testing.assert_array_almost_equal(b_x.value, x_.value, decimal=5)
     np.testing.assert_array_almost_equal(b_y.value, y_.value, decimal=5)
     np.testing.assert_array_almost_equal(b_z.value, z_.value, decimal=5)
+
+
+def test_enu_uses_given_ellipsoid():
+    ell = Ellipsoid("intl")
+    point = ECEF(1e7 * u.m, 2e7 * u.m, 3e7 * u.m)
+    origin = (55.0 * u.deg, 37.0 * u.deg, 100.0 * u.m)
+
+    expected = ecef_to_enu(point.x, point.y, point.z, origin=origin, ell=ell)
+    actual = point.enu(origin=origin, ell=ell)
+
+    np.testing.assert_allclose(actual[0].value, expected[0].value)
+    np.testing.assert_allclose(actual[1].value, expected[1].value)
+    np.testing.assert_allclose(actual[2].value, expected[2].value)

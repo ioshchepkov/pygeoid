@@ -205,14 +205,11 @@ class ECEF(BaseCoordinateFrame):
         east, north, up : ~pygeoid.conventions.units.Quantity
             Local east-north-up cartesian coordinates.
         """
-        if ell is not None:
-            ell = self._ellipsoid
-
         east, north, up = transform.ecef_to_enu(self.x, self.y, self.z, origin, ell=ell)
 
         return east, north, up
 
-    def represent_as(self, base, s="base", in_frame_units="False"):
+    def represent_as(self, base, s="base", in_frame_units=False):
         if (
             inspect.isclass(base) and issubclass(base, GeodeticRepresentation)
         ) or base == "geodetic":
@@ -220,10 +217,10 @@ class ECEF(BaseCoordinateFrame):
         elif (
             inspect.isclass(base)
             and issubclass(base, EllipsoidalHarmonicRepresentation)
-        ) or base == "elliposidalharmonic":
+        ) or base == "ellipsoidalharmonic":
             return self.ellipsoidal_harmonic
         else:
-            return super().represent_as(base, s="base", in_frame_units="False")
+            return super().represent_as(base, s=s, in_frame_units=in_frame_units)
 
 
 class LocalTangentPlane(BaseCoordinateFrame):
