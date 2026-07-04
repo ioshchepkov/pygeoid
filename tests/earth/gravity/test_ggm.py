@@ -133,7 +133,7 @@ def test_r_derivatives():
 
 def test_lat_derivatives():
     lat_derivative_model = (
-        model._gravity.lat_derivative(position) / position.spherical.distance**2 * u.rad
+        model._gravity.lat_derivative(position) / position.spherical.radius**2 * u.rad
     )
     lat_derivative_differential_model = model._gravity.differential(position).d_lat
 
@@ -143,7 +143,7 @@ def test_lat_derivatives():
 
 
 def test_lon_derivatives():
-    scale = u.rad / (position.spherical.distance * np.cos(position.spherical.lat)) ** 2
+    scale = u.rad / (position.spherical.radius * np.cos(position.spherical.lat)) ** 2
     lon_derivative_model = model._gravity.lon_derivative(position) * scale
     lon_derivative_differential_model = model._gravity.differential(position).d_lon
 
