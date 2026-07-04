@@ -20,7 +20,8 @@ def _limits_sum(function):
     def wraper(self, position):
 
         x1b, x2b, y1b, y2b, z1b, z2b = self._bounds
-        x, y, z = position.cartesian.get_xyz()
+        cartesian = position.cartesian
+        x, y, z = cartesian.x, cartesian.y, cartesian.z
 
         cond = (
             (x >= x1b) & (x <= x2b) & (y >= y1b) & (y <= y2b) & (z >= z1b) & (z <= z2b)
@@ -89,8 +90,9 @@ class Prism(_PotentialBase):
 
     @staticmethod
     def _prepare_coords(position):
-        x, y, z = position.cartesian.get_xyz().value
-        r = position.cartesian.norm().value
+        cartesian = position.cartesian
+        x, y, z = u.Quantity([cartesian.x, cartesian.y, cartesian.z]).value
+        r = np.sqrt(x**2 + y**2 + z**2)
         return x, y, z, r
 
     @_limits_sum

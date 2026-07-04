@@ -1,5 +1,5 @@
 import numpy as np
-from astropy.coordinates import CartesianDifferential, CartesianRepresentation
+from astropy.coordinates import CartesianDifferential
 
 from pygeoid.conventions import units as u
 from pygeoid.fields.potential.base import PotentialBase
@@ -26,11 +26,11 @@ class Centrifugal(PotentialBase):
         return self._omega
 
     def _potential(self, position):
-        rep = position.represent_as(CartesianRepresentation)
+        rep = getattr(position, "cartesian", position)
         return 0.5 * self.omega**2 * (rep.x**2 + rep.y**2)
 
     def _differential(self, position):
-        rep = position.represent_as(CartesianRepresentation)
+        rep = getattr(position, "cartesian", position)
         return CartesianDifferential(
             self.omega**2 * rep.x,
             self.omega**2 * rep.y,

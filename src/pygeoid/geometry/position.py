@@ -1,210 +1,196 @@
-"""Position classes."""
+"""Position container with lazy coordinate transformations."""
 
-import inspect
+from functools import cached_property
 
-from astropy.coordinates import BaseCoordinateFrame
-from astropy.coordinates.angles import Latitude, Longitude
-from astropy.coordinates.representation import CartesianRepresentation
+import numpy as np
 
 from pygeoid.conventions import units as u
 from pygeoid.geometry import transform
-from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid
-from pygeoid.geometry.representation import (
-    EllipsoidalHarmonicRepresentation,
-    GeodeticRepresentation,
+from pygeoid.geometry.coordinates import (
+    CartesianCoordinates,
+    Coordinates,
+    EllipsoidalCoordinates,
+    EllipsoidalHarmonicCoordinates,
+    GeodeticCoordinates,
+    SphericalCoordinates,
 )
+from pygeoid.geometry.ellipsoid import Ellipsoid
 
 __all__ = ["Position"]
 
 
-class Position(BaseCoordinateFrame):
-    """Earth-Centered, Earth-Fixed frame.
+class Position:
+    """A position represented by one initial set of coordinates.
+
+    Coordinate transformations are performed only when another representation
+    is requested, then cached on the instance.
 
     Parameters
     ----------
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
-        Reference ellipsoid to which geodetic coordinates are referenced to.
-    *args
-        Any representation of the frame data, e.g. x, y, and z coordinates.
-    **kwargs
-        Any extra BaseCoordinateFrame arguments.
-
+    coordinates
+        Initial coordinate container.
+    ell : Ellipsoid, optional
+        Reference ellipsoid used to derive ellipsoidal coordinates from
+        Cartesian or spherical coordinates.
     """
 
-    default_representation = CartesianRepresentation
-    """Default representation of local frames"""
+    def __init__(self, coordinates, *, ell=None):
+        if not isinstance(coordinates, Coordinates):
+            raise TypeError("Position requires a Coordinates instance.")
 
-    def __init__(self, *args, ell=None, **kwargs):
+        if isinstance(coordinates, EllipsoidalCoordinates):
+            if ell is not None and ell is not coordinates.ellipsoid:
+                raise ValueError(
+                    "ell conflicts with the ellipsoid stored in the coordinates."
+                )
+            ellipsoid = coordinates.ellipsoid
+        else:
+            ellipsoid = Ellipsoid() if ell is None else ell
 
-        super().__init__(*args, **kwargs)
+        if not isinstance(ellipsoid, Ellipsoid):
+            raise TypeError("ell must be an Ellipsoid instance.")
 
-        if ell is None:
-            ell = Ellipsoid(DEFAULT_ELLIPSOID)
-        self._ellipsoid = ell
+        self._coordinates = coordinates
+        self._ellipsoid = ellipsoid
+
+    @staticmethod
+    def _angle(value):
+        return value if isinstance(value, u.Quantity) else u.Quantity(value, u.deg)
+
+    @staticmethod
+    def _length(value):
+        return value if isinstance(value, u.Quantity) else u.Quantity(value, u.m)
+
+    @property
+    def coordinates(self):
+        """The initial, untransformed coordinate container."""
+        return self._coordinates
 
     @property
     def ellipsoid(self):
-        """Reference ellipsoid."""
+        """Reference ellipsoid used for ellipsoidal transformations."""
         return self._ellipsoid
 
-    @ellipsoid.setter
-    def ellipsoid(self, ellipsoid):
-        if not isinstance(ellipsoid, Ellipsoid):
-            raise ValueError(
-                "elliposid should be an instance of the "
-                "`pygeoid.geometry.ellipsoid.Ellipsoid`!"
-            )
-        else:
-            self._ellipsoid = ellipsoid
+    @cached_property
+    def cartesian(self):
+        """Cartesian coordinates, transformed lazily."""
+        if isinstance(self.coordinates, CartesianCoordinates):
+            return self.coordinates
+        return self.coordinates.to_cartesian()
+
+    @cached_property
+    def spherical(self):
+        """Geocentric spherical coordinates, transformed lazily."""
+        if isinstance(self.coordinates, SphericalCoordinates):
+            return self.coordinates
+        return SphericalCoordinates.from_cartesian(self.cartesian)
+
+    @cached_property
+    def geodetic(self):
+        """Geodetic coordinates, transformed lazily."""
+        if isinstance(self.coordinates, GeodeticCoordinates):
+            return self.coordinates
+        return GeodeticCoordinates.from_cartesian(
+            self.cartesian, ellipsoid=self.ellipsoid
+        )
+
+    @cached_property
+    def ellipsoidal_harmonic(self):
+        """Ellipsoidal-harmonic coordinates, transformed lazily."""
+        if isinstance(self.coordinates, EllipsoidalHarmonicCoordinates):
+            return self.coordinates
+        return EllipsoidalHarmonicCoordinates.from_cartesian(
+            self.cartesian, ellipsoid=self.ellipsoid
+        )
+
+    @property
+    def x(self):
+        return self.cartesian.x
+
+    @property
+    def y(self):
+        return self.cartesian.y
+
+    @property
+    def z(self):
+        return self.cartesian.z
+
+    @property
+    def shape(self):
+        """Broadcast shape of the Cartesian coordinate components."""
+        return np.broadcast_shapes(np.shape(self.x), np.shape(self.y), np.shape(self.z))
 
     @classmethod
-    def from_spherical(cls, lat, lon, radius):
-        """Position, initialized from spherical coordinates.
-
-        Parameters
-        ----------
-        lat : ~pygeoid.conventions.units.Quantity or array-like
-            Spherical latitude. Can be anything that initialises an
-            `~astropy.coordinates.Latitude` object.
-            (if array-like, in degrees).
-        lon : ~pygeoid.conventions.units.Quantity or array-like
-            Spherical longitude. Can be anything that initialises an
-            `~astropy.coordinates.Longitude` object.
-            (if array-like, in degrees).
-        radius : ~pygeoid.conventions.units.Quantity or array-like
-            Radius (if array-like, in metres).
-        """
-        lat = Latitude(lat, u.degree, copy=False)
-        lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
-
-        if not isinstance(radius, u.Quantity):
-            radius = u.Quantity(radius, u.m, copy=False)
-
-        x, y, z = u.Quantity(transform.spherical_to_cartesian(lat, lon, radius))
-
-        return cls(x, y, z)
+    def from_spherical(cls, lat, lon, radius, *, ell=None):
+        """Create a position retaining spherical coordinates."""
+        coordinates = SphericalCoordinates(
+            cls._angle(lat), cls._angle(lon), cls._length(radius)
+        )
+        return cls(coordinates, ell=ell)
 
     @classmethod
     def from_geodetic(cls, lat, lon, height=0.0, ell=None):
-        """Position, initialized from geodetic coordinates.
-
-        Parameters
-        ----------
-        lat : ~pygeoid.conventions.units.Quantity or array-like
-            Geodetic latitude. Can be anything that initialises an
-            `~astropy.coordinates.Latitude` object (if array-like, in degrees).
-        lon : ~pygeoid.conventions.units.Quantity or array-like
-            Geodetic longitude. Can be anything that initialises an
-            `~astropy.coordinates.Longitude` object (if array-like, in degrees).
-        height : ~pygeoid.conventions.units.Quantity or array-like
-            Geodetic height (if array-like, in metres). Default is 0 m.
-        ell : ~`pygeoid.geometry.ellipsoid.Ellipsoid`, optional
-            Reference ellipsoid to which geodetic coordinates are referenced to.
-            Default is None, which means the default ellipsoid of the class
-            instance, but if given, it also will change the ellipsoid for
-            the class instance.
-
-        """
-        lat = Latitude(lat, u.degree, copy=False)
-        lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
-
-        if not isinstance(height, u.Quantity):
-            height = u.Quantity(height, u.m, copy=False)
-
-        if ell is None:
-            ell = Ellipsoid(DEFAULT_ELLIPSOID)
-
-        x, y, z = u.Quantity(transform.geodetic_to_cartesian(lat, lon, height, ell))
-
-        self = cls(x, y, z)
-        self._ellipsoid = ell
-
-        return self
-
-    @property
-    def geodetic(self):
-        return GeodeticRepresentation.from_cartesian(
-            self.cartesian, ell=self._ellipsoid
+        """Create a position retaining geodetic coordinates."""
+        ellipsoid = Ellipsoid() if ell is None else ell
+        coordinates = GeodeticCoordinates(
+            cls._angle(lat),
+            cls._angle(lon),
+            cls._length(height),
+            ellipsoid=ellipsoid,
         )
+        return cls(coordinates)
 
     @classmethod
     def from_ellipsoidal_harmonic(cls, rlat, lon, u_ax, ell=None):
-        """Position, initialized from ellipsoidal-harmonic coordinates.
-
-        Parameters
-        ----------
-        rlat : ~pygeoid.conventions.units.Quantity or array-like
-            Reduced latitude. Can be anything that initialises an
-            `~astropy.coordinates.Latitude` object.
-        lon : ~pygeoid.conventions.units.Quantity or array-like
-            Spherical longitude. Can be anything that initialises an
-            `~astropy.coordinates.Longitude` object.
-            (if array-like, in degrees).
-        u_ax : ~pygeoid.conventions.units.Quantity or array-like
-            Polar axis of the ellipsoid passing through the given point
-            (if array-like, in metres).
-        ell : ~`pygeoid.geometry.ellipsoid.Ellipsoid`
-            Reference ellipsoid to which coordinates are referenced to.
-            Default is None, which means the default ellipsoid of the class
-            instance, but if given, it also will change the ellipsoid for
-            the class instance.
-        """
-        rlat = Latitude(rlat, u.degree, copy=False)
-        lon = Longitude(lon, u.degree, wrap_angle=180 * u.degree, copy=False)
-
-        if not isinstance(u_ax, u.Quantity):
-            u_ax = u.Quantity(u_ax, u.m, copy=False)
-
-        if ell is None:
-            ell = Ellipsoid(DEFAULT_ELLIPSOID)
-
-        x, y, z = u.Quantity(
-            transform.ellipsoidal_to_cartesian(rlat, lon, u_ax, ell=ell)
+        """Create a position retaining ellipsoidal-harmonic coordinates."""
+        ellipsoid = Ellipsoid() if ell is None else ell
+        coordinates = EllipsoidalHarmonicCoordinates(
+            cls._angle(rlat),
+            cls._angle(lon),
+            cls._length(u_ax),
+            ellipsoid=ellipsoid,
         )
-
-        self = cls(x, y, z)
-        self._ellipsoid = ell
-
-        return self
-
-    @property
-    def ellipsoidal_harmonic(self):
-        return EllipsoidalHarmonicRepresentation.from_cartesian(
-            self.cartesian, ell=self._ellipsoid
-        )
+        return cls(coordinates)
 
     @u.quantity_input
     def enu(self, origin: tuple[u.deg, u.deg, u.m], ell=None):
-        """Return local east-north-up cartesian coordinates.
+        """Return local east-north-up Cartesian coordinates."""
+        return transform.ecef_to_enu(self.x, self.y, self.z, origin, ell=ell)
 
-        Parameters
-        ----------
-        origin : tuple of ~pygeoid.conventions.units.Quantity
-            Ggeocentric (spherical) or geodetic coordinates of the origin
-            (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
-        ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
-            Reference ellipsoid to which geodetic coordinates
-            are referenced to. Default is None, meaning spherical
-            coordinates instead of geodetic.
+    def transform_to(self, frame):
+        """Transform this position to a local tangent plane."""
+        from pygeoid.geometry.frame import LocalTangentPlane
 
-        Returns
-        -------
-        east, north, up : ~pygeoid.conventions.units.Quantity
-            Local east-north-up cartesian coordinates.
+        if isinstance(frame, LocalTangentPlane):
+            return frame.from_position(self)
+        raise TypeError(f"Unsupported target frame: {frame!r}")
+
+    def represent_as(self, coordinates):
+        """Return coordinates in a supported coordinate system.
+
+        ``coordinates`` may be a coordinate class or one of ``"cartesian"``,
+        ``"spherical"``, ``"geodetic"`` or ``"ellipsoidalharmonic"``.
         """
-        east, north, up = transform.ecef_to_enu(self.x, self.y, self.z, origin, ell=ell)
+        coordinate_types = {
+            CartesianCoordinates: "cartesian",
+            SphericalCoordinates: "spherical",
+            GeodeticCoordinates: "geodetic",
+            EllipsoidalHarmonicCoordinates: "ellipsoidal_harmonic",
+        }
+        if coordinates in coordinate_types:
+            return getattr(self, coordinate_types[coordinates])
 
-        return east, north, up
+        if isinstance(coordinates, str):
+            name = coordinates.lower().replace("_", "").replace("-", "")
+            by_name = {
+                "cartesian": "cartesian",
+                "spherical": "spherical",
+                "geodetic": "geodetic",
+                "ellipsoidalharmonic": "ellipsoidal_harmonic",
+            }
+            try:
+                return getattr(self, by_name[name])
+            except KeyError:
+                pass
 
-    def represent_as(self, base, s="base", in_frame_units=False):
-        if (
-            inspect.isclass(base) and issubclass(base, GeodeticRepresentation)
-        ) or base == "geodetic":
-            return self.geodetic
-        elif (
-            inspect.isclass(base)
-            and issubclass(base, EllipsoidalHarmonicRepresentation)
-        ) or base == "ellipsoidalharmonic":
-            return self.ellipsoidal_harmonic
-        else:
-            return super().represent_as(base, s=s, in_frame_units=in_frame_units)
+        raise ValueError(f"Unsupported coordinate system: {coordinates!r}")

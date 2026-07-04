@@ -5,6 +5,9 @@ import abc
 from astropy.coordinates import (
     BaseDifferential,
     CartesianDifferential,
+    CartesianRepresentation,
+    PhysicsSphericalRepresentation,
+    SphericalRepresentation,
 )
 
 from pygeoid.conventions import units as u
@@ -29,6 +32,27 @@ class PotentialBase(ScalarField, metaclass=abc.ABCMeta):
 
     def _hessian(self, position, *args, **kwargs):
         raise NotImplementedError
+
+    @staticmethod
+    def _base_representation(position, representation):
+        """Build the Astropy base required to transform a differential."""
+        if not hasattr(position, "coordinates"):
+            return position.represent_as(representation)
+
+        if issubclass(representation, CartesianRepresentation):
+            cartesian = position.cartesian
+            return CartesianRepresentation(cartesian.x, cartesian.y, cartesian.z)
+        if issubclass(representation, PhysicsSphericalRepresentation):
+            spherical = position.spherical
+            return PhysicsSphericalRepresentation(
+                spherical.lon, 90 * u.deg - spherical.lat, spherical.radius
+            )
+        if issubclass(representation, SphericalRepresentation):
+            spherical = position.spherical
+            return SphericalRepresentation(
+                spherical.lon, spherical.lat, spherical.radius
+            )
+        raise TypeError(f"Unsupported differential base: {representation!r}")
 
     @u.quantity_input
     def potential(self, position, *args, **kwargs) -> u.m**2 / u.s**2:
@@ -71,7 +95,9 @@ class PotentialBase(ScalarField, metaclass=abc.ABCMeta):
                         BaseDifferential.""")
             return default_differential.represent_as(
                 differential_class,
-                base=position.represent_as(default_differential.base_representation),
+                base=self._base_representation(
+                    position, default_differential.base_representation
+                ),
             )
         else:
             return default_differential
@@ -90,7 +116,7 @@ class PotentialBase(ScalarField, metaclass=abc.ABCMeta):
 
         cart_diff = differential.represent_as(
             CartesianDifferential,
-            base=position.represent_as(differential.base_representation),
+            base=self._base_representation(position, differential.base_representation),
         )
         return cart_diff.norm()
 

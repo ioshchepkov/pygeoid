@@ -1,171 +1,138 @@
-"""This module contains frame classes."""
+"""Local Cartesian coordinate containers."""
 
-import numpy as _np
-from astropy.coordinates import (
-    AffineTransform,
-    Attribute,
-    BaseCoordinateFrame,
-    frame_transform_graph,
-)
-from astropy.coordinates.representation import CartesianRepresentation
+import numpy as np
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry import Position, transform
+from pygeoid.geometry import transform
+from pygeoid.geometry.coordinates import CartesianCoordinates
 
 __all__ = ["LocalFrame", "LocalTangentPlane"]
 
 
-class LocalFrame(BaseCoordinateFrame):
-    """Arbitrary local cartesian frame."""
+class LocalFrame:
+    """Arbitrary local Cartesian frame."""
 
-    default_representation = CartesianRepresentation
-
-
-class LocalTangentPlane(BaseCoordinateFrame):
-    """Local tangent plane geodetic coordiante frame.
-
-    Parameters
-    ----------
-    *args
-        Any representation of the frame data, e.g. x, y, and z coordinates
-    origin : `pygeoid.geometry.Position`
-        The location on Earth of the local frame origin
-    orientation : sequence of str, optional
-        The cardinal directions of the x, y, and z axis (default: E, N, U)
-    **kwargs
-        Any extra BaseCoordinateFrame arguments
-
-    Raises
-    ------
-    ValueError
-        The local frame configuration is not valid
-
-    """
-
-    default_representation = CartesianRepresentation
-
-    origin = Attribute()
-    """The origin on Earth of the local frame"""
-
-    orientation = Attribute(default=("E", "N", "U"))
-    """The orientation of the local frame, as cardinal directions"""
-
-    def __init__(self, *args, origin, orientation=None, **kwargs):
-
-        if orientation is None:
-            super().__init__(*args, origin=origin, **kwargs)
+    def __init__(self, coordinates, y=None, z=None):
+        if isinstance(coordinates, CartesianCoordinates):
+            self._coordinates = coordinates
+        elif y is not None and z is not None:
+            self._coordinates = CartesianCoordinates(coordinates, y, z)
         else:
-            super().__init__(*args, origin=origin, orientation=orientation, **kwargs)
+            x, y, z = coordinates
+            self._coordinates = CartesianCoordinates(x, y, z)
 
-        def vector(lat, lon, name):
-            _name = name[0].upper()
+    @property
+    def cartesian(self):
+        return self._coordinates
 
-            azalt = {
-                "E": (90, 0),
-                "W": (270, 0),
-                "N": (0, 0),
-                "S": (180, 0),
-                "U": (0, 90),
-                "D": (0, -90),
-            }
+    @property
+    def x(self):
+        return self.cartesian.x
 
-            if _name not in azalt:
-                raise ValueError(f"Invalid frame orientation `{name}`")
+    @property
+    def y(self):
+        return self.cartesian.y
 
-            az, alt = azalt[_name]
-            az *= u.deg
-            alt *= u.deg
+    @property
+    def z(self):
+        return self.cartesian.z
 
-            calt = _np.cos(alt)
-            r = [calt * _np.sin(az), calt * _np.cos(az), _np.sin(alt)]
-            east, north, up = transform._ecef_to_enu_rotation_matrix(lat, lon)
-
-            d0 = r[0] * east[0] + r[1] * north[0] + r[2] * up[0]
-            d1 = r[0] * east[1] + r[1] * north[1] + r[2] * up[1]
-            d2 = r[0] * east[2] + r[1] * north[2] + r[2] * up[2]
-
-            return d0, d1, d2
-
-        geodetic = self._origin.geodetic
-
-        ux = vector(geodetic.lat, geodetic.lon, self._orientation[0])
-        uy = vector(geodetic.lat, geodetic.lon, self._orientation[1])
-        uz = vector(geodetic.lat, geodetic.lon, self._orientation[2])
-
-        self._basis = _np.column_stack((ux, uy, uz))
+    @property
+    def shape(self):
+        return np.broadcast_shapes(np.shape(self.x), np.shape(self.y), np.shape(self.z))
 
 
-@frame_transform_graph.transform(AffineTransform, Position, LocalTangentPlane)
-def position_to_local(position, local):
-    """Compute the transformation from Position to LocalTangentPlane coordinates.
+class LocalTangentPlane(LocalFrame):
+    """Local Cartesian frame tangent to an Earth position."""
 
-    Parameters
-    ----------
-    position : Position
-        The initial coordinates
-    local : LocalTangentPlane
-        The LocalTangentPlane frame to transform to
+    def __init__(self, coordinates=None, *, origin, orientation=("E", "N", "U")):
+        self._origin = origin
+        self._orientation = orientation
+        self._basis = np.column_stack(
+            tuple(self._vector(direction) for direction in orientation)
+        )
+        self._coordinates = coordinates
 
-    Returns
-    -------
-    LocalTangentPlane
-        The LocalTangentPlane frame with transformed coordinates
-    """
-    matrix = local._basis.T
-    offset = None
-    c = position.represent_as("cartesian")
-    if c.x.unit.is_equivalent("m"):
-        offset = -local._origin.represent_as("cartesian").transform(matrix)
-    return matrix, offset
+    @property
+    def origin(self):
+        return self._origin
 
+    @property
+    def orientation(self):
+        return self._orientation
 
-@frame_transform_graph.transform(AffineTransform, LocalTangentPlane, Position)
-def local_to_position(local, position):
-    """Compute the transformation from LocalTangentPlane to Position coordinates.
+    @property
+    def cartesian(self):
+        if self._coordinates is None:
+            raise ValueError("This local tangent plane does not contain a position.")
+        return self._coordinates
 
-    Parameters
-    ----------
-    local : LocalTangentPlane
-        The initial coordinates in LocalTangentPlane
-    position : Position
-        The Position frame to transform to
+    def _vector(self, name):
+        direction = name[0].upper()
+        azalt = {
+            "E": (90, 0),
+            "W": (270, 0),
+            "N": (0, 0),
+            "S": (180, 0),
+            "U": (0, 90),
+            "D": (0, -90),
+        }
+        try:
+            azimuth, altitude = azalt[direction]
+        except KeyError as exc:
+            raise ValueError(f"Invalid frame orientation `{name}`") from exc
 
-    Returns
-    -------
-    Position
-        The Position frame with transformed coordinates
-    """
-    matrix = local._basis
-    offset = None
-    c = local.represent_as("cartesian")
-    if c.x.unit.is_equivalent("m"):
-        offset = local._origin.represent_as("cartesian")
-    return matrix, offset
+        azimuth *= u.deg
+        altitude *= u.deg
+        cos_altitude = np.cos(altitude)
+        local = np.array(
+            [
+                cos_altitude * np.sin(azimuth),
+                cos_altitude * np.cos(azimuth),
+                np.sin(altitude),
+            ]
+        )
 
+        geodetic = self.origin.geodetic
+        ecef_to_enu = transform._ecef_to_enu_rotation_matrix(geodetic.lat, geodetic.lon)
+        return local @ ecef_to_enu
 
-@frame_transform_graph.transform(AffineTransform, LocalTangentPlane, LocalTangentPlane)
-def local_to_local(local0, local1):
-    """Compute the transformation between LocalTangentPlane coordinates.
+    def from_position(self, position):
+        """Return this frame containing ``position`` in local coordinates."""
+        delta = u.Quantity(
+            [
+                position.x - self.origin.x,
+                position.y - self.origin.y,
+                position.z - self.origin.z,
+            ]
+        )
+        x, y, z = self._basis.T @ delta
+        return type(self)(
+            CartesianCoordinates(x, y, z),
+            origin=self.origin,
+            orientation=self.orientation,
+        )
 
-    Parameters
-    ----------
-    local0 : LocalTangentPlane
-        The initial coordinates in the 1st LocalTangentPlane frame.
-    local1 : LocalTangentPlane
-        The 2nd LocalTangentPlane frame to transform to.
+    def to_position(self):
+        """Convert the contained local coordinates to an Earth position."""
+        from pygeoid.geometry.position import Position
 
-    Returns
-    -------
-    LocalTangentPlane
-        The LocalTangentPlane frame with transformed coordinates.
+        local = u.Quantity([self.x, self.y, self.z])
+        x, y, z = self._basis @ local + u.Quantity(
+            [self.origin.x, self.origin.y, self.origin.z]
+        )
+        return Position(
+            CartesianCoordinates(x, y, z),
+            ell=self.origin.ellipsoid,
+        )
 
-    """
-    matrix = local1._basis.T @ local0._basis
-    offset = None
-    c = local0.represent_as("cartesian")
-    if c.x.unit.is_equivalent("m"):
-        offset = (
-            local0._origin.represent_as("cartesian")
-            - local1._origin.represent_as("cartesian")
-        ).transform(local1._basis.T)
-    return matrix, offset
+    def transform_to(self, frame):
+        """Transform to another local tangent plane or to ``Position``."""
+        from pygeoid.geometry.position import Position
+
+        position = self.to_position()
+        if frame is Position:
+            return position
+        if isinstance(frame, LocalTangentPlane):
+            return frame.from_position(position)
+        raise TypeError(f"Unsupported target frame: {frame!r}")
