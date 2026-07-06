@@ -11,7 +11,7 @@ from astropy.coordinates import (
 from astropy.coordinates.angles import Latitude, Longitude
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry import transform
+from pygeoid.geometry.coordinates import transform
 from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid
 
 

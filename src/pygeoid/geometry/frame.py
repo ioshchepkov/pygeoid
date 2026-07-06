@@ -3,8 +3,7 @@
 import numpy as np
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry import transform
-from pygeoid.geometry.coordinates import CartesianCoordinates
+from pygeoid.geometry.coordinates import CartesianCoordinates, transform
 
 __all__ = ["LocalFrame", "LocalTangentPlane"]
 

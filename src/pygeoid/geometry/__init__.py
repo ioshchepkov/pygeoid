@@ -5,8 +5,8 @@ transformations frequently used in physical geodesy.
 """
 
 from .coordinates import (
+    BaseCoordinates,
     CartesianCoordinates,
-    Coordinates,
     EllipsoidalCoordinates,
     EllipsoidalHarmonicCoordinates,
     GeodeticCoordinates,
@@ -15,7 +15,7 @@ from .coordinates import (
 from .position import Position
 
 __all__ = [
-    "Coordinates",
+    "BaseCoordinates",
     "EllipsoidalCoordinates",
     "CartesianCoordinates",
     "SphericalCoordinates",

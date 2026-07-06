@@ -1,8 +1,7 @@
 
 ************************************************************
-Coordinate Transformations (`pygeoid.geometry.transform`)
+Coordinate Transformations (`pygeoid.geometry.coordinates.transform`)
 ************************************************************
 
-.. automodule:: pygeoid.geometry.transform
+.. automodule:: pygeoid.geometry.coordinates.transform
    :members:
-

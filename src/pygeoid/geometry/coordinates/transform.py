@@ -1,4 +1,4 @@
-"""This module contains functions for coordinate transformations"""
+"""Functions for coordinate transformations."""
 
 import functools as _functools
 

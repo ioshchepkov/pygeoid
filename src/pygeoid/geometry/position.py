@@ -5,14 +5,14 @@ from functools import cached_property
 import numpy as np
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry import transform
 from pygeoid.geometry.coordinates import (
+    BaseCoordinates,
     CartesianCoordinates,
-    Coordinates,
     EllipsoidalCoordinates,
     EllipsoidalHarmonicCoordinates,
     GeodeticCoordinates,
     SphericalCoordinates,
+    transform,
 )
 from pygeoid.geometry.ellipsoid import Ellipsoid
 
@@ -35,8 +35,8 @@ class Position:
     """
 
     def __init__(self, coordinates, *, ell=None):
-        if not isinstance(coordinates, Coordinates):
-            raise TypeError("Position requires a Coordinates instance.")
+        if not isinstance(coordinates, BaseCoordinates):
+            raise TypeError("Position requires a BaseCoordinates instance.")
 
         if isinstance(coordinates, EllipsoidalCoordinates):
             if ell is not None and ell is not coordinates.ellipsoid:

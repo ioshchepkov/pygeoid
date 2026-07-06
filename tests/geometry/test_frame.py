@@ -10,7 +10,7 @@ from pygeoid.geometry.coordinates import (
 )
 from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid
 from pygeoid.geometry.frame import LocalTangentPlane
-from pygeoid.geometry.transform import ecef_to_enu, enu_to_ecef
+from pygeoid.geometry.coordinates.transform import ecef_to_enu, enu_to_ecef
 
 ell = Ellipsoid("GRS80")
 

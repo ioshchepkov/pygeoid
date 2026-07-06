@@ -2,7 +2,7 @@
 import pytest
 import numpy as np
 from pygeoid.geometry.ellipsoid import Ellipsoid
-from pygeoid.geometry.transform import *
+from pygeoid.geometry.coordinates.transform import *
 
 
 ell = Ellipsoid('GRS80')

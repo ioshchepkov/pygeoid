@@ -2,8 +2,8 @@ import astropy.units as u
 import numpy as np
 
 from pygeoid.geometry.coordinates import (
+    BaseCoordinates,
     CartesianCoordinates,
-    Coordinates,
     EllipsoidalCoordinates,
     EllipsoidalHarmonicCoordinates,
     GeodeticCoordinates,
@@ -49,8 +49,8 @@ def assert_scale_factors_equal(actual, expected):
 
 
 def test_coordinate_hierarchy():
-    assert issubclass(CartesianCoordinates, Coordinates)
-    assert issubclass(SphericalCoordinates, Coordinates)
+    assert issubclass(CartesianCoordinates, BaseCoordinates)
+    assert issubclass(SphericalCoordinates, BaseCoordinates)
     assert issubclass(GeodeticCoordinates, EllipsoidalCoordinates)
     assert issubclass(EllipsoidalHarmonicCoordinates, EllipsoidalCoordinates)
 

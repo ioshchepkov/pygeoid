@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 import astropy.units as u
-import pygeoid.geometry.transform as transform
+import pygeoid.geometry.coordinates.transform as transform
 from pygeoid.earth.gravity.normal import LevelEllipsoid
 from pygeoid.earth.gravity.normal import surface_normal_gravity_clairaut
 

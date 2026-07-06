@@ -11,7 +11,9 @@ References
 import numpy as np
 import numpy.ma as ma
 
-from pygeoid.geometry.transform import latlon_to_planar as latlon_to_metres
+from pygeoid.geometry.coordinates.transform import (
+    latlon_to_planar as latlon_to_metres,
+)
 from pygeoid.geometry.utils import spherical_distance
 
 
