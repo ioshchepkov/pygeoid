@@ -9,7 +9,7 @@ from pygeoid.geometry.coordinates import (
     GeodeticCoordinates,
     SphericalCoordinates,
 )
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.surfaces import Ellipsoid
 
 
 def assert_cartesian_equal(actual, expected):

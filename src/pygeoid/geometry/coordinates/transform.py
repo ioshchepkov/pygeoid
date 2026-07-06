@@ -26,7 +26,7 @@ def geodetic_to_cartesian(lat: u.deg, lon: u.deg, height: u.m, ell):
         Geodetic longitude.
     height : ~pygeoid.conventions.units.Quantity
         Geodetic height.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -53,7 +53,7 @@ def _cartesian_to_geodetic(x, y, z, ell, degrees=True):
     ----------
     x, y, z : float or array_like of floats
         Cartesian coordinates, in metres.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
     degrees : bool, optional
         If True, the output geodetic latitude and longitude will be in degrees,
@@ -132,7 +132,7 @@ def cartesian_to_geodetic(x: u.m, y: u.m, z: u.m, ell):
     ----------
     x, y, z : ~pygeoid.conventions.units.Quantity
         Cartesian coordinates.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -225,7 +225,7 @@ def cartesian_to_ellipsoidal(x: u.m, y: u.m, z: u.m, ell):
     ----------
     x, y, z : ~pygeoid.conventions.units.Quantity
         Cartesian coordinates.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which ellipsoidal coordinates are referenced to.
 
     Returns
@@ -270,7 +270,7 @@ def ellipsoidal_to_cartesian(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
         Longitude.
     u_ax : ~pygeoid.conventions.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -300,7 +300,7 @@ def geodetic_to_spherical(lat: u.deg, lon: u.deg, height: u.m, ell):
         Geodetic longitude.
     height : ~pygeoid.conventions.units.Quantity
         Geodetic height.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -323,7 +323,7 @@ def spherical_to_geodetic(lat: u.deg, lon: u.deg, radius: u.m, ell):
         Spherical latitude and longitude.
     r : ~pygeoid.conventions.units.Quantity
         Radius.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -350,7 +350,7 @@ def geodetic_to_ellipsoidal(lat: u.deg, lon: u.deg, height: u.m, ell):
         Geodetic longitude.
     height : ~pygeoid.conventions.units.Quantity
         Geodetic height.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -380,7 +380,7 @@ def ellipsoidal_to_geodetic(rlat: u.deg, lon: u.deg, u_ax: u.m, ell):
         Longitude.
     u_ax : ~pygeoid.conventions.units.Quantity
         Polar axis of the ellipsoid passing through the given point.
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -439,7 +439,7 @@ def ecef_to_enu(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=No
     origin : tuple of ~pygeoid.conventions.units.Quantity
         Ggeocentric (spherical) or geodetic coordinates of the origin
         (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`, optional
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`, optional
         Reference ellipsoid to which geodetic coordinates are referenced to.
         Default is None, meaning spherical coordinates instead of geodetic.
 
@@ -488,7 +488,7 @@ def enu_to_ecef(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], ell=No
     origin : tuple of ~pygeoid.conventions.units.Quantity
         Ggeocentric (spherical) or geodetic coordinates of the origin
         (`lat0`, `lon0`, `r0`) or (`lat0`, `lon0`, `h0`).
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
         Default is None, meaning spherical coordinates instead of geodetic.
 
@@ -547,7 +547,7 @@ def geodetic_to_enu(
         Geodetic height.
     origin : tuple of ~pygeoid.conventions.units.Quantity
         Geodetic coordinates of the origin (`lat0`, `lon0`, `h0`).
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns
@@ -574,7 +574,7 @@ def enu_to_geodetic(x: u.m, y: u.m, z: u.m, origin: tuple[u.deg, u.deg, u.m], el
         Local east-north-uo cartesian coordinates.
     origin : tuple of ~pygeoid.conventions.units.Quantity
         Geodetic coordinates of the origin (`lat0`, `lon0`, `h0`).
-    ell : instance of the `pygeoid.geometry.ellipsoid.Ellipsoid`
+    ell : instance of the `pygeoid.geometry.surfaces.Ellipsoid`
         Reference ellipsoid to which geodetic coordinates are referenced to.
 
     Returns

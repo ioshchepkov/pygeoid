@@ -8,7 +8,7 @@ import numpy as np
 from astropy.coordinates.angles import Latitude, Longitude
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.surfaces import Ellipsoid
 
 from . import transform
 from .base import BaseCoordinates

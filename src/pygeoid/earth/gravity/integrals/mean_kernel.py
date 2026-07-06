@@ -14,7 +14,7 @@ import numpy.ma as ma
 from pygeoid.geometry.coordinates.transform import (
     latlon_to_planar as latlon_to_metres,
 )
-from pygeoid.geometry.utils import spherical_distance
+from pygeoid.geometry.surfaces import Sphere
 
 
 class MeanKernel:
@@ -128,7 +128,7 @@ class MeanKernel:
         weight = self._kernel_weighting_factor_planar(x, y, x1, y1, x2, y2)
 
         # TODO: move to MeanSphericalKernel
-        psi = spherical_distance(latp, lonp, latq, lonq).reshape(latq.shape)
+        psi = Sphere.spherical_distance(latp, lonp, latq, lonq).reshape(latq.shape)
 
         psi = ma.masked_outside(psi, self.psi1, self.psi2)
 

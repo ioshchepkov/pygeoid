@@ -1,7 +1,7 @@
 
 import pytest
 import numpy as np
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.surfaces import Ellipsoid
 from pygeoid.geometry.coordinates.transform import *
 
 

@@ -6,7 +6,7 @@ import numpy as np
 from scipy import optimize, special
 
 from pygeoid.conventions import units as u
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.surfaces import Ellipsoid
 
 LEVEL_ELLIPSOIDS = {
     "GRS80": {
@@ -63,7 +63,7 @@ class LevelEllipsoid(Ellipsoid):
     """Class represents the gravity field of the level ellipsoid.
 
     This class intialize `Ellipsoid` class from
-    `pygeoid.geometry.ellipsoid`, so
+    `pygeoid.geometry.surfaces.ellipsoid`, so
     all geometrical methods and parameters are available too.
 
     Parameters

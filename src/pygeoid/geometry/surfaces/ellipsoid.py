@@ -1,4 +1,4 @@
-"""Geometry of the reference ellipsoid."""
+"""Geometry of reference ellipsoids."""
 
 import functools as _functools
 

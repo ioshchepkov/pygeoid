@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 import astropy.units as u
 import pyproj
-from pygeoid.geometry.ellipsoid import DEFAULT_ELLIPSOID, Ellipsoid, get_ellps_map
+from pygeoid.geometry.surfaces import DEFAULT_ELLIPSOID, Ellipsoid, get_ellps_map
 from pygeoid.geometry.coordinates.transform import (
     geodetic_to_cartesian,
     geodetic_to_spherical,

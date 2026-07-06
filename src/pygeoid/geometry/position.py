@@ -14,7 +14,7 @@ from pygeoid.geometry.coordinates import (
     SphericalCoordinates,
     transform,
 )
-from pygeoid.geometry.ellipsoid import Ellipsoid
+from pygeoid.geometry.surfaces import Ellipsoid
 
 __all__ = ["Position"]
 
