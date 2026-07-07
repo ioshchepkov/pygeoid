@@ -6,6 +6,7 @@ import numpy as _np
 import pyproj as _proj
 
 from pygeoid.conventions import units as u
+from pygeoid.geometry.surfaces.base import Surface
 
 # default ellipsoid for geometrical (geodetic) applications
 DEFAULT_ELLIPSOID = "GRS80"
@@ -38,7 +39,7 @@ def _ellipsoid_parameter_with_units(key, value):
     return value
 
 
-class Ellipsoid:
+class Ellipsoid(Surface):
     """Ellipsoid of revolution and its geometric properties.
 
     This class wraps `pyproj.Geod` for geodesic calculations and exposes

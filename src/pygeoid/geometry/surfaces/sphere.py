@@ -3,11 +3,12 @@
 import numpy as np
 
 from pygeoid.conventions import units as u
+from pygeoid.geometry.surfaces.base import Surface
 
 __all__ = ["Sphere"]
 
 
-class Sphere:
+class Sphere(Surface):
     """Spherical geometry operations."""
 
     @staticmethod

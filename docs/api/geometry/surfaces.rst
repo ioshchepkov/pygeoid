@@ -3,6 +3,10 @@
 Reference Surfaces (`pygeoid.geometry.surfaces`)
 ***************************************************************
 
+.. automodule:: pygeoid.geometry.surfaces.base
+   :members:
+   :inherited-members:
+
 .. automodule:: pygeoid.geometry.surfaces.ellipsoid
    :members:
    :inherited-members:
